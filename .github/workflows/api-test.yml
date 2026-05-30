@@ -103,6 +103,7 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
 
       - name: Stop backend services
         if: always()
