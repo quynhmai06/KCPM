@@ -81,6 +81,16 @@ jobs:
             --reporter-junit-export reports/newman-result.xml \
             --reporter-htmlextra-export reports/newman-report.html
 
+      - name: Move Jira issue to Done when tests pass
+        if: success()
+        run: bash scripts/transition-jira-issue.sh
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_TRANSITION_PATH: In Progress,Testing,Done
+
       - name: Collect Docker logs when failed
         if: failure()
         run: |
