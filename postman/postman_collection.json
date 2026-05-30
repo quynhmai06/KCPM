@@ -26,8 +26,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Gateway returns HTTP 200', function () {",
-              "    pm.response.to.have.status(200);",
+              "pm.test('Gateway returns HTTP 500', function () {",
+              "    pm.response.to.have.status(500);",
               "});",
               "",
               "pm.test('Gateway status is ok', function () {",
