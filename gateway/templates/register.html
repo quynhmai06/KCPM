@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng ký - EV & Battery Trading</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root{
+      --brand:#ffba00;
+      --text:#111;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --bg:#f5f5f5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{min-height:100dvh;display:grid;place-items:center;padding:24px}
+    .card{
+      width:100%;max-width:520px;background:#fff;border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px 26px 24px
+    }
+    .logo{width:36px;height:36px;display:grid;place-items:center;margin:0 auto 8px;
+      border-radius:10px;background:var(--brand);color:#fff;font-weight:900;font-style:italic;transform:skewX(-8deg)}
+    h1{margin:6px 0 18px;text-align:center;font-size:26px}
+
+    .flash-messages{margin-bottom:12px}
+    .flash-message{padding:10px;border-radius:10px;margin:6px 0}
+    .flash-success{background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46}
+    .flash-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+
+    .field{margin-bottom:12px}
+    .input{
+      width:100%;height:44px;border:1px solid var(--border);border-radius:10px;
+      padding:0 12px;background:#fcfcfc;outline:none
+    }
+    .input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(255,171,6,.18)}
+
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;height:44px;width:100%;
+      border-radius:10px;border:0;cursor:pointer;font-weight:600;
+      transition:transform .05s ease, box-shadow .15s ease;text-decoration:none
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:var(--brand);color:#111}
+    .btn-primary:hover{box-shadow:0 6px 16px rgba(255,171,6,.35)}
+    .btn-google{background:#fff;border:1px solid var(--border);color:#222}
+    .btn-google:hover{box-shadow:0 6px 16px rgba(0,0,0,.06)}
+    .btn-facebook{background:#1877f2;color:#fff}
+    .ic{width:18px;height:18px;object-fit:contain;display:block}
+    .ic-fb{width:16px;height:16px;fill:currentColor}
+
+    .divider{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:var(--muted)}
+    .divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--border)}
+
+    .meta{margin-top:14px;text-align:center;color:var(--muted);font-size:14px}
+    .meta a{color:#0f62fe;text-decoration:none}
+    .meta a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">⚡</div>
+      <h1>Đăng ký thành viên</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('register_page') }}">
+        <div class="field">
+          <input class="input" type="text" name="hoten" placeholder="Họ và tên" required>
+        </div>
+        <div class="field">
+          <input class="input" type="text" name="username" placeholder="Tên đăng nhập" required>
+        </div>
+        <div class="field">
+          <input class="input" type="email" name="email" placeholder="Email" required>
+        </div>
+        <div class="field">
+          <input class="input" type="text" name="sdt" placeholder="Số điện thoại" required>
+        </div>
+        <div class="field">
+          <input class="input" type="password" name="password" placeholder="Mật khẩu" required>
+        </div>
+        <div class="field">
+          <input class="input" type="password" name="confirm_password" placeholder="Xác nhận mật khẩu" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
+      </form>
+
+      <div class="divider"><span>hoặc</span></div>
+      <a class="btn btn-google" href="#">
+        <img class="ic" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+        <span>Tiếp tục với Google</span>
+      </a>
+
+      <div style="height:8px"></div>
+
+      <a class="btn btn-facebook" href="#">
+        <svg class="ic-fb" viewBox="0 0 216 216" aria-hidden="true">
+          <path d="M204.1 0H11.9C5.3 0 0 5.3 0 11.9v192.2C0 210.7 5.3 216 11.9 216h103.4v-83.6H93.1v-32.5h22.2V77.4c0-22 13.4-34 33-34 9.4 0 17.5.7 19.9 1v23.1h-13.7c-10.7 0-12.7 5.1-12.7 12.5v16.4h25.3l-3.3 32.5h-22v83.6h43.2c6.6 0 11.9-5.3 11.9-11.9V11.9c0-6.6-5.3-11.9-11.9-11.9z"/>
+        </svg>
+        <span>Tiếp tục với Facebook</span>
+      </a>
+
+      <div class="meta">
+        Đã có tài khoản? <a href="{{ url_for('login_page') }}">Đăng nhập</a><br>
+        <a href="{{ url_for('home') }}">🏠 Quay về trang chủ</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

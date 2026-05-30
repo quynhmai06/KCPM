@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tìm kiếm xe điện & pin - XDPM</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: "Helvetica", Arial, sans-serif;
+      background: #f8f9fa;
+    }
+    
+    /* Override global header styles */
+    .header {
+      background: white !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0 !important;
+    }
+    
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+    }
+    
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #667eea;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    .logo:hover {
+      transform: scale(1.05);
+    }
+    
+    .nav-menu {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+    }
+    
+    .nav-item {
+      color: #666;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item:hover {
+      color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .nav-item.active {
+      color: #667eea;
+      background: #f0f2ff;
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .user-menu-item {
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .user-menu-item:hover {
+      color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .user-dropdown {
+      position: relative;
+    }
+    
+    .avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .avatar-circle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: white;
+      min-width: 200px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 1001;
+    }
+    
+    .user-dropdown:hover .dropdown-content {
+      display: block;
+    }
+    
+    .dropdown-user-info {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .dropdown-user-info strong {
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      color: #666;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    .dropdown-item:hover {
+      background: #f8f9ff;
+      color: #667eea;
+    }
+    
+    .dropdown-item i {
+      width: 20px;
+    }
+    
+    .post-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+    
+    .post-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .search-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 100px 20px 60px;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
+    
+    /* Hero Search Section */
+    .search-hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 50px 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+      color: white;
+    }
+    
+    .search-hero h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 0 0 15px 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .search-hero p {
+      font-size: 18px;
+      opacity: 0.95;
+      margin: 0 0 30px 0;
+    }
+    
+    /* Tabs */
+    .search-tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .tab-btn {
+      flex: 1;
+      max-width: 250px;
+      padding: 15px 25px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .tab-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
+    }
+    
+    .tab-btn.active {
+      background: white;
+      color: #667eea;
+      border-color: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .tab-btn i {
+      font-size: 20px;
+    }
+    
+    /* Quick Search Bar */
+    .quick-search {
+      background: white;
+      border-radius: 50px;
+      padding: 8px 8px 8px 25px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .quick-search input {
+      flex: 1;
+      border: none;
+      font-size: 16px;
+      padding: 10px;
+      outline: none;
+    }
+    
+    .quick-search-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 35px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .quick-search-btn:hover {
+      background: #5568d3;
+      transform: scale(1.02);
+    }
+    
+    /* Advanced Filters */
+    .filters-container {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .filters-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    
+    .filters-toggle h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .filters-toggle i {
+      color: #667eea;
+      transition: transform 0.3s ease;
+    }
+    
+    .filters-toggle.collapsed i {
+      transform: rotate(180deg);
+    }
+    
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .filters-grid.collapsed {
+      max-height: 0;
+    }
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .filter-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .filter-group label i {
+      color: #667eea;
+      font-size: 12px;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+      padding: 12px 15px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: #fafafa;
+    }
+    
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .filter-range {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .filter-range span {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+      padding-top: 25px;
+      border-top: 2px solid #f0f0f0;
+    }
+    
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #666;
+      border: 2px solid #e0e0e0;
+      padding: 15px 30px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: #e8e8e8;
+      border-color: #d0d0d0;
+    }
+    
+    /* Results Section */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding: 0 5px;
+    }
+    
+    .results-count {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .results-count span {
+      color: #667eea;
+    }
+    
+    .results-sort {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .results-sort label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .results-sort select {
+      padding: 10px 35px 10px 15px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .results-sort select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    /* Results Grid */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+    
+    .product-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    
+    .product-image {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 64px;
+    }
+    
+    .product-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #667eea;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .product-body {
+      padding: 20px;
+    }
+    
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin: 0 0 12px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .product-specs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .spec-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .spec-item i {
+      color: #667eea;
+      width: 16px;
+      text-align: center;
+    }
+    
+    .product-price {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin: 15px 0 0 0;
+      padding-top: 15px;
+      border-top: 2px solid #f5f5f5;
+    }
+    
+    /* No Results */
+    .no-results {
+      text-align: center;
+      padding: 80px 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .no-results i {
+      font-size: 80px;
+      color: #e0e0e0;
+      margin-bottom: 25px;
+    }
+    
+    .no-results h3 {
+      font-size: 24px;
+      color: #666;
+      margin: 0 0 10px 0;
+    }
+    
+    .no-results p {
+      color: #999;
+      font-size: 16px;
+      margin: 0;
+    }
+    
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 40px;
+    }
+    
+    .page-btn {
+      min-width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #e8e8e8;
+      background: white;
+      border-radius: 10px;
+      color: #666;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .page-btn:hover:not(:disabled):not(.active) {
+      border-color: #667eea;
+      color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .page-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .page-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .search-hero {
+        padding: 30px 25px;
+      }
+      
+      .search-hero h1 {
+        font-size: 28px;
+      }
+      
+      .search-tabs {
+        flex-direction: column;
+      }
+      
+      .tab-btn {
+        max-width: 100%;
+      }
+      
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .results-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+      
+      .filter-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Compare Button -->
+  <button id="compareBtn" onclick="goToCompare()" style="display:none; position:fixed; bottom:20px; right:20px; z-index:1000; padding:12px 24px; background:#ff6f00; color:white; border:none; border-radius:50px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); font-weight:600;">
+    So sánh (0)
+  </button>
+  
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <a href="{{ url_for('home') }}" class="logo">XDPM</a>
+      <nav class="nav-menu">
+        <a href="{{ url_for('home') }}" class="nav-item">Trang chủ</a>
+        <a href="{{ url_for('search_page') }}" class="nav-item active">Tìm kiếm</a>
+      </nav>
+      {% set actual_user = session.get('user') %}
+      <nav class="user-menu">
+        {% if actual_user %}
+        <div class="user-dropdown">
+          {% set user = actual_user %}
+          {% set username = user.get('username', 'User') %}
+          <div class="avatar-circle">{{ username[0]|upper }}</div>
+          <div class="dropdown-content">
+            <div class="dropdown-user-info">
+              <strong>{{ username }}</strong>
+            </div>
+            <a href="{{ url_for('profile') }}" class="dropdown-item">
+              <i class="fas fa-user"></i> Hồ sơ
+            </a>
+            {% if user.get('role') == 'admin' %}
+            <a href="{{ url_for('admin_page') }}" class="dropdown-item">
+              <i class="fas fa-cog"></i> Quản trị
+            </a>
+            {% endif %}
+            <a href="{{ url_for('logout_page') }}" class="dropdown-item">
+              <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+          </div>
+        </div>
+        <a href="{{ url_for('add_listing') }}" class="post-button">Đăng tin</a>
+        {% else %}
+        <a href="{{ url_for('login_page') }}" class="user-menu-item">Đăng nhập</a>
+        <a href="{{ url_for('register_page') }}" class="user-menu-item">Đăng ký</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="search-page">
+    <!-- Hero Search Section -->
+    <div class="search-hero">
+      <h1><i class="fas fa-search"></i> Tìm kiếm xe điện & pin cũ</h1>
+      <p>Khám phá hàng ngàn xe điện và pin chất lượng với giá tốt nhất</p>
+      
+      <!-- Tabs -->
+      <div class="search-tabs">
+        <button class="tab-btn active" data-type="vehicle">
+          <i class="fas fa-car"></i>
+          <span>Xe điện</span>
+        </button>
+        <button class="tab-btn" data-type="battery">
+          <i class="fas fa-battery-full"></i>
+          <span>Pin xe điện</span>
+        </button>
+      </div>
+      
+      <!-- Quick Search -->
+      <form class="quick-search" id="quickSearchForm" method="GET" action="{{ url_for('search_page') }}">
+        <input type="hidden" name="item_type" id="itemTypeInput" value="{{ query_params.get('item_type', 'vehicle') }}">
+        <input 
+          type="text" 
+          name="q" 
+          placeholder="Tìm kiếm theo tên, hãng, model..." 
+          value="{{ query_params.get('q', '') }}"
+        >
+        <button type="submit" class="quick-search-btn">
+          <i class="fas fa-search"></i> Tìm kiếm
+        </button>
+      </form>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filters-container">
+      <div class="filters-toggle" onclick="toggleFilters()">
+        <h3>
+          <i class="fas fa-filter"></i>
+          Bộ lọc nâng cao
+        </h3>
+        <i class="fas fa-chevron-up"></i>
+      </div>
+      
+      <form id="advancedSearchForm" method="GET" action="{{ url_for('search_page') }}">
+        <input type="hidden" name="item_type" value="{{ query_params.get('item_type', 'vehicle') }}">
+        <input type="hidden" name="q" value="{{ query_params.get('q', '') }}">
+        
+        <div class="filters-grid">
+          <!-- Hãng -->
+          <div class="filter-group">
+            <label><i class="fas fa-copyright"></i> Hãng xe/pin</label>
+            <input type="text" name="brand" placeholder="VinFast, Tesla, BYD..." value="{{ query_params.get('brand', '') }}">
+          </div>
+          
+          <!-- Tỉnh/Thành -->
+          <div class="filter-group">
+            <label><i class="fas fa-map-marker-alt"></i> Tỉnh/Thành phố</label>
+            <input type="text" name="province" placeholder="Hà Nội, TP.HCM..." value="{{ query_params.get('province', '') }}">
+          </div>
+          
+          <!-- Giá -->
+          <div class="filter-group">
+            <label><i class="fas fa-tag"></i> Giá từ (VNĐ)</label>
+            <input type="number" name="min_price" placeholder="100000000" value="{{ query_params.get('min_price', '') }}">
+          </div>
+          
+          <div class="filter-group">
+            <label><i class="fas fa-tags"></i> Giá đến (VNĐ)</label>
+            <input type="number" name="max_price" placeholder="1000000000" value="{{ query_params.get('max_price', '') }}">
+          </div>
+          
+          <!-- Năm sản xuất -->
+          <div class="filter-group">
+            <label><i class="fas fa-calendar"></i> Năm từ</label>
+            <input type="number" name="year_from" placeholder="2020" min="2000" max="2025" value="{{ query_params.get('year_from', '') }}">
+          </div>
+          
+          <div class="filter-group">
+            <label><i class="fas fa-calendar-alt"></i> Năm đến</label>
+            <input type="number" name="year_to" placeholder="2024" min="2000" max="2025" value="{{ query_params.get('year_to', '') }}">
+          </div>
+          
+          <!-- Số km -->
+          <div class="filter-group">
+            <label><i class="fas fa-tachometer-alt"></i> Số km từ</label>
+            <input type="number" name="mileage_min" placeholder="0" value="{{ query_params.get('mileage_min', '') }}">
+          </div>
+          
+          <div class="filter-group">
+            <label><i class="fas fa-road"></i> Số km đến</label>
+            <input type="number" name="mileage_max" placeholder="50000" value="{{ query_params.get('mileage_max', '') }}">
+          </div>
+          
+          <!-- Dung lượng pin -->
+          <div class="filter-group">
+            <label><i class="fas fa-battery-half"></i> Dung lượng pin từ (kWh)</label>
+            <input type="number" step="0.1" name="battery_capacity_min" placeholder="40" value="{{ query_params.get('battery_capacity_min', '') }}">
+          </div>
+          
+          <div class="filter-group">
+            <label><i class="fas fa-battery-full"></i> Dung lượng pin đến (kWh)</label>
+            <input type="number" step="0.1" name="battery_capacity_max" placeholder="100" value="{{ query_params.get('battery_capacity_max', '') }}">
+          </div>
+          
+          <!-- Sắp xếp -->
+          <div class="filter-group">
+            <label><i class="fas fa-sort"></i> Sắp xếp theo</label>
+            <select name="sort">
+              <option value="created_desc" {% if query_params.get('sort') == 'created_desc' %}selected{% endif %}>Mới nhất</option>
+              <option value="created_asc" {% if query_params.get('sort') == 'created_asc' %}selected{% endif %}>Cũ nhất</option>
+              <option value="price_asc" {% if query_params.get('sort') == 'price_asc' %}selected{% endif %}>Giá thấp → cao</option>
+              <option value="price_desc" {% if query_params.get('sort') == 'price_desc' %}selected{% endif %}>Giá cao → thấp</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="filter-actions">
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-search"></i> Áp dụng bộ lọc
+          </button>
+          <button type="button" class="btn-secondary" onclick="resetFilters()">
+            <i class="fas fa-redo"></i> Đặt lại
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results Section -->
+    {% if results is defined %}
+    <div class="results-header">
+      <div class="results-count">
+        Tìm thấy <span>{{ total }}</span> kết quả
+      </div>
+    </div>
+    
+    {% if results %}
+    <div class="results-grid">
+      {% for item in results %}
+      <div class="product-card" style="position: relative; cursor: pointer;">
+        
+        <!-- Action Buttons -->
+        <div class="product-actions" onclick="event.preventDefault(); event.stopPropagation();">
+          <button class="product-action-btn" onclick="addToFavorites({{ item.id }}, '{{ item.item_type }}')" title="Thêm vào yêu thích">
+            <i class="far fa-heart"></i>
+          </button>
+          <button class="product-action-btn" onclick="toggleCompare({{ item.id }})" title="So sánh">
+            <i class="fas fa-chart-bar"></i>
+          </button>
+        </div>
+        
+        <div onclick="window.location.href='{{ url_for('product_detail', pid=item.id) }}'">
+          {% if item.main_image_url %}
+          <img src="{{ item.main_image_url }}" alt="{{ item.name }}" class="product-image">
+          {% else %}
+          <div class="product-image">
+            <i class="fas fa-{% if item.item_type == 'battery' %}battery-full{% else %}car{% endif %}"></i>
+          </div>
+          {% endif %}
+          
+          <div class="product-badge">
+            {% if item.item_type == 'battery' %}
+            <i class="fas fa-battery-full"></i> Pin
+            {% else %}
+            <i class="fas fa-car"></i> Xe điện
+            {% endif %}
+          </div>
+          
+          <div class="product-body">
+            <h3 class="product-title">{{ item.name }}</h3>
+            
+            <div class="product-specs">
+              {% if item.brand %}
+              <div class="spec-item">
+                <i class="fas fa-copyright"></i>
+                <span>{{ item.brand }}</span>
+              </div>
+              {% endif %}
+              
+              {% if item.year %}
+              <div class="spec-item">
+                <i class="fas fa-calendar"></i>
+                <span>{{ item.year }}</span>
+              </div>
+              {% endif %}
+              
+              {% if item.mileage and item.item_type != 'battery' %}
+              <div class="spec-item">
+              <i class="fas fa-tachometer-alt"></i>
+              <span>{{ "{:,}".format(item.mileage) }} km</span>
+            </div>
+            {% endif %}
+            
+            {% if item.battery_capacity %}
+            <div class="spec-item">
+              <i class="fas fa-battery-full"></i>
+              <span>{{ item.battery_capacity }}</span>
+            </div>
+            {% endif %}
+            
+            {% if item.province %}
+            <div class="spec-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ item.province }}</span>
+            </div>
+            {% endif %}
+          </div>
+          
+          <div class="product-price">
+            {{ "{:,.0f}".format(item.price) }} ₫
+          </div>
+        </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pages > 1 %}
+    <div class="pagination">
+      <button class="page-btn" {% if current_page <= 1 %}disabled{% endif %} onclick="goToPage({{ current_page - 1 }})">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      
+      {% for p in range(1, pages + 1) %}
+        {% if p == 1 or p == pages or (p >= current_page - 2 and p <= current_page + 2) %}
+          <button class="page-btn {% if p == current_page %}active{% endif %}" onclick="goToPage({{ p }})">
+            {{ p }}
+          </button>
+        {% elif p == current_page - 3 or p == current_page + 3 %}
+          <span class="page-btn" disabled>...</span>
+        {% endif %}
+      {% endfor %}
+      
+      <button class="page-btn" {% if current_page >= pages %}disabled{% endif %} onclick="goToPage({{ current_page + 1 }})">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="no-results">
+      <i class="fas fa-search"></i>
+      <h3>Không tìm thấy kết quả phù hợp</h3>
+      <p>Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
+    </div>
+    {% endif %}
+    {% endif %}
+  </main>
+
+  <script>
+    // Toggle filters
+    function toggleFilters() {
+      const toggle = document.querySelector('.filters-toggle');
+      const grid = document.querySelector('.filters-grid');
+      toggle.classList.toggle('collapsed');
+      grid.classList.toggle('collapsed');
+    }
+    
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const type = this.dataset.type;
+        document.getElementById('itemTypeInput').value = type;
+        document.querySelectorAll('input[name="item_type"]').forEach(input => {
+          input.value = type;
+        });
+      });
+    });
+    
+    // Reset filters
+    function resetFilters() {
+      const form = document.getElementById('advancedSearchForm');
+      form.reset();
+      const itemType = document.getElementById('itemTypeInput').value;
+      form.querySelector('input[name="item_type"]').value = itemType;
+      window.location.href = '{{ url_for("search_page") }}?item_type=' + itemType;
+    }
+    
+    // Pagination
+    function goToPage(page) {
+      const form = document.getElementById('advancedSearchForm');
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', page);
+      
+      // Preserve all current filters
+      const formData = new FormData(form);
+      for (let [key, value] of formData.entries()) {
+        if (value) {
+          url.searchParams.set(key, value);
+        }
+      }
+      
+      window.location.href = url.toString();
+    }
+    
+    // Add to favorites
+    function addToFavorites(itemId, itemType) {
+      fetch('/favorites/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          item_id: itemId,
+          item_type: itemType || 'vehicle'
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          if (data.error.includes('Already')) {
+            alert('Sản phẩm đã có trong danh sách yêu thích!');
+          } else {
+            alert('Lỗi: ' + data.error);
+          }
+        } else {
+          alert('Đã thêm vào yêu thích!');
+        }
+      })
+      .catch(err => {
+        alert('Không thể thêm vào yêu thích. Vui lòng đăng nhập!');
+      });
+    }
+
+    // Compare items
+    let compareList = JSON.parse(localStorage.getItem('compareList') || '[]');
+    
+    function toggleCompare(itemId) {
+      // Ensure itemId is a number
+      itemId = parseInt(itemId);
+      if (isNaN(itemId)) return;
+      
+      const idx = compareList.indexOf(itemId);
+      if (idx > -1) {
+        compareList.splice(idx, 1);
+        alert('Đã xóa khỏi danh sách so sánh');
+      } else {
+        if (compareList.length >= 4) {
+          alert('Chỉ có thể so sánh tối đa 4 sản phẩm');
+          return;
+        }
+        compareList.push(itemId);
+        alert('Đã thêm vào danh sách so sánh');
+      }
+      localStorage.setItem('compareList', JSON.stringify(compareList));
+      updateCompareButton();
+    }
+
+    function updateCompareButton() {
+      const btn = document.getElementById('compareBtn');
+      if (btn) {
+        btn.style.display = compareList.length > 0 ? 'block' : 'none';
+        btn.textContent = `So sánh (${compareList.length})`;
+      }
+    }
+
+    function goToCompare() {
+      if (compareList.length < 2) {
+        alert('Vui lòng chọn ít nhất 2 sản phẩm để so sánh');
+        return;
+      }
+      // Ensure all IDs are numbers
+      const validIds = compareList.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
+      window.location.href = '/compare?ids=' + validIds.join(',');
+    }
+    
+    // Set active tab based on URL parameter
+    window.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const itemType = urlParams.get('item_type') || 'vehicle';
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === itemType) {
+          btn.classList.add('active');
+        }
+      });
+      
+      document.getElementById('itemTypeInput').value = itemType;
+      
+      // Initialize compare button
+      updateCompareButton();
+    });
+  </script>
+</body>
+</html>

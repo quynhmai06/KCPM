@@ -1,0 +1,325 @@
+{
+  "info": {
+    "_postman_id": "33ff43a8-8540-47cc-b818-9f2b90b61f14",
+    "name": "KCPM Backend API Automation Test",
+    "description": "Collection used by GitHub Actions and Newman to verify that backend services are built, started, and reachable through HTTP/REST endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Gateway - health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gatewayUrl}}/health",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Gateway returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Gateway status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth service - health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{authUrl}}/health",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Auth service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Auth health payload is valid', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.ok).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Listing service - root check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{listingUrl}}/",
+          "host": [
+            "{{listingUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Listing service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Listing service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('listing');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin service - health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{adminUrl}}/health",
+          "host": [
+            "{{adminUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Admin service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Admin service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('admin-service');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites service - root check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{favoritesUrl}}/favorites/",
+          "host": [
+            "{{favoritesUrl}}"
+          ],
+          "path": [
+            "favorites",
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Favorites service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Favorites service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('favorites');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment service - health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{paymentUrl}}/payment/health",
+          "host": [
+            "{{paymentUrl}}"
+          ],
+          "path": [
+            "payment",
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Payment service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Payment service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('payment');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing service - root check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{pricingUrl}}/",
+          "host": [
+            "{{pricingUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Pricing service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Pricing service payload is valid', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('pricing');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search service - root check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{searchUrl}}/search/",
+          "host": [
+            "{{searchUrl}}"
+          ],
+          "path": [
+            "search",
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Search service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Search service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('search');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews service - root check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{reviewsUrl}}/",
+          "host": [
+            "{{reviewsUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Reviews service returns HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Reviews service status is ok', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.service).to.eql('reviews');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

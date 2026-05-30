@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chỉnh sửa hồ sơ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .edit-profile-container{max-width:600px;margin:40px auto;padding:20px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+    .edit-profile-container h2{margin-bottom:20px;color:#222}
+    form label{font-weight:600;display:block;margin:12px 0 4px;color:#333}
+    form input,form select,form button{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;margin-bottom:12px;font-size:14px}
+    form button{background:#333;color:#fff;font-weight:bold;cursor:pointer}
+    .avatar-preview{text-align:center;margin-top:10px}
+    .avatar-preview img{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #ffba00}
+    .action-links{margin-top:15px;display:flex;gap:10px}
+    .action-links a{text-decoration:none;padding:8px 14px;border-radius:6px;background:#ffba00;color:#222;font-weight:bold}
+    .action-links a.back-home{background:#666;color:#fff}
+  </style>
+</head>
+<body>
+  <div class="edit-profile-container">
+    <h2>Chỉnh sửa hồ sơ</h2>
+
+    <!-- form LƯU HỒ SƠ -->
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('save_profile') }}">
+      <label>Họ và tên</label>
+      <input type="text" name="full_name" value="{{ user.full_name or '' }}">
+
+      <label>Số điện thoại</label>
+      <input type="text" name="phone" value="{{ user.phone or '' }}">
+
+      <label>Ngày sinh</label>
+      <input type="date" name="birthdate" value="{{ user.birthdate or '' }}">
+
+      <label>Địa chỉ</label>
+      <input type="text" name="address" value="{{ user.address or '' }}">
+
+      <label>Giới tính</label>
+      <select name="gender">
+        <option value="">--</option>
+        <option value="male"   {% if user.gender=='male' %}selected{% endif %}>Nam</option>
+        <option value="female" {% if user.gender=='female' %}selected{% endif %}>Nữ</option>
+        <option value="other"  {% if user.gender=='other' %}selected{% endif %}>Khác</option>
+      </select>
+
+      <label>Ảnh đại diện</label>
+      <input type="file" name="avatar" accept="image/*" onchange="previewAvatar(event)">
+      <div class="avatar-preview">
+        <img id="avatarPreview" src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="avatar">
+      </div>
+
+      <button type="submit">💾 Lưu thay đổi</button>
+    </form>
+
+    <div class="action-links">
+      <a href="{{ url_for('profile_page_gateway') }}">⬅️ Quay lại hồ sơ</a>
+      <a href="{{ url_for('home') }}" class="back-home">🏠 Trang chủ</a>
+    </div>
+  </div>
+
+  <script>
+    function previewAvatar(e){const p=document.getElementById('avatarPreview'); if(e.target.files[0]) p.src=URL.createObjectURL(e.target.files[0]);}
+
+    // On load, if user has an avatar or username, try predictable avatar paths
+    document.addEventListener('DOMContentLoaded', function(){
+      const userAvatar = {{ '"' + (user.avatar|e) + '"' if user and user.avatar else 'null' }};
+      const username = {{ '"' + (user.username|e) + '"' if user and user.username else 'null' }};
+      const img = document.getElementById('avatarPreview');
+      if (!img) return;
+      // If explicit avatar URL is provided from server, prefer it
+      if (userAvatar) {
+        try {
+          const s = String(userAvatar || '');
+          if (s.startsWith('http')) { img.src = s; return; }
+          // otherwise treat as filename saved by auth-service and request via /auth/avatar/<name>
+          img.src = '/auth/avatar/' + encodeURIComponent(s);
+          // onerror fallback will be handled by trying username below
+        } catch (e) {}
+      }
+      if (!userAvatar && username) {
+        const uname = encodeURIComponent(username);
+        const tryPaths = [`/auth/avatar/${uname}.jpg`, `/auth/avatar/${uname}.png`, `/auth/avatar/${uname}`];
+        let ti = 0;
+        img.onerror = function(){ ti += 1; if (ti < tryPaths.length) img.src = tryPaths[ti]; else img.onerror = null; };
+        img.src = tryPaths[0];
+      }
+    });
+  </script>
+</body>
+</html>

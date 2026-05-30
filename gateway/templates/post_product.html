@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đăng bán xe/pin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    :root{
+      --brand:#f5a300; /* vàng chủ đạo */
+      --ink:#0f172a;   /* đen xanh */
+      --muted:#64748b; --line:#e5e7eb; --ok:#16a34a; --err:#dc2626;
+      --card:#ffffff; --bg:#fafafa;
+      --radius:14px;
+    }
+    body{background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+    .wrap{max-width:980px;margin:28px auto; padding:0 16px}
+    .hero{
+      background:linear-gradient(180deg,#ffe08a, #ffd166);
+      border:1px solid #fcd34d; border-radius:var(--radius);
+      padding:18px 20px; margin-bottom:18px;
+      display:flex; align-items:center; gap:12px
+    }
+    .hero b{font-size:18px}
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:0 8px 24px rgba(0,0,0,.04);
+      padding:18px;
+    }
+    h1{font-size:22px; margin:0 0 6px}
+    .hint{color:var(--muted); font-size:14px; margin-bottom:16px}
+
+    /* form */
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width: 780px){ .grid{grid-template-columns:1fr} }
+    label{font-weight:600; margin:8px 0 6px; display:block}
+    .req::after{content:" *"; color:var(--err)}
+    input[type=text], input[type=number], select, textarea{
+      width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:10px; background:#fff;
+      outline:none; transition:all .15s ease
+    }
+    textarea{min-height:120px; resize:vertical}
+    input:focus, select:focus, textarea:focus{border-color:#93c5fd; box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width: 780px){ .row{grid-template-columns:1fr} }
+
+    .file-row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width: 780px){ .file-row{grid-template-columns:1fr} }
+
+    .actions{display:flex; gap:12px; align-items:center; justify-content:flex-end; margin-top:14px}
+    .btn{appearance:none; border:1px solid #0f172a; background:#0f172a; color:#fff; padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn:disabled{opacity:.7; cursor:not-allowed}
+    .btn-outline{background:#fff; color:#0f172a}
+    .btn-brand{background:var(--brand); border-color:#c97f00}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; font-size:13px; background:#fff7ed; border:1px solid #fed7aa}
+
+    /* AI block */
+    .ai-bar{display:flex; gap:10px; align-items:center}
+    .ai-msg{font-size:14px}
+    .ai-msg.ok{color:var(--ok)} .ai-msg.err{color:var(--err)} .ai-msg.muted{color:var(--muted)}
+    .price-row{display:flex; gap:10px; align-items:center}
+    .price-row input[type=number]{flex:1}
+    .chip{padding:4px 8px; border-radius:999px; background:#eef2ff; border:1px solid #c7d2fe; font-size:12px; color:#3730a3}
+    .flash{padding:12px; border-radius:10px; margin-bottom:12px}
+    .flash.success{background:#ecfdf5; border:1px solid #bbf7d0; color:#166534}
+    .flash.error{background:#fef2f2; border:1px solid #fecaca; color:#991b1b}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="#c97f00" stroke-width="2" stroke-linecap="round"/></svg>Đăng tin nhanh</div>
+      <b>Đăng bán xe/pin đã qua sử dụng</b>
+      <span class="hint">Nhập thông tin thật chính xác để AI gợi ý giá hợp lý.</span>
+    </div>
+
+    <!-- flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+      <h1>Thông tin sản phẩm</h1>
+      <p class="hint">Các mục có dấu <span style="color:#dc2626">*</span> là bắt buộc.</p>
+
+      <form action="{{ url_for('add_listing') }}" method="POST" enctype="multipart/form-data" id="postForm" novalidate>
+        <!-- Loại + Tên -->
+        <div class="grid">
+          <div>
+            <label class="req" for="product_type">Loại sản phẩm</label>
+            <select id="product_type" name="product_type">
+              <option value="car" {% if request.form.get('product_type','car')=='car' %}selected{% endif %}>Xe điện</option>
+              <option value="battery" {% if request.form.get('product_type')=='battery' %}selected{% endif %}>Pin xe điện</option>
+            </select>
+          </div>
+          <div>
+            <label class="req" for="name">Tên sản phẩm</label>
+            <input id="name" type="text" name="name" required value="{{ request.form.get('name','') }}" placeholder="VD: VinFast VF e34 2023, pin 42 kWh">
+          </div>
+        </div>
+
+        <!-- Mô tả -->
+        <label for="description">Mô tả chi tiết (tình trạng, sửa chữa, phụ kiện…)</label>
+        <textarea id="description" name="description" placeholder="Ghi rõ tình trạng xe/pin, lịch sử bảo dưỡng…">{{ request.form.get('description','') }}</textarea>
+
+        <!-- Hãng / Tỉnh -->
+        <div class="grid">
+          <div>
+            <label for="brand">Hãng</label>
+            <input id="brand" type="text" name="brand" value="{{ request.form.get('brand','') }}" placeholder="VinFast, Tesla, MG…">
+          </div>
+          <div>
+            <label class="req" for="province">Tỉnh/Thành phố</label>
+            <select id="province" name="province" required>
+              {% set pv = request.form.get('province','') %}
+              <option value="">--Chọn tỉnh/thành phố--</option>
+              {% for p in [
+                'Hà Nội','Hồ Chí Minh','An Giang','Bà Rịa - Vũng Tàu','Bắc Giang','Bắc Kạn','Bạc Liêu','Bắc Ninh',
+                'Bến Tre','Bình Định','Bình Dương','Bình Phước','Bình Thuận','Cà Mau','Cao Bằng','Đà Nẵng',
+                'Đắk Lắk','Đắk Nông','Điện Biên','Đồng Nai','Đồng Tháp','Gia Lai','Hà Giang','Hà Nam','Hà Tĩnh',
+                'Hải Dương','Hải Phòng','Hậu Giang','Hòa Bình','Hưng Yên','Khánh Hòa','Kiên Giang','Kon Tum',
+                'Lai Châu','Lâm Đồng','Lạng Sơn','Lào Cai','Long An','Nam Định','Nghệ An','Ninh Bình','Ninh Thuận',
+                'Phú Thọ','Quảng Bình','Quảng Nam','Quảng Ngãi','Quảng Ninh','Quảng Trị','Sóc Trăng','Sơn La',
+                'Tây Ninh','Thái Bình','Thái Nguyên','Thanh Hóa','Thừa Thiên Huế','Tiền Giang','Trà Vinh',
+                'Tuyên Quang','Vĩnh Long','Vĩnh Phúc','Yên Bái'
+              ] %}
+                <option value="{{ p }}" {% if pv==p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Năm / ODO -->
+        <div class="grid">
+          <div>
+            <label for="year">Năm sản xuất</label>
+            <input id="year" type="number" name="year" min="2008" max="2100" value="{{ request.form.get('year','') }}" placeholder="VD: 2023">
+          </div>
+          <div>
+            <label for="mileage">Số km đã đi</label>
+            <input id="mileage" type="number" name="mileage" min="0" step="1" value="{{ request.form.get('mileage','') }}" placeholder="VD: 20000">
+          </div>
+        </div>
+
+        <!-- Dung lượng pin -->
+        <div>
+          <label for="battery_capacity">Dung lượng pin</label>
+          <input id="battery_capacity" type="text" name="battery_capacity" value="{{ request.form.get('battery_capacity','') }}" placeholder="VD: 42 kWh">
+          <p class="hint" id="typeHint"><span class="chip">Gợi ý</span> Với “Pin xe điện”, hãy ghi đúng dung lượng (kWh) để AI định giá chuẩn hơn.</p>
+        </div>
+
+        <!-- Ảnh -->
+        <div class="file-row">
+          <div>
+            <label class="req" for="main_image">Ảnh chính sản phẩm</label>
+            <input id="main_image" type="file" name="main_image" accept=".jpg,.jpeg,.png,.webp,image/*" {% if not request.form %}required{% endif %}>
+          </div>
+          <div>
+            <label for="sub_images">Ảnh đi kèm</label>
+            <input id="sub_images" type="file" name="sub_images" accept=".jpg,.jpeg,.png,.webp,image/*" multiple>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--line); margin:18px 0">
+
+        <!-- GIÁ + AI  -->
+        <div>
+          <label class="req" for="price">Giá mong muốn (VNĐ)</label>
+          <div class="ai-bar">
+            <div class="price-row" style="flex:1">
+              <input id="price" type="number" name="price" min="1000" step="1000" required
+                     value="{{ request.form.get('price','') }}" placeholder="Nhập tay hoặc bấm Gợi ý AI">
+            </div>
+            <button type="button" class="btn btn-brand" id="aiSuggestBtn">Gợi ý giá AI</button>
+          </div>
+          <div id="aiResult" class="ai-msg muted" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="actions">
+          <a class="btn btn-outline" href="{{ url_for('home') }}">Huỷ</a>
+          <button type="submit" class="btn">Đăng bán</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const typeSel = document.getElementById('product_type');
+    const typeHint = document.getElementById('typeHint');
+    function refreshHint(){
+      if(!typeSel || !typeHint) return;
+      typeHint.innerHTML = (typeSel.value === 'battery')
+        ? '<span class="chip">Gợi ý</span> Bạn đang đăng <b>Pin xe điện</b> — hãy ghi đúng dung lượng (kWh), mô tả tình trạng và số lần sạc nếu biết.'
+        : '<span class="chip">Gợi ý</span> Bạn đang đăng <b>Xe điện</b> — nhập ODO, năm SX, dung lượng pin để AI định giá chính xác.';
+    }
+    if(typeSel){ typeSel.addEventListener('change', refreshHint); refreshHint(); }
+
+    function bindSizeCheck(inputEl){
+      if(!inputEl) return;
+      inputEl.addEventListener('change', () => {
+        for(const f of inputEl.files){
+          if(f.size > 10 * 1024 * 1024){
+            alert('Ảnh quá 10MB: ' + f.name);
+            inputEl.value = '';
+            break;
+          }
+        }
+      });
+    }
+    bindSizeCheck(document.getElementById('main_image'));
+    bindSizeCheck(document.getElementById('sub_images'));
+
+async function callAISuggest(){
+  const aiDiv = document.getElementById('aiResult');
+  const btn   = document.getElementById('aiSuggestBtn');
+  if(!aiDiv || !btn) return;
+
+  const toNum = (v) => {
+    const m = (v ?? '').toString().match(/\d+(?:\.\d+)?/);
+    return m ? Number(m[0]) : null;
+  };
+
+
+  const rawType = (document.getElementById('product_type')?.value || 'car').trim();
+  const product_type = (rawType === 'battery') ? 'battery' : 'car';
+
+  const name        = (document.getElementById('name')?.value || '').trim();
+  const brand       = (document.getElementById('brand')?.value || '').trim();
+  const province    = (document.getElementById('province')?.value || '').trim();
+  const year        = toNum(document.getElementById('year')?.value);
+  const mileage     = toNum(document.getElementById('mileage')?.value);
+
+  const capRaw      = (document.getElementById('battery_capacity')?.value || '').trim();
+  const battery_capacity_kwh = toNum(capRaw);   
+  const battery_capacity     = capRaw;         
+  const description = (document.getElementById('description')?.value || '').trim();
+
+  aiDiv.className = 'ai-msg muted';
+  aiDiv.textContent = 'Đang phân tích…';
+  btn.disabled = true;
+
+  try{
+    const payload = {
+      product_type, name, brand, province,
+      year, mileage, battery_capacity_kwh, battery_capacity, description
+    };
+
+    // ✅ GỌI QUA GATEWAY (cùng origin) — KHÔNG gọi 127.0.0.1:5003
+    const resp = await fetch('/ai/price_suggest_v2', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(payload)
+    });
+
+    const ct = resp.headers.get('content-type') || '';
+    const json = ct.includes('application/json') ? await resp.json() : { error: await resp.text() };
+
+    // v2 trả {"cached":..., "data": {...}} khi 200
+    const data = json?.data ?? json;
+
+    if (resp.ok && (data?.suggested_price ?? data?.suggestedPrice)) {
+      const priceVal = data.suggested_price ?? data.suggestedPrice;
+      const low  = data?.range?.low ?? data?.rangeLow ?? null;
+      const high = data?.range?.high ?? data?.rangeHigh ?? null;
+
+      const priceEl = document.getElementById('price');
+      if (priceEl) priceEl.value = priceVal;
+
+      aiDiv.className = 'ai-msg ok';
+      aiDiv.textContent =
+        `💡 AI gợi ý: ${Number(priceVal).toLocaleString('vi-VN')} đ`
+        + (low!=null && high!=null ? ` (khung ${Number(low).toLocaleString('vi-VN')}–${Number(high).toLocaleString('vi-VN')})` : '')
+        + (data.explanation ? ` — ${data.explanation}` : '');
+    } else {
+      throw new Error(data?.detail || data?.error || 'AI trả về lỗi');
+    }
+  }catch(e){
+    console.error('AI suggest error:', e);
+    aiDiv.className = 'ai-msg err';
+    aiDiv.textContent = '⚠️ Không gọi được AI gợi ý giá. Thử lại sau.';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+(() => {
+  const btn = document.getElementById('aiSuggestBtn');
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    callAISuggest();
+  });
+})();
+</script>
+
+</body>
+</html>

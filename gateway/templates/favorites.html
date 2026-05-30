@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yêu thích - EV Trading</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      /* Favorites page styling */
+      .favorites-header {
+        background: #f5f5f5;
+        padding: 30px 20px;
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #e0e0e0;
+      }
+
+      .favorites-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 500;
+        color: #555;
+      }
+
+      .favorites-count {
+        margin-top: 8px;
+        font-size: 14px;
+        color: #888;
+      }
+
+      .logo-home-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #ff6f00 0%, #ffa726 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(255, 111, 0, 0.2);
+      }
+
+      .logo-home-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 111, 0, 0.3);
+      }
+
+      .logo-home-btn i {
+        font-size: 18px;
+      }
+
+      .fav-product-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .fav-product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+      }
+
+      .fav-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: #ff4757;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        z-index: 1;
+        box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
+      }
+
+      .fav-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .btn-remove-fav {
+        flex: 1;
+        padding: 10px;
+        background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 2px 4px rgba(255, 71, 87, 0.2);
+      }
+
+      .btn-remove-fav:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 71, 87, 0.3);
+      }
+
+      .btn-view-detail {
+        flex: 1;
+        padding: 10px;
+        background: linear-gradient(135deg, #ffa726 0%, #ff6f00 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(255, 111, 0, 0.2);
+      }
+
+      .btn-view-detail:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 111, 0, 0.3);
+      }
+
+      .empty-favorites {
+        text-align: center;
+        padding: 60px 20px;
+      }
+
+      .empty-favorites i {
+        font-size: 80px;
+        color: #e0e0e0;
+        margin-bottom: 20px;
+      }
+
+      .empty-favorites h3 {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .empty-favorites p {
+        color: #999;
+        margin-bottom: 30px;
+      }
+
+      .btn-browse {
+        display: inline-block;
+        padding: 12px 32px;
+        background: linear-gradient(135deg, #ff6f00 0%, #ffa726 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(255, 111, 0, 0.2);
+      }
+
+      .btn-browse:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 111, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-container">
+        <div class="logo-section">
+          <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+          <img src="/static/images/logo.png" alt="EV Trading" class="logo" />
+        </div>
+        {% set actual_user = session.get('user') %}
+        <div class="user-menu">
+          <a href="/" class="user-menu-item">Trang chủ</a>
+          <!-- Đấu giá hiển thị ở trang chủ -->
+          <a href="/favorites" class="user-menu-item">Yêu thích</a>
+          <a href="/reviews" class="user-menu-item">Đánh giá</a>
+          <a href="/cart" class="user-menu-item">Giỏ hàng</a>
+          <a href="/admin" class="user-menu-item">Admin</a>
+          {% if actual_user %}
+          <a href="{{ url_for('logout_page') }}" class="user-menu-item"
+            >Đăng xuất</a
+          >
+          {% else %}
+          <a href="{{ url_for('login_page') }}" class="user-menu-item"
+            >Đăng nhập</a
+          >
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <div class="favorites-header">
+      <h2><i class="fas fa-heart"></i> Danh sách yêu thích</h2>
+      <p class="favorites-count">{{ favs | length }} sản phẩm đã lưu</p>
+    </div>
+
+    {% if favs | length > 0 %}
+    <div
+      style="
+        max-width: 1200px;
+        margin: 0 auto 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      "
+    >
+      <div style="display: flex; align-items: center; gap: 10px; color: #555">
+        <i class="fas fa-code-compare" style="color: #ff6f00"></i>
+        <span>Chọn tối đa 5 sản phẩm để so sánh</span>
+        <span id="selCount" style="font-weight: 600; color: #333">0/5</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button id="btnCompareSel" class="logo-home-btn" disabled>
+          <i class="fas fa-balance-scale"></i>
+          So sánh
+        </button>
+        <button
+          id="btnClearSel"
+          class="logo-home-btn"
+          style="
+            background: #eee;
+            color: #555;
+            box-shadow: none;
+            background-image: none;
+          "
+        >
+          <i class="fas fa-times"></i>
+          Bỏ chọn
+        </button>
+      </div>
+    </div>
+    {% endif %} {% if favs | length == 0 %}
+    <div class="empty-favorites">
+      <i class="far fa-heart"></i>
+      <h3>Chưa có sản phẩm yêu thích</h3>
+      <p>Hãy khám phá và lưu những sản phẩm bạn quan tâm</p>
+      <a href="/" class="btn-browse">Khám phá ngay</a>
+    </div>
+    {% else %}
+    <section class="product-section">
+      <div class="product-grid">
+        {% for f in favs %} {% set it = f.get('item') %}
+        <div class="fav-product-card">
+          <div
+            style="
+              position: absolute;
+              top: 12px;
+              right: 12px;
+              z-index: 2;
+              background: #fff;
+              padding: 6px 10px;
+              border-radius: 20px;
+              border: 1px solid #eee;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <input
+              type="checkbox"
+              class="fav-compare"
+              data-type="{{ f.item_type }}"
+              data-id="{{ f.item_id }}"
+            />
+            <span style="font-size: 12px; color: #666">So sánh</span>
+          </div>
+          <span class="fav-badge">
+            <i class="fas fa-heart"></i> Yêu thích
+          </span>
+          {% if it %}
+          <a href="/listings/{{ it.id }}" style="display: block">
+            <img 
+              src="{{ it.main_image_url or '/static/images/logo.png' }}" 
+              alt="{{ it.name or 'Product' }}" 
+              class="product-image"
+              onerror="this.onerror=null;this.src='/static/images/logo.png'"
+            />
+          </a>
+          <div class="product-info">
+            <h3 class="product-title">{{ it.name or 'Không rõ tên' }}</h3>
+            <div class="product-price">
+              {{ "{:,.0f}".format(it.price or 0) }} ₫
+            </div>
+            {% if it.description %}
+            <p style="font-size: 13px; color: #666; margin: 8px 0; line-height: 1.4; max-height: 40px; overflow: hidden;">
+              {{ it.description[:80] }}{% if it.description|length > 80 %}...{% endif %}
+            </p>
+            {% endif %}
+            <div class="product-location">
+              <i class="fas fa-map-marker-alt"></i> {{ it.province or 'Chưa rõ' }}
+              {% if it.year %}• {{ it.year }}{% endif %}
+              {% if it.mileage %}• {{ "{:,.0f}".format(it.mileage) }} km{% endif %}
+              {% if it.battery_capacity %}• {{ it.battery_capacity }}{% endif %}
+            </div>
+            {% else %}
+            <img src="/static/images/logo.png" alt="unavailable" class="product-image" />
+            <div class="product-info">
+            <h3 class="product-title" style="color: #999;">Sản phẩm không còn khả dụng</h3>
+            {% endif %}
+            <div class="fav-actions">
+              <button class="btn-remove-fav" onclick="removeFav({{ f.id }})">
+                <i class="fas fa-trash-alt"></i> Xóa
+              </button>
+              {% if it %}
+              <a href="/listings/{{ it.id }}" class="btn-view-detail">
+                <i class="fas fa-eye"></i> Xem chi tiết
+              </a>
+              {% else %}
+              <span class="btn-view-detail" style="opacity: 0.5; cursor: not-allowed;">
+                <i class="fas fa-eye-slash"></i> Không có
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <script>
+      async function removeFav(id) {
+        if (!confirm('Bạn có chắc muốn xóa khỏi yêu thích?')) return;
+        const res = await fetch(`/favorites/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          alert('Đã xóa khỏi yêu thích!');
+          location.reload();
+        } else {
+          alert("Không xóa được.");
+        }
+      }
+
+      // Compare selection logic (min 2, max 4, same type recommended)
+      (function () {
+        const sel = new Set();
+        const MAX_COMPARE = 5;
+        const countEl = document.getElementById("selCount");
+        const btnCompare = document.getElementById("btnCompareSel");
+        const btnClear = document.getElementById("btnClearSel");
+        const boxes = Array.from(document.querySelectorAll(".fav-compare"));
+
+        function keyOf(t, id) {
+          return `${t}:${id}`;
+        }
+        function updateUI() {
+          // Cập nhật số lượng đã chọn và trạng thái nút So sánh
+          if (countEl) countEl.textContent = `${sel.size}/${MAX_COMPARE}`;
+          if (btnCompare) btnCompare.disabled = sel.size < 2;
+        }
+
+        boxes.forEach((cb) => {
+          cb.addEventListener("change", () => {
+            const t = cb.dataset.type;
+            const id = cb.dataset.id;
+            const k = keyOf(t, id);
+            if (cb.checked) {
+              // Enforce max
+              if (sel.size >= MAX_COMPARE) {
+                cb.checked = false;
+                alert(
+                  `Bạn chỉ có thể chọn tối đa ${MAX_COMPARE} sản phẩm để so sánh.`
+                );
+                return;
+              }
+              // Enforce same type as first selected
+              const first = sel.values().next().value;
+              if (first) {
+                const firstType = String(first).split(":")[0];
+                if (firstType !== t) {
+                  cb.checked = false;
+                  alert(
+                    "Vui lòng chọn các sản phẩm cùng loại (tất cả là xe hoặc tất cả là pin)."
+                  );
+                  return;
+                }
+              }
+              sel.add(k);
+            } else {
+              sel.delete(k);
+            }
+            updateUI();
+          });
+        });
+
+        btnClear &&
+          btnClear.addEventListener("click", () => {
+            sel.clear();
+            boxes.forEach((b) => (b.checked = false));
+            updateUI();
+          });
+
+        btnCompare &&
+          btnCompare.addEventListener("click", () => {
+            if (sel.size < 2) {
+              alert("Hãy chọn ít nhất 2 sản phẩm để so sánh.");
+              return;
+            }
+            // Build compare list and redirect to compare page
+            const items = [];
+            boxes.forEach((b) => {
+              if (b.checked) {
+                items.push({
+                  type: b.dataset.type,
+                  id: parseInt(b.dataset.id),
+                });
+              }
+            });
+            if (items.length < 2) return;
+            // Ensure same type across all selections
+            const typeSet = new Set(items.map((i) => i.type));
+            if (typeSet.size > 1) {
+              alert(
+                "Vui lòng chọn các sản phẩm cùng loại (tất cả là xe hoặc tất cả là pin)."
+              );
+              return;
+            }
+            try {
+              // Normalize to include a unique key and persist to both keys for compatibility
+              const normalized = items.map(i => ({ key: `${i.type}_${i.id}`, type: i.type, id: i.id }));
+              const s = JSON.stringify(normalized);
+              localStorage.setItem("compareItems", s);
+              localStorage.setItem("compareList", s);
+            } catch (e) {}
+            window.location.href = "/compare";
+          });
+
+        updateUI();
+      })();
+    </script>
+  </body>
+</html>

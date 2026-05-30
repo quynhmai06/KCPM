@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ vehicle.brand }} {{ vehicle.model }} - XDPM</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .detail-page {
+        max-width: 1200px;
+        margin: 100px auto 40px;
+        padding: 0 20px;
+      }
+      .detail-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+      .detail-header {
+        padding: 30px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .detail-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+      }
+      .detail-meta {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        color: #666;
+        font-size: 14px;
+      }
+      .detail-body {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+        padding: 30px;
+      }
+      .detail-main {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .detail-image {
+        width: 100%;
+        height: 400px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 120px;
+      }
+      .detail-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      .info-item {
+        display: flex;
+        flex-direction: column;
+      }
+      .info-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      .info-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+      }
+      .detail-sidebar {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+      }
+      .price-box {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .price-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      .price-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 5px;
+      }
+      .price-unit {
+        font-size: 14px;
+        color: #666;
+      }
+      .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .btn-primary {
+        padding: 14px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .btn-primary:hover {
+        background: #0056b3;
+      }
+      .btn-secondary {
+        padding: 14px 20px;
+        background: white;
+        color: #007bff;
+        border: 2px solid #007bff;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-secondary:hover {
+        background: #007bff;
+        color: white;
+      }
+      .seller-info {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+      }
+      .seller-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+      .condition-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .condition-new {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .condition-good {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+      .condition-used {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+      .condition-fair {
+        background: #fce4ec;
+        color: #c2185b;
+      }
+      @media (max-width: 768px) {
+        .detail-body {
+          grid-template-columns: 1fr;
+        }
+        .detail-sidebar {
+          position: static;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-container">
+        <a href="{{ url_for('home') }}" class="logo">XDPM</a>
+        <nav class="nav-menu">
+          <a href="{{ url_for('home') }}" class="nav-item">Trang chu</a>
+          <a href="{{ url_for('auctions_page') }}" class="nav-item">Dau gia</a>
+          <a href="{{ url_for('search_page') }}" class="nav-item">Tim kiem</a>
+        </nav>
+        {% set actual_user = session.get('user') %}
+        <nav class="user-menu">
+          {% if actual_user %}
+          <a href="{{ url_for('cart_page') }}" class="user-menu-item">
+            <i class="fas fa-shopping-cart"></i>
+          </a>
+          <div class="user-dropdown">
+            {% set user = actual_user %} {% set avatar_url =
+            user.get('avatar_url', '') %} {% set username = user.get('username',
+            user.get('email', 'User')) %} {% set first_initial =
+            username[0]|upper if username else 'U' %} {% if avatar_url %} {% if
+            avatar_url.startswith('http://') or
+            avatar_url.startswith('https://') %}
+            <img
+              src="{{ avatar_url }}"
+              alt="Avatar"
+              class="avatar-circle-img"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="avatar-circle" style="display: none">
+              {{ first_initial }}
+            </div>
+            {% else %}
+            <img
+              src="/static/uploads/avatars/{{ avatar_url }}"
+              alt="Avatar"
+              class="avatar-circle-img"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="avatar-circle" style="display: none">
+              {{ first_initial }}
+            </div>
+            {% endif %} {% else %}
+            <div class="avatar-circle">{{ first_initial }}</div>
+            {% endif %}
+
+            <div class="dropdown-content">
+              <div class="dropdown-user-info">
+                <strong>{{ username }}</strong>
+                <span>{{ user.get('email', '') }}</span>
+              </div>
+              <a
+                href="{{ url_for('profile_page_gateway') }}"
+                class="dropdown-item"
+                ><i class="fas fa-user"></i> Ho so</a
+              >
+              <a href="{{ url_for('favorites_page') }}" class="dropdown-item"
+                ><i class="fas fa-heart"></i> Yeu thich</a
+              >
+              {% if user.get('role') == 'admin' %}
+              <a href="{{ url_for('admin_page') }}" class="dropdown-item"
+                ><i class="fas fa-cog"></i> Quan tri</a
+              >
+              {% endif %}
+              <a href="{{ url_for('logout_page') }}" class="dropdown-item"
+                ><i class="fas fa-sign-out-alt"></i> Dang xuat</a
+              >
+            </div>
+          </div>
+          <a href="{{ url_for('add_listing') }}" class="post-button"
+            >Dang tin</a
+          >
+          {% else %}
+          <a href="{{ url_for('login_page') }}" class="user-menu-item"
+            >Dang nhap</a
+          >
+          <a href="{{ url_for('register_page') }}" class="user-menu-item"
+            >Dang ky</a
+          >
+          <a href="{{ url_for('login_page') }}" class="post-button">Dang tin</a>
+          {% endif %}
+        </nav>
+      </div>
+    </header>
+
+    <main class="detail-page">
+      <div class="detail-container">
+        <div class="detail-header">
+          <h1 class="detail-title">{{ vehicle.brand }} {{ vehicle.model }}</h1>
+          <div class="detail-meta">
+            {% if vehicle.condition %}
+            <span class="condition-badge condition-{{ vehicle.condition }}">
+              {% if vehicle.condition == 'new' %}Moi {% elif vehicle.condition
+              == 'good' %}Tot {% elif vehicle.condition == 'used' %}Da su dung
+              {% elif vehicle.condition == 'fair' %}Trung binh {% else %}{{
+              vehicle.condition }}{% endif %}
+            </span>
+            {% endif %}
+            <span
+              ><i class="fas fa-calendar"></i> Dang ngay {{
+              vehicle.created_at[:10] if vehicle.created_at else 'N/A' }}</span
+            >
+          </div>
+        </div>
+
+        <div class="detail-body">
+          <div class="detail-main">
+            <div class="detail-image">
+              <i class="fas fa-car"></i>
+            </div>
+
+            <div class="detail-info">
+              <h3 style="margin-bottom: 15px; font-size: 20px">
+                Thong tin chi tiet
+              </h3>
+              <div class="info-grid">
+                {% if vehicle.brand %}
+                <div class="info-item">
+                  <span class="info-label">Hang xe</span>
+                  <span class="info-value">{{ vehicle.brand }}</span>
+                </div>
+                {% endif %} {% if vehicle.model %}
+                <div class="info-item">
+                  <span class="info-label">Model</span>
+                  <span class="info-value">{{ vehicle.model }}</span>
+                </div>
+                {% endif %} {% if vehicle.year %}
+                <div class="info-item">
+                  <span class="info-label">Nam san xuat</span>
+                  <span class="info-value">{{ vehicle.year }}</span>
+                </div>
+                {% endif %} {% if vehicle.km is not none %}
+                <div class="info-item">
+                  <span class="info-label">So km da di</span>
+                  <span class="info-value"
+                    >{{ "{:,}".format(vehicle.km) }} km</span
+                  >
+                </div>
+                {% endif %} {% if vehicle.battery_capacity_kwh %}
+                <div class="info-item">
+                  <span class="info-label">Dung luong pin</span>
+                  <span class="info-value"
+                    >{{ vehicle.battery_capacity_kwh }} kWh</span
+                  >
+                </div>
+                {% endif %} {% if vehicle.condition %}
+                <div class="info-item">
+                  <span class="info-label">Tinh trang</span>
+                  <span class="info-value">
+                    {% if vehicle.condition == 'new' %}Moi {% elif
+                    vehicle.condition == 'good' %}Tot {% elif vehicle.condition
+                    == 'used' %}Da su dung {% elif vehicle.condition == 'fair'
+                    %}Trung binh {% else %}{{ vehicle.condition }}{% endif %}
+                  </span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-sidebar">
+            <div class="price-box">
+              <div class="price-label">Gia ban</div>
+              <div class="price-value">
+                {{ "{:,}".format(vehicle.price) if vehicle.price else '0' }}
+              </div>
+              <div class="price-unit">VND</div>
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn-primary" onclick="buyNow()">
+                <i class="fas fa-bolt"></i> Mua ngay
+              </button>
+              <button class="btn-secondary" onclick="addToCart()">
+                <i class="fas fa-shopping-cart"></i> Them vao gio hang
+              </button>
+              {% if vehicle.approved %}
+              <button
+                class="btn-secondary"
+                onclick="toggleFavorite()"
+                id="favBtn"
+                style="
+                  background: white;
+                  color: #ff4757;
+                  border: 2px solid #ff4757;
+                "
+              >
+                <i class="fas fa-heart"></i> Yeu thich
+              </button>
+              {% endif %}
+            </div>
+
+            <div class="seller-info">
+              <div class="seller-label">Nguoi ban</div>
+              <div style="font-weight: 600; color: #333">
+                {{ vehicle.owner or 'N/A' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const vehicleId = {{ vehicle.id }};
+      const vehiclePrice = {{ vehicle.price or 0 }};
+
+      async function buyNow() {
+        // Add to cart and redirect to checkout
+        try {
+          // Prevent duplicate add: if item exists in client-side cart, do not add again
+          try {
+            const ccart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const exists = ccart.find(c => Number(c.item_id) === Number(vehicleId));
+            if (exists) {
+              // item already in cart — go to checkout (or do nothing)
+              window.location.href = '/checkout';
+              return;
+            }
+          } catch (err) { /* ignore localStorage parse issues */ }
+          const res = await fetch('/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              item_type: 'car',
+              item_id: vehicleId,
+              price: vehiclePrice,
+              quantity: 1
+            })
+          });
+
+            if (res.ok) {
+            // Keep local cart in sync: add to localStorage if not exist, then remove from local cart because we're proceeding to checkout
+            try {
+              const ccart = JSON.parse(localStorage.getItem('cart') || '[]');
+              const exists = ccart.find(c => Number(c.item_id) === Number(vehicleId));
+              if (!exists) {
+                ccart.push({item_type: 'vehicle', item_id: vehicleId, price: vehiclePrice || 0, qty: 1});
+                localStorage.setItem('cart', JSON.stringify(ccart));
+                try { const el = document.getElementById('hdrCartCount'); if (el) el.textContent = ccart.reduce((s, c) => s + (c.qty || 0), 0); } catch (e) {}
+              }
+            } catch (err) {
+              // ignore localStorage errors
+            }
+            // remove this purchased item from local cart as checkout has been initiated
+            try { const ccart = JSON.parse(localStorage.getItem('cart')||'[]'); const newCart = ccart.filter(c => Number(c.item_id)!==Number(vehicleId)); localStorage.setItem('cart', JSON.stringify(newCart)); try{const el = document.getElementById('hdrCartCount'); if (el) el.textContent = newCart.reduce((s,c)=>s+(c.qty||0),0);}catch(e){} } catch(e) {}
+            window.location.href = '/checkout';
+          } else {
+            const data = await res.json();
+            alert(data.error || 'Không thể thêm vào giỏ hàng');
+          }
+        } catch (err) {
+          alert('Có lỗi xảy ra: ' + err.message);
+        }
+      }
+
+      async function addToCart() {
+        try {
+          // Prevent duplicate add: if item exists in client-side cart, warn and do nothing
+          try {
+            const ccart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const exists = ccart.find(c => Number(c.item_id) === Number(vehicleId));
+            if (exists) {
+              alert('Sản phẩm đã có trong giỏ hàng');
+              return;
+            }
+          } catch (err) { /* ignore localStorage parse issues */ }
+          const res = await fetch('/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              item_type: 'car',
+              item_id: vehicleId,
+              price: vehiclePrice,
+              quantity: 1
+            })
+          });
+
+          if (res.ok) {
+            // Update localStorage to stay consistent
+            try {
+              const ccart = JSON.parse(localStorage.getItem('cart') || '[]');
+              const exists = ccart.find(c => Number(c.item_id) === Number(vehicleId));
+                if (!exists) {
+                  ccart.push({item_type: 'vehicle', item_id: vehicleId, price: vehiclePrice || 0, qty: 1});
+                  localStorage.setItem('cart', JSON.stringify(ccart));
+                  try { const el = document.getElementById('hdrCartCount'); if (el) el.textContent = ccart.reduce((s, c) => s + (c.qty || 0), 0); } catch (e) {}
+                }
+            } catch (err) { /* ignore */ }
+            alert('Đã thêm vào giỏ hàng!');
+          } else {
+            const data = await res.json();
+            alert(data.error || 'Không thể thêm vào giỏ hàng');
+          }
+        } catch (err) {
+          alert('Có lỗi xảy ra: ' + err.message);
+        }
+      }
+
+      async function toggleFavorite() {
+        try {
+          const res = await fetch('/api/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              item_type: 'car',
+              item_id: vehicleId
+            })
+          });
+
+          if (res.ok) {
+            const btn = document.getElementById('favBtn');
+            btn.style.background = '#ff4757';
+            btn.style.color = 'white';
+            btn.innerHTML = '<i class="fas fa-heart"></i> Đã yêu thích';
+            alert('Đã thêm vào yêu thích!');
+          } else {
+            const data = await res.json();
+            alert(data.message || 'Không thể thêm vào yêu thích');
+          }
+        } catch (err) {
+          alert('Có lỗi xảy ra: ' + err.message);
+        }
+      }
+    </script>
+  </body>
+</html>

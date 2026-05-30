@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tim kiem - XDPM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .search-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 100px 20px 40px;
+      }
+      .search-header {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+      }
+      .search-header h1 {
+        font-size: 28px;
+        margin-bottom: 20px;
+        color: #333;
+      }
+      .search-filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+      }
+      .filter-group label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      .filter-group input,
+      .filter-group select {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border 0.2s;
+      }
+      .filter-group input:focus,
+      .filter-group select:focus {
+        outline: none;
+        border-color: #007bff;
+      }
+      .filter-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .btn-search {
+        background: #007bff;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .btn-search:hover {
+        background: #0056b3;
+      }
+      .btn-reset {
+        background: #f5f5f5;
+        color: #666;
+        padding: 12px 30px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-reset:hover {
+        background: #e0e0e0;
+      }
+      .search-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+      .tab-button {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        font-size: 16px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+      }
+      .tab-button.active {
+        color: #007bff;
+        border-bottom-color: #007bff;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .results-count {
+        font-size: 16px;
+        color: #666;
+      }
+      .results-sort {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .results-sort select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+      }
+      .result-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+      }
+      .result-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      }
+      .result-image {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 48px;
+      }
+      .result-body {
+        padding: 16px;
+      }
+      .result-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+      .result-details {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .result-detail {
+        font-size: 14px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .result-detail i {
+        color: #007bff;
+        width: 16px;
+      }
+      .result-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #007bff;
+        margin-top: 12px;
+      }
+      .result-condition {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 8px;
+      }
+      .condition-new {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .condition-used {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+      .condition-good {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+      .condition-fair {
+        background: #fce4ec;
+        color: #c2185b;
+      }
+      .no-results {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      .no-results i {
+        font-size: 64px;
+        color: #ddd;
+        margin-bottom: 20px;
+      }
+      .no-results h3 {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+      .no-results p {
+        color: #999;
+        font-size: 16px;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 40px;
+      }
+      .page-btn {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .page-btn:hover {
+        background: #f5f5f5;
+      }
+      .page-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-container">
+        <a href="{{ url_for('home') }}" class="logo">XDPM</a>
+        <nav class="nav-menu">
+          <a href="{{ url_for('home') }}" class="nav-item">Trang chu</a>
+          <a href="{{ url_for('auctions_page') }}" class="nav-item">Dau gia</a>
+          <a href="{{ url_for('search_page') }}" class="nav-item active">Tim kiem</a>
+        </nav>
+        <nav class="user-menu">
+          {% if session.get('user') %}
+          <a href="{{ url_for('cart_page') }}" class="user-menu-item">
+            <i class="fas fa-shopping-cart"></i>
+          </a>
+          <div class="user-dropdown">
+            {% set user = session['user'] %}
+            {% set avatar_url = user.get('avatar_url', '') %}
+            {% set username = user.get('username', user.get('email', 'User')) %}
+            {% set first_initial = username[0]|upper if username else 'U' %}
+            
+            {% if avatar_url %}
+              {% if avatar_url.startswith('http://') or avatar_url.startswith('https://') %}
+                <img src="{{ avatar_url }}" alt="Avatar" class="avatar-circle-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar-circle" style="display: none;">{{ first_initial }}</div>
+              {% else %}
+                <img src="/static/uploads/avatars/{{ avatar_url }}" alt="Avatar" class="avatar-circle-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar-circle" style="display: none;">{{ first_initial }}</div>
+              {% endif %}
+            {% else %}
+              <div class="avatar-circle">{{ first_initial }}</div>
+            {% endif %}
+            
+            <div class="dropdown-content">
+              <div class="dropdown-user-info">
+                <strong>{{ username }}</strong>
+                <span>{{ user.get('email', '') }}</span>
+              </div>
+              <a href="{{ url_for('profile_page_gateway') }}" class="dropdown-item"
+                ><i class="fas fa-user"></i> Ho so</a
+              >
+              <a href="{{ url_for('favorites_page') }}" class="dropdown-item"
+                ><i class="fas fa-heart"></i> Yeu thich</a
+              >
+              {% if user.get('role') == 'admin' %}
+              <a href="{{ url_for('admin_page') }}" class="dropdown-item"
+                ><i class="fas fa-cog"></i> Quan tri</a
+              >
+              {% endif %}
+              <a href="{{ url_for('logout_page') }}" class="dropdown-item"
+                ><i class="fas fa-sign-out-alt"></i> Dang xuat</a
+              >
+            </div>
+          </div>
+          <a href="{{ url_for('add_listing') }}" class="post-button">Dang tin</a>
+          {% else %}
+          <a href="{{ url_for('login_page') }}" class="user-menu-item">Dang nhap</a>
+          <a href="{{ url_for('register_page') }}" class="user-menu-item">Dang ky</a>
+          <a href="{{ url_for('login_page') }}" class="post-button">Dang tin</a>
+          {% endif %}
+        </nav>
+      </div>
+    </header>
+
+    <main class="search-page">
+      <div class="search-header">
+        <h1><i class="fas fa-search"></i> Tim kiem xe dien va pin cu</h1>
+        
+        <div class="search-tabs">
+          <button class="tab-button active" data-tab="vehicles">
+            <i class="fas fa-car"></i> Xe dien
+          </button>
+          <button class="tab-button" data-tab="batteries">
+            <i class="fas fa-battery-full"></i> Pin
+          </button>
+        </div>
+
+        <!-- Vehicles Search Form -->
+        <div id="vehicles-filters" class="tab-content active">
+          <form id="vehicle-search-form">
+            <div class="search-filters">
+              <div class="filter-group">
+                <label>Hang xe</label>
+                <input type="text" name="brand" placeholder="VinFast, Tesla..." value="{{ request.args.get('brand', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Model</label>
+                <input type="text" name="model" placeholder="VF8, Model 3..." value="{{ request.args.get('model', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam san xuat</label>
+                <input type="number" name="year" placeholder="2023" value="{{ request.args.get('year', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam tu</label>
+                <input type="number" name="year_min" placeholder="2020" value="{{ request.args.get('year_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam den</label>
+                <input type="number" name="year_max" placeholder="2024" value="{{ request.args.get('year_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>So km tu</label>
+                <input type="number" name="km_min" placeholder="0" value="{{ request.args.get('km_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>So km den</label>
+                <input type="number" name="km_max" placeholder="50000" value="{{ request.args.get('km_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Gia tu (VND)</label>
+                <input type="number" name="price_min" placeholder="100000000" value="{{ request.args.get('price_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Gia den (VND)</label>
+                <input type="number" name="price_max" placeholder="1000000000" value="{{ request.args.get('price_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Tinh trang</label>
+                <select name="condition">
+                  <option value="">Tat ca</option>
+                  <option value="new" {% if request.args.get('condition') == 'new' %}selected{% endif %}>Moi</option>
+                  <option value="good" {% if request.args.get('condition') == 'good' %}selected{% endif %}>Tot</option>
+                  <option value="used" {% if request.args.get('condition') == 'used' %}selected{% endif %}>Da su dung</option>
+                  <option value="fair" {% if request.args.get('condition') == 'fair' %}selected{% endif %}>Trung binh</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Dung luong pin tu (kWh)</label>
+                <input type="number" step="0.1" name="battery_capacity_min" placeholder="40" value="{{ request.args.get('battery_capacity_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Dung luong pin den (kWh)</label>
+                <input type="number" step="0.1" name="battery_capacity_max" placeholder="100" value="{{ request.args.get('battery_capacity_max', '') }}">
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button type="submit" class="btn-search">
+                <i class="fas fa-search"></i> Tim kiem
+              </button>
+              <button type="button" class="btn-reset" onclick="resetVehicleFilters()">
+                <i class="fas fa-redo"></i> Dat lai
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Batteries Search Form -->
+        <div id="batteries-filters" class="tab-content">
+          <form id="battery-search-form">
+            <div class="search-filters">
+              <div class="filter-group">
+                <label>Hang pin</label>
+                <input type="text" name="brand" placeholder="CATL, LG..." value="{{ request.args.get('brand', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Dung luong tu (kWh)</label>
+                <input type="number" step="0.1" name="capacity_min" placeholder="40" value="{{ request.args.get('capacity_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Dung luong den (kWh)</label>
+                <input type="number" step="0.1" name="capacity_max" placeholder="100" value="{{ request.args.get('capacity_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Gia tu (VND)</label>
+                <input type="number" name="price_min" placeholder="50000000" value="{{ request.args.get('price_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Gia den (VND)</label>
+                <input type="number" name="price_max" placeholder="500000000" value="{{ request.args.get('price_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Tinh trang pin tu (%)</label>
+                <input type="number" step="0.1" name="health_min" placeholder="70" value="{{ request.args.get('health_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Tinh trang pin den (%)</label>
+                <input type="number" step="0.1" name="health_max" placeholder="100" value="{{ request.args.get('health_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Chu ky sac tu</label>
+                <input type="number" name="cycles_min" placeholder="0" value="{{ request.args.get('cycles_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Chu ky sac den</label>
+                <input type="number" name="cycles_max" placeholder="1000" value="{{ request.args.get('cycles_max', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam san xuat</label>
+                <input type="number" name="year" placeholder="2023" value="{{ request.args.get('year', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam tu</label>
+                <input type="number" name="year_min" placeholder="2020" value="{{ request.args.get('year_min', '') }}">
+              </div>
+              <div class="filter-group">
+                <label>Nam den</label>
+                <input type="number" name="year_max" placeholder="2024" value="{{ request.args.get('year_max', '') }}">
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button type="submit" class="btn-search">
+                <i class="fas fa-search"></i> Tim kiem
+              </button>
+              <button type="button" class="btn-reset" onclick="resetBatteryFilters()">
+                <i class="fas fa-redo"></i> Dat lai
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="vehicles-results" class="tab-content active">
+        <div class="results-header">
+          <div class="results-count">
+            Tim thay <strong id="vehicle-count">0</strong> xe dien
+          </div>
+        </div>
+        <div id="vehicle-grid" class="results-grid">
+          <!-- Vehicle results will be loaded here -->
+        </div>
+        <div id="vehicle-pagination" class="pagination"></div>
+      </div>
+
+      <div id="batteries-results" class="tab-content">
+        <div class="results-header">
+          <div class="results-count">
+            Tim thay <strong id="battery-count">0</strong> pin
+          </div>
+        </div>
+        <div id="battery-grid" class="results-grid">
+          <!-- Battery results will be loaded here -->
+        </div>
+        <div id="battery-pagination" class="pagination"></div>
+      </div>
+    </main>
+
+    <script>
+      let currentTab = 'vehicles';
+      let currentPage = 1;
+
+      // Tab switching
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          switchTab(tab);
+        });
+      });
+
+      function switchTab(tab) {
+        currentTab = tab;
+        currentPage = 1;
+        
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+        
+        // Update filter forms
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(`${tab}-filters`).classList.add('active');
+        document.getElementById(`${tab}-results`).classList.add('active');
+        
+        // Load results
+        if (tab === 'vehicles') {
+          searchVehicles();
+        } else {
+          searchBatteries();
+        }
+      }
+
+      // Vehicle search
+      document.getElementById('vehicle-search-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        currentPage = 1;
+        searchVehicles();
+      });
+
+      async function searchVehicles(page = 1) {
+        const form = document.getElementById('vehicle-search-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (let [key, value] of formData.entries()) {
+          if (value) params.append(key, value);
+        }
+        params.append('page', page);
+        params.append('size', 12);
+
+        try {
+          const response = await fetch(`/api/search/vehicles?${params}`);
+          const data = await response.json();
+          
+          displayVehicles(data);
+          displayPagination(data, 'vehicle', searchVehicles);
+        } catch (error) {
+          console.error('Error searching vehicles:', error);
+          document.getElementById('vehicle-grid').innerHTML = '<div class="no-results"><i class="fas fa-exclamation-circle"></i><h3>Loi tim kiem</h3><p>Khong the tai ket qua. Vui long thu lai.</p></div>';
+        }
+      }
+
+      function displayVehicles(data) {
+        const grid = document.getElementById('vehicle-grid');
+        const count = document.getElementById('vehicle-count');
+        
+        count.textContent = data.total || 0;
+        
+        if (!data.items || data.items.length === 0) {
+          grid.innerHTML = '<div class="no-results"><i class="fas fa-car"></i><h3>Khong tim thay xe</h3><p>Thu thay doi bo loc tim kiem cua ban.</p></div>';
+          return;
+        }
+        
+        grid.innerHTML = data.items.map(vehicle => `
+          <div class="result-card" onclick="window.location.href='/vehicles/${vehicle.id}'">
+            <div class="result-image">
+              <i class="fas fa-car"></i>
+            </div>
+            <div class="result-body">
+              <h3 class="result-title">${vehicle.brand || ''} ${vehicle.model || ''}</h3>
+              <div class="result-details">
+                ${vehicle.year ? `<div class="result-detail"><i class="fas fa-calendar"></i> Nam: ${vehicle.year}</div>` : ''}
+                ${vehicle.km ? `<div class="result-detail"><i class="fas fa-road"></i> ${vehicle.km.toLocaleString()} km</div>` : ''}
+                ${vehicle.battery_capacity_kwh ? `<div class="result-detail"><i class="fas fa-battery-full"></i> ${vehicle.battery_capacity_kwh} kWh</div>` : ''}
+              </div>
+              ${vehicle.condition ? `<span class="result-condition condition-${vehicle.condition}">${getConditionText(vehicle.condition)}</span>` : ''}
+              <div class="result-price">${formatPrice(vehicle.price)} VND</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Battery search
+      document.getElementById('battery-search-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        currentPage = 1;
+        searchBatteries();
+      });
+
+      async function searchBatteries(page = 1) {
+        const form = document.getElementById('battery-search-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (let [key, value] of formData.entries()) {
+          if (value) params.append(key, value);
+        }
+        params.append('page', page);
+        params.append('size', 12);
+
+        try {
+          const response = await fetch(`/api/search/batteries?${params}`);
+          const data = await response.json();
+          
+          displayBatteries(data);
+          displayPagination(data, 'battery', searchBatteries);
+        } catch (error) {
+          console.error('Error searching batteries:', error);
+          document.getElementById('battery-grid').innerHTML = '<div class="no-results"><i class="fas fa-exclamation-circle"></i><h3>Loi tim kiem</h3><p>Khong the tai ket qua. Vui long thu lai.</p></div>';
+        }
+      }
+
+      function displayBatteries(data) {
+        const grid = document.getElementById('battery-grid');
+        const count = document.getElementById('battery-count');
+        
+        count.textContent = data.total || 0;
+        
+        if (!data.items || data.items.length === 0) {
+          grid.innerHTML = '<div class="no-results"><i class="fas fa-battery-full"></i><h3>Khong tim thay pin</h3><p>Thu thay doi bo loc tim kiem cua ban.</p></div>';
+          return;
+        }
+        
+        grid.innerHTML = data.items.map(battery => `
+          <div class="result-card" onclick="window.location.href='/batteries/${battery.id}'">
+            <div class="result-image">
+              <i class="fas fa-battery-full"></i>
+            </div>
+            <div class="result-body">
+              <h3 class="result-title">${battery.brand || 'Pin'}</h3>
+              <div class="result-details">
+                ${battery.capacity_kwh ? `<div class="result-detail"><i class="fas fa-bolt"></i> ${battery.capacity_kwh} kWh</div>` : ''}
+                ${battery.health_percent ? `<div class="result-detail"><i class="fas fa-heart-pulse"></i> Tinh trang: ${battery.health_percent}%</div>` : ''}
+                ${battery.cycles ? `<div class="result-detail"><i class="fas fa-sync"></i> ${battery.cycles} chu ky</div>` : ''}
+                ${battery.year ? `<div class="result-detail"><i class="fas fa-calendar"></i> Nam: ${battery.year}</div>` : ''}
+              </div>
+              ${battery.condition ? `<span class="result-condition condition-${battery.condition}">${getConditionText(battery.condition)}</span>` : ''}
+              <div class="result-price">${formatPrice(battery.price)} VND</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function displayPagination(data, type, searchFunc) {
+        const pagination = document.getElementById(`${type}-pagination`);
+        const totalPages = Math.ceil(data.total / data.size);
+        
+        if (totalPages <= 1) {
+          pagination.innerHTML = '';
+          return;
+        }
+        
+        let html = '';
+        html += `<button class="page-btn" ${data.page === 1 ? 'disabled' : ''} onclick="searchFunc(${data.page - 1})"><i class="fas fa-chevron-left"></i></button>`;
+        
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= data.page - 2 && i <= data.page + 2)) {
+            html += `<button class="page-btn ${i === data.page ? 'active' : ''}" onclick="${type === 'vehicle' ? 'searchVehicles' : 'searchBatteries'}(${i})">${i}</button>`;
+          } else if (i === data.page - 3 || i === data.page + 3) {
+            html += `<span>...</span>`;
+          }
+        }
+        
+        html += `<button class="page-btn" ${data.page === totalPages ? 'disabled' : ''} onclick="${type === 'vehicle' ? 'searchVehicles' : 'searchBatteries'}(${data.page + 1})"><i class="fas fa-chevron-right"></i></button>`;
+        
+        pagination.innerHTML = html;
+      }
+
+      function resetVehicleFilters() {
+        document.getElementById('vehicle-search-form').reset();
+        searchVehicles();
+      }
+
+      function resetBatteryFilters() {
+        document.getElementById('battery-search-form').reset();
+        searchBatteries();
+      }
+
+      function getConditionText(condition) {
+        const conditions = {
+          'new': 'Moi',
+          'good': 'Tot',
+          'used': 'Da su dung',
+          'fair': 'Trung binh'
+        };
+        return conditions[condition] || condition;
+      }
+
+      function formatPrice(price) {
+        if (!price) return '0';
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
+
+      // Load initial results
+      searchVehicles();
+    </script>
+  </body>
+</html>

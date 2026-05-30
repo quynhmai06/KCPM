@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>
+      {% if seller_id is defined and seller_id %} Đánh giá người bán #{{
+      seller_id }} {% else %} Đánh giá sản phẩm #{{ product_id }} {% endif %}
+    </title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #fff8e1 0%, #fff3cf 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 32px;
+        margin-bottom: 24px;
+        color: #222;
+        font-weight: 700;
+        text-align: center;
+        background: linear-gradient(135deg, #ffd54f 0%, #ffb74d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 20px;
+        color: #333;
+        font-weight: 600;
+      }
+
+      .card {
+        background: white;
+        border: none;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .muted {
+        color: #777;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        font-family: inherit;
+        padding: 14px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        background: #fafafa;
+        resize: vertical;
+        line-height: 1.6;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #ffc107;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #ffd54f 0%, #ffb74d 100%);
+        color: #222;
+        text-decoration: none;
+        border-radius: 25px;
+        cursor: pointer;
+        border: none;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn i {
+        font-size: 16px;
+      }
+
+      .reply {
+        margin-top: 12px;
+        padding: 16px;
+        background: linear-gradient(135deg, #fff8e1 0%, #fff3cf 100%);
+        border-left: 4px solid #ffc107;
+        border-radius: 8px;
+      }
+
+      .reply strong {
+        color: #222;
+        font-weight: 600;
+      }
+
+      .stars {
+        color: #ffc107;
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+
+      .stars.big {
+        font-size: 36px;
+        letter-spacing: 4px;
+      }
+
+      .star-btn {
+        cursor: pointer;
+        color: #e0e0e0;
+        font-size: 32px;
+        user-select: none;
+        transition: all 0.2s ease;
+        display: inline-block;
+      }
+
+      .star-btn:hover,
+      .star-btn.active {
+        color: #ffc107;
+        transform: scale(1.1);
+      }
+
+      .rating-number {
+        font-weight: 700;
+        margin-left: 8px;
+        font-size: 48px;
+        background: linear-gradient(135deg, #ffd54f 0%, #ffb74d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f5f5f5;
+      }
+
+      .buyer-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .buyer-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #ffc107;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .buyer-info b {
+        color: #222;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .review-time {
+        color: #999;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .seller-reply-form input[name="message"] {
+        width: 100%;
+        padding: 14px 18px;
+        margin-right: 8px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        background: #fafafa;
+      }
+
+      .seller-reply-form input[name="message"]:focus {
+        outline: none;
+        border-color: #ffc107;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+      }
+
+      .seller-reply-form {
+        display: none;
+      }
+
+      .avg-stars-section {
+        text-align: center;
+        padding: 32px 0;
+        background: linear-gradient(135deg, #fff8e1 0%, #fffbf0 100%);
+        border-radius: 16px;
+        margin-bottom: 8px;
+      }
+
+      .avg-stars-section h3 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+
+      #avgStars {
+        font-size: 36px;
+        display: block;
+        margin: 16px 0;
+      }
+
+      .form-group {
+        margin-top: 20px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+        font-size: 15px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        background: #fafafa;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #ffc107;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+      }
+
+      #reviewAuthNotice {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+
+      #reviewAuthNotice:empty {
+        display: none;
+      }
+
+      .review-comment {
+        margin-top: 12px;
+        line-height: 1.7;
+        color: #444;
+        font-size: 15px;
+      }
+
+      .review-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+      }
+
+      #ratingStars {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 12px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        .card {
+          padding: 16px;
+        }
+
+        .buyer-avatar {
+          width: 40px;
+          height: 40px;
+        }
+
+        .rating-number {
+          font-size: 36px;
+        }
+
+        .stars.big {
+          font-size: 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>
+        {% if seller_id is defined and seller_id %}
+        <i class="fas fa-star-half-alt"></i> Đánh giá người bán {% else %}
+        <i class="fas fa-comments"></i> Đánh giá sản phẩm {% endif %}
+      </h1>
+
+      <!-- Thẻ tổng quan điểm trung bình -->
+      <div class="card avg-stars-section">
+        <h3>
+          <i
+            class="fas fa-chart-line"
+            style="color: #ffc107; margin-right: 8px"
+          ></i>
+          Điểm đánh giá trung bình
+        </h3>
+        <span id="avgStars" class="stars big" aria-hidden="true"></span>
+        <div>
+          <span id="avgNumber" class="rating-number"
+            >{{ ('{:.1f}'.format(avg) if avg is not none else '—') }}</span
+          >
+        </div>
+        <div class="muted" style="margin-top: 12px">
+          <i class="fas fa-users"></i> Dựa trên {{ reviews|length }} đánh giá
+        </div>
+        <div style="margin-top: 20px">
+          <a href="/" class="btn"> <i class="fas fa-home"></i> Về trang chủ </a>
+        </div>
+      </div>
+
+      <!-- Thông báo quyền đánh giá / lỗi / yêu cầu đăng nhập -->
+      <div id="reviewAuthNotice"></div>
+
+      {% if dev_allow %}
+      <div
+        class="card"
+        style="
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+          border: 2px solid #fbbf24;
+          color: #92400e;
+        "
+      >
+        <i class="fas fa-code" style="margin-right: 8px"></i>
+        <strong>(DEV)</strong> Chế độ phát triển: form đánh giá sẽ hiển thị để
+        test.
+      </div>
+      {% endif %}
+
+      <!-- Form đánh giá: mặc định ẩn, chỉ hiện nếu đúng NGƯỜI MUA đã thanh toán -->
+      <div id="reviewFormWrapper" class="card" style="display: none">
+        <h3>
+          <i
+            class="fas fa-pen-fancy"
+            style="color: #ffc107; margin-right: 8px"
+          ></i>
+          Viết đánh giá của bạn
+        </h3>
+        <p class="muted" style="margin-top: 8px">
+          <i class="fas fa-info-circle"></i>
+          Chỉ người mua đã thanh toán thành công cho sản phẩm này mới có thể gửi
+          đánh giá.
+        </p>
+        <form id="frmReview">
+          {% if seller_id is defined and seller_id %}
+          <input type="hidden" name="seller_id" value="{{ seller_id }}" />
+          {% endif %} {% if product_id is defined and product_id %}
+          <input type="hidden" name="product_id" value="{{ product_id }}" />
+          {% endif %}
+
+          <div class="form-group">
+            <label for="rating">
+              <i class="fas fa-star" style="color: #ffc107"></i>
+              Đánh giá của bạn (1–5 sao)
+            </label>
+            <div id="ratingStars"></div>
+            <!-- keep select for progressive enhancement & existing JS; kept hidden and synced with star clicks -->
+            <select name="rating" id="rating" style="display: none">
+              <option value="5">5 – Rất tốt</option>
+              <option value="4">4 – Tốt</option>
+              <option value="3">3 – Bình thường</option>
+              <option value="2">2 – Chưa tốt</option>
+              <option value="1">1 – Rất tệ</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="comment">
+              <i class="fas fa-comment-dots" style="color: #ffc107"></i>
+              Nhận xét của bạn
+            </label>
+            <textarea
+              name="comment"
+              id="comment"
+              placeholder="Hãy chia sẻ trải nghiệm mua hàng của bạn... ✨"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <button class="btn" type="submit">
+              <i class="fas fa-paper-plane"></i>
+              Gửi đánh giá
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Danh sách BÀI ĐÁNH GIÁ -->
+      <div>
+        {% if reviews %}
+        <h3 style="margin: 32px 0 16px; color: #333; text-align: center">
+          <i
+            class="fas fa-comments"
+            style="color: #ffc107; margin-right: 8px"
+          ></i>
+          Tất cả đánh giá ({{ reviews|length }})
+        </h3>
+        {% for r in reviews %}
+        <div class="card">
+          <div class="review-header">
+            <div class="buyer-info">
+              {% set buyer = buyers.get(r.buyer_id) if buyers is defined else
+              None %} {% if buyer %}
+              <img
+                src="{{ buyer.avatar_url or '/static/images/default-avatar.png' }}"
+                alt="Avatar"
+                class="buyer-avatar"
+              />
+              <div>
+                <b>
+                  {# Ẩn một phần tên: ví dụ "N*** Nam" nếu có họ tên đầy đủ #}
+                  {% set raw_name = buyer.full_name or buyer.username %} {% if
+                  raw_name %} {% set parts = raw_name.split(' ') %} {% if
+                  parts|length > 1 %} {% set first = parts[0] %} {% set last =
+                  parts[-1] %} {{ first[0] ~ '*** ' ~ last }} {% else %} {{
+                  raw_name[0] ~ '***' }} {% endif %} {% else %} Người mua #{{
+                  r.buyer_id }} {% endif %}
+                </b>
+                <div class="review-time">
+                  <i class="far fa-clock"></i>
+                  {{ r.created_at }}
+                </div>
+              </div>
+              {% else %}
+              <div>
+                <b>Người mua #{{ r.buyer_id }}</b>
+                <div class="review-time">
+                  <i class="far fa-clock"></i>
+                  {{ r.created_at }}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="review-rating">
+              <span class="stars">
+                {% for i in range(0, r.rating) %} ★ {% endfor %} {% for i in
+                range(r.rating, 5) %} ☆ {% endfor %}
+              </span>
+              <span style="font-weight: 600; color: #333"
+                >{{ r.rating }}/5</span
+              >
+            </div>
+          </div>
+
+          <div class="review-comment">
+            {{ r.comment or '💬 Người mua không để lại nhận xét.' }}
+          </div>
+
+          <!-- Phản hồi của người bán -->
+          {% if r.replies %}
+          <div style="margin-top: 16px">
+            {% for rep in r.replies %}
+            <div class="reply">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  margin-bottom: 8px;
+                "
+              >
+                <i class="fas fa-store" style="color: #ffc107"></i>
+                <strong>Phản hồi của người bán</strong>
+              </div>
+              <div style="color: #444">{{ rep.message }}</div>
+              <div class="review-time" style="margin-top: 8px">
+                <i class="far fa-clock"></i>
+                {{ rep.created_at }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Form phản hồi: chỉ hiện với đúng seller (bật bằng JS) -->
+          <div style="margin-top: 16px" class="seller-reply-form">
+            <form method="post" action="/reviews/reply/{{ r.id }}">
+              <input
+                type="hidden"
+                name="seller_id"
+                value="{{ seller_id if seller_id is defined and seller_id else 0 }}"
+              />
+              <div class="row" style="gap: 12px">
+                <input
+                  name="message"
+                  placeholder="💬 Viết phản hồi của bạn..."
+                />
+                <button class="btn" type="submit">
+                  <i class="fas fa-reply"></i>
+                  Gửi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="card" style="text-align: center; color: #999">
+          <i
+            class="far fa-comment-dots"
+            style="font-size: 48px; color: #ddd; margin-bottom: 16px"
+          ></i>
+          <div>Chưa có đánh giá nào. Hãy là người đầu tiên! 🌟</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        const form = document.getElementById("frmReview");
+        const wrapper = document.getElementById("reviewFormWrapper");
+        const notice = document.getElementById("reviewAuthNotice");
+
+        function setNotice(msg, type = 'info') {
+          if (notice) {
+            let bgColor = '#f0f9ff';
+            let borderColor = '#0ea5e9';
+            let textColor = '#0c4a6e';
+            let icon = 'fa-info-circle';
+
+            if (type === 'error') {
+              bgColor = '#fff3f3';
+              borderColor = '#ef4444';
+              textColor = '#c62828';
+              icon = 'fa-exclamation-triangle';
+            } else if (type === 'success') {
+              bgColor = '#f1f8e9';
+              borderColor = '#22c55e';
+              textColor = '#558b2f';
+              icon = 'fa-check-circle';
+            }
+
+            notice.innerHTML = '<div class="card" style="background: ' + bgColor + '; border: 2px solid ' + borderColor + '; color: ' + textColor + ';"><i class="fas ' + icon + '" style="margin-right: 8px;"></i>' + msg + "</div>";
+          }
+        }
+
+        if (!form) {
+          setNotice("Không tìm thấy form đánh giá.", 'error');
+          return;
+        }
+
+        // Lấy product_id & seller_id từ hidden input
+        const prodInput = form.querySelector('input[name="product_id"]');
+        const sellerInput = form.querySelector('input[name="seller_id"]');
+        const product_id = prodInput ? prodInput.value : null;
+
+        let seller_id = null;
+        if (
+          sellerInput &&
+          sellerInput.value &&
+          sellerInput.value !== "None" &&
+          sellerInput.value !== "null"
+        ) {
+          seller_id = sellerInput.value;
+        }
+
+        if (!product_id) {
+          setNotice(
+            "Không tìm thấy sản phẩm. Vui lòng truy cập từ trang chi tiết sản phẩm."
+          );
+          if (wrapper) wrapper.style.display = "none";
+          return;
+        }
+
+        // Debug flag (check URL) - allow forcing the form to show with ?force_form=1 or ?debug=1
+        const urlParamsDbgTop = new URLSearchParams(window.location.search);
+        const dbgForce = urlParamsDbgTop.get('force_form') === '1' || urlParamsDbgTop.get('debug') === '1';
+
+        // Lấy thông tin user hiện tại
+        let currentUserId = null;
+        try {
+          const r = await fetch("/auth/me");
+          if (r.ok) {
+            const j = await r.json();
+            currentUserId = j.sub || j.id || null;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        // Không đăng nhập → chỉ xem review, không được gửi (trừ khi bật debug force)
+        if (!currentUserId && !dbgForce) {
+          setNotice(
+            "Bạn cần đăng nhập để đánh giá. " +
+              '<a href="/login?next=' +
+              encodeURIComponent(location.pathname + location.search) +
+              '" style="color: #ffc107; font-weight: 600; text-decoration: underline;">Đăng nhập ngay</a>',
+            'info'
+          );
+          if (wrapper) wrapper.style.display = "none";
+        }
+
+        // Ẩn/hiện form PHẢN HỒI người bán: chỉ seller mới thấy
+        const replyForms = document.querySelectorAll(".seller-reply-form");
+        if (
+          seller_id &&
+          currentUserId &&
+          String(currentUserId) === String(seller_id)
+        ) {
+          replyForms.forEach((el) => (el.style.display = "block"));
+        } else {
+          replyForms.forEach((el) => (el.style.display = "none"));
+        }
+
+        // Nếu không đăng nhập thì không cần check tiếp phần "mua hàng" (trừ khi dbgForce)
+        if (!currentUserId && !dbgForce) return;
+
+        // Kiểm tra xem user đã có thanh toán được admin duyệt cho sản phẩm này chưa
+        if (!dbgForce) {
+        try {
+          // Get current user's payments and filter client-side for paid items of this product
+          const pr = await fetch("/payments/mine", { credentials: 'include' });
+          if (!pr.ok) {
+            setNotice(
+              "⚠️ Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.",
+              'error'
+            );
+            if (wrapper) wrapper.style.display = "none";
+            return;
+          }
+
+          const data = await pr.json();
+          const payments = data.items || [];
+          let hasPaidThisProduct = false;
+          for (const p of payments) {
+            // filter by seller if provided
+            if (seller_id && String(p.seller_id || p.seller || p.seller_id) !== String(seller_id)) continue;
+            if ((p.status || '').toLowerCase() !== 'paid') continue;
+            const its = p.items || [];
+            for (const it of its) {
+              const candidate = it.item_id !== undefined ? it.item_id : it.id !== undefined ? it.id : it.itemId;
+              if (candidate != null && String(candidate) === String(product_id)) {
+                hasPaidThisProduct = true;
+                break;
+              }
+            }
+            if (hasPaidThisProduct) break;
+          }
+
+          if (!hasPaidThisProduct) {
+            setNotice(
+              "🔒 Bạn chưa có giao dịch thanh toán đã được admin duyệt cho sản phẩm này, nên không thể gửi đánh giá.",
+              'error'
+            );
+            if (wrapper) wrapper.style.display = "none";
+            return;
+          }
+
+          // Kiểm tra xem user đã đánh giá sản phẩm này trước đó chưa (1 user / 1 product)
+          try {
+            const rvParams = new URLSearchParams();
+            rvParams.set("product_id", product_id);
+            const rr = await fetch(
+              "/reviews/api/reviews?" + rvParams.toString()
+            );
+            if (rr.ok) {
+              const rj = await rr.json();
+              const list = rj.items || [];
+              const already = list.some(
+                (item) => String(item.buyer_id) === String(currentUserId)
+              );
+              if (already) {
+                setNotice(
+                  "✅ Bạn đã gửi đánh giá cho sản phẩm/người bán này rồi.",
+                  'success'
+                );
+                if (wrapper) wrapper.style.display = "none";
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn(
+              "Không kiểm tra được trạng thái đã đánh giá hay chưa:",
+              e
+            );
+          }
+
+          // Tất cả điều kiện ok → cho hiển thị form đánh giá
+          if (wrapper) wrapper.style.display = "block";
+          if (notice) notice.innerHTML = "";
+        } catch (e) {
+          console.error(e);
+          setNotice("❌ Lỗi khi kiểm tra thanh toán: " + (e.message || e), 'error');
+          if (wrapper) wrapper.style.display = "none";
+        }
+        } else {
+          // Debug mode: skip payment checks and show the form for testing
+          if (wrapper) wrapper.style.display = 'block';
+          if (notice) notice.innerHTML = '<div class="card" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fbbf24; color: #92400e;"><i class="fas fa-code" style="margin-right: 8px;"></i><strong>(Debug)</strong> Form đánh giá được hiển thị bằng ?force_form=1</div>';
+        }
+
+        // Submit form: server vẫn kiểm tra lại toàn bộ điều kiện
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const btn = form.querySelector('button[type="submit"]');
+          if (btn) btn.disabled = true;
+
+          // rating is synced from star UI into hidden select #rating
+          const rating = this.rating.value;
+          const comment = this.comment.value || null;
+
+          const payload = {
+            product_id: product_id,
+            rating: rating,
+            comment: comment,
+          };
+          if (seller_id) payload.seller_id = seller_id;
+
+          try {
+            const res = await fetch("/reviews/api/reviews", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (res.ok) {
+              // Show success message with animation before reload
+              const successMsg = document.createElement('div');
+              successMsg.className = 'card';
+              successMsg.style.cssText = 'background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%); border: 2px solid #22c55e; color: #558b2f; text-align: center; animation: fadeInUp 0.5s ease;';
+              successMsg.innerHTML = '<i class="fas fa-check-circle" style="font-size: 48px; color: #22c55e; margin-bottom: 12px;"></i><div style="font-size: 18px; font-weight: 600;">✨ Đánh giá của bạn đã được gửi thành công!</div><div style="margin-top: 8px; font-size: 14px;">Trang sẽ tự động tải lại...</div>';
+              wrapper.innerHTML = '';
+              wrapper.appendChild(successMsg);
+              wrapper.style.display = 'block';
+              setTimeout(() => location.reload(), 2000);
+            } else {
+              const j = await res.json().catch(() => null);
+              setNotice(
+                "❌ Không thể gửi đánh giá: " +
+                  (j && j.detail ? j.detail : res.status + " " + res.statusText),
+                'error'
+              );
+            }
+          } catch (err) {
+            console.error(err);
+            setNotice("❌ Lỗi kết nối khi gửi đánh giá: " + (err.message || err), 'error');
+          } finally {
+            if (btn) btn.disabled = false;
+          }
+        });
+
+        // --- Star rating UI: render avg and make ratingStars interactive ---
+        (function initStarUI(){
+          function renderStars(container, value, opts){
+            opts = opts || {};
+            const max = opts.max || 5;
+            const round = Math.round(Number(value) || 0);
+            let html = '';
+            for(let i=1;i<=max;i++){
+              if(i<=Math.floor(value)) html += '★';
+              else html += '☆';
+            }
+            container.innerHTML = html;
+          }
+
+          // render average as stars
+          try{
+            const avgEl = document.getElementById('avgStars');
+            const avgNumEl = document.getElementById('avgNumber');
+            const avgVal = {{ 'null' if avg is none else ('%.2f' % avg) }};
+            if(avgEl){
+              renderStars(avgEl, avgVal, {max:5});
+            }
+            if(avgNumEl){
+              // keep numeric already in template
+            }
+          }catch(e){console.warn('avg star render', e)}
+
+          // rating selector stars
+          try{
+            const ratingStars = document.getElementById('ratingStars');
+            const ratingSelect = document.getElementById('rating');
+            if(ratingStars && ratingSelect){
+              // build 5 star buttons
+              ratingStars.innerHTML = '';
+              for(let i=1;i<=5;i++){
+                const span = document.createElement('span');
+                span.className = 'star-btn' + (i==Number(ratingSelect.value)?' active':'');
+                span.dataset.value = i;
+                span.innerText = '★';
+                span.title = i + ' sao';
+                span.addEventListener('click', function(){
+                  const v = this.dataset.value;
+                  // set select value and update active classes
+                  ratingSelect.value = v;
+                  const children = ratingStars.querySelectorAll('.star-btn');
+                  children.forEach((c, idx)=>{
+                    c.classList.toggle('active', idx < Number(v));
+                  });
+                });
+                ratingStars.appendChild(span);
+              }
+              // initialize: if select has default, highlight
+              const initV = Number(ratingSelect.value) || 5;
+              const children = ratingStars.querySelectorAll('.star-btn');
+              children.forEach((c, idx)=> c.classList.toggle('active', idx < initV));
+            }
+          }catch(e){console.warn('rating stars init', e)}
+        })();
+      });
+    </script>
+  </body>
+</html>

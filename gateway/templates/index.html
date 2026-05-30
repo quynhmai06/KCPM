@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sàn Giao Dịch Xe Điện & Pin - XDPM</title>
+    <link rel="stylesheet" href="/static/style.css?v=4.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    {% set actual_user = session.get('user') %}
+    {% if GATEWAY_DEBUG_SESSION %}
+    <div style="background:#333;color:#fff;padding:6px 10px;font-size:13px;text-align:center;">
+      <strong>DEBUG SESSION</strong>
+      {% if actual_user %}
+        — Logged in as: {{ actual_user.get('username') }}
+        {% if actual_user.get('role') %} ({{ actual_user.get('role') }}){% endif %}
+      {% else %}
+        — Not signed in
+      {% endif %}
+      {% if session.get('display_name') %}
+        • display_name: {{ session.get('display_name') }}
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="header">
+      <div class="header-container">
+        <div class="logo-section">
+          <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+          <img src="/static/images/logo.png" alt="EV Trading" class="logo" />
+        </div>
+
+        <div class="user-menu">
+          <a href="{{ url_for('policy_page') }}" class="user-menu-item"
+            >Chính sách</a>
+          {% set actual_user = session.get('user') %}
+          {% if actual_user %}
+          <a href="{{ url_for('favorites_page') }}" class="user-menu-item">
+            <i class="fas fa-heart"></i> Yêu thích
+          </a>
+           {% set display_name = session.get('display_name') or (actual_user.get('full_name') if actual_user else None) or (actual_user.get('username') if actual_user else None) or 'User' %}
+           {% set avatar_initial = (display_name[:1] if display_name else 'U') | upper %}
+
+          <div class="user-avatar-wrap">
+            <button class="avatar-btn" onclick="toggleUserMenu(event)">
+              <span class="avatar-circle">{{ avatar_initial }}</span>
+            </button>
+            <div id="userDropdown" class="user-dropdown" style="display: none">
+              <div class="dropdown-name">{{ display_name }}</div>
+              <a href="{{ url_for('profile') }}" class="dropdown-item"
+                >Quản lý hồ sơ</a
+              >
+              {% if actual_user and (actual_user.get('role')|lower == 'admin') %}
+              <a href="{{ url_for('admin_page') }}" class="dropdown-item">Quản trị</a>
+              {% endif %}
+              <a href="/cart" class="dropdown-item"
+                >Giỏ hàng
+                <span
+                  id="hdrCartCount"
+                  style="
+                    background: #ff6f00;
+                    color: #fff;
+                    padding: 2px 6px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    margin-left: 8px;
+                  "
+                  >0</span
+                ></a
+              >
+              <a href="{{ url_for('logout_page') }}" class="dropdown-item"
+                >Đăng xuất</a
+              >
+            </div>
+          </div>
+
+          <a href="{{ url_for('add_listing') }}" class="post-button"
+            >Đăng tin</a
+          >
+          {% else %}
+          <a href="{{ url_for('login_page') }}" class="user-menu-item"
+            >Đăng nhập</a
+          >
+          <a href="{{ url_for('register_page') }}" class="user-menu-item"
+            >Đăng ký</a
+          >
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <section class="search-section">
+      <div class="search-container">
+        <h1 class="search-title">Sàn Giao Dịch Xe Điện & Pin Cũ</h1>
+        <h2 class="search-subtitle">
+          Tìm kiếm xe điện và pin chất lượng với giá tốt nhất
+        </h2>
+
+        <form action="/" method="GET" class="search-box-wrapper">
+          <div class="search-box">
+            <div class="search-input-group">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                name="q"
+                class="search-input"
+                placeholder="Tìm kiếm theo tên, hãng, model..."
+              />
+            </div>
+
+            <!-- Province selector removed to simplify UI -->
+
+            <select name="item_type" class="type-dropdown">
+              <option value="">Tất cả</option>
+              <option value="vehicle">Xe điện</option>
+              <option value="battery">Pin</option>
+            </select>
+
+            <button type="submit" class="search-button">
+              <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+          </div>
+
+          <div class="quick-filters">
+            <a href="?item_type=vehicle" class="quick-filter">
+              <i class="fas fa-car"></i> Xe điện
+            </a>
+            <a href="?item_type=battery" class="quick-filter">
+              <i class="fas fa-battery-full"></i> Pin
+            </a>
+            <button
+              type="button"
+              class="quick-filter advanced-toggle"
+              onclick="toggleAdvancedFilters()"
+            >
+              <i class="fas fa-sliders-h"></i> Bộ lọc nâng cao
+            </button>
+          </div>
+        </form>
+
+        <!-- Advanced Filters Section (Hidden by default) -->
+        <div
+          id="advancedFilters"
+          class="advanced-filters"
+          style="display: none"
+        >
+          <div class="filters-container">
+            <div class="filter-row">
+              <div class="filter-group">
+                <label><i class="fas fa-tag"></i> Hãng xe/pin</label>
+                <input
+                  type="text"
+                  id="brand"
+                  placeholder="VinFast, Tesla, CATL..."
+                />
+              </div>
+              <div class="filter-group">
+                <label><i class="fas fa-dollar-sign"></i> Giá từ (VNĐ)</label>
+                <input type="number" id="min_price" placeholder="Từ" min="0" />
+              </div>
+              <div class="filter-group">
+                <label><i class="fas fa-dollar-sign"></i> Giá đến (VNĐ)</label>
+                <input type="number" id="max_price" placeholder="Đến" />
+              </div>
+            </div>
+
+            <div class="filter-row">
+              <div class="filter-group">
+                <label><i class="fas fa-calendar"></i> Năm từ</label>
+                <input
+                  type="number"
+                  id="year_from"
+                  placeholder="2020"
+                  min="2015"
+                  max="2025"
+                />
+              </div>
+              <div class="filter-group">
+                <label><i class="fas fa-calendar"></i> Năm đến</label>
+                <input
+                  type="number"
+                  id="year_to"
+                  placeholder="2024"
+                  min="2015"
+                  max="2025"
+                />
+              </div>
+              <div class="filter-group">
+                <label><i class="fas fa-road"></i> Số km tối đa</label>
+                <input type="number" id="mileage_max" placeholder="50000" />
+              </div>
+            </div>
+
+            <div class="filter-row">
+              <div class="filter-group">
+                <label
+                  ><i class="fas fa-battery-three-quarters"></i> Dung lượng pin
+                  từ (kWh)</label
+                >
+                <input
+                  type="number"
+                  id="battery_capacity_min"
+                  placeholder="40"
+                />
+              </div>
+              <div class="filter-group">
+                <label
+                  ><i class="fas fa-battery-full"></i> Dung lượng pin đến
+                  (kWh)</label
+                >
+                <input
+                  type="number"
+                  id="battery_capacity_max"
+                  placeholder="100"
+                />
+              </div>
+              <div class="filter-group">
+                <label><i class="fas fa-sort"></i> Sắp xếp theo</label>
+                <select id="sort">
+                  <option value="newest">Mới nhất</option>
+                  <option value="price_asc">Giá tăng dần</option>
+                  <option value="price_desc">Giá giảm dần</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="btn-apply-filters"
+                onclick="applyAdvancedFilters()"
+              >
+                <i class="fas fa-check"></i> Áp dụng bộ lọc
+              </button>
+              <button
+                type="button"
+                class="btn-reset-filters"
+                onclick="resetFilters()"
+              >
+                <i class="fas fa-redo"></i> Đặt lại
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search Results Section (shows when searching) -->
+    {% if is_search %}
+    <section class="product-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          Kết quả tìm kiếm {% if total %}({{ total }} sản phẩm){% endif %}
+        </h2>
+      </div>
+
+      <div class="product-grid">
+        {% if search_results and search_results|length %} {% for p in
+        search_results %}
+        <div class="product-card">
+          {% if p.verified %}
+          <span class="badge-verified">ĐÃ KIỂM ĐỊNH</span>
+          {% endif %} {% if p.item_type == 'vehicle' %}
+          <span class="badge-type">Ô TÔ</span>
+          {% elif p.item_type == 'battery' %}
+          <span class="badge-type battery">PIN</span>
+          {% endif %}
+          <a href="/listings/{{ p.id }}" style="text-decoration: none; color: inherit">
+            <img
+              src="{{ p.main_image_url or '/static/images/logo.png' }}"
+              alt="{{ p.name }}"
+              class="product-image"
+              onerror="this.onerror=null;this.src='/static/images/logo.png'"
+            />
+            <div class="product-info">
+              <h3 class="product-title">{{ p.name }}</h3>
+              <div class="product-price">{{ "{:,.0f}".format(p.price) }} đ</div>
+              <div class="product-location">
+                <i class="fas fa-map-marker-alt"></i> {{ p.province or '—' }}
+              </div>
+            </div>
+          </a>
+        <div class="product-card-actions">
+          <button
+            class="btn-buy-now"
+            onclick="event.stopPropagation(); buyNowFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+          >
+            <i class="fas fa-bolt"></i> Mua ngay
+          </button>
+          <button
+            class="btn-add-cart"
+            onclick="event.stopPropagation(); addToCartFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+          >
+            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+          </button>
+  </div>
+  </div>
+  {% endfor %} {% else %}
+        <div class="no-results">
+          <i
+            class="fas fa-search"
+            style="font-size: 48px; color: #ccc; margin-bottom: 15px"
+          ></i>
+          <p>Không tìm thấy sản phẩm phù hợp</p>
+          <button
+            onclick="resetFilters()"
+            class="btn-reset-filters"
+            style="margin-top: 15px"
+          >
+            <i class="fas fa-redo"></i> Đặt lại bộ lọc
+          </button>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Pagination -->
+      {% if pages and pages > 1 %}
+      <div class="pagination">
+        {% if current_page > 1 %}
+        <a
+          href="?{{ query_params|urlencode }}&page={{ current_page - 1 }}"
+          class="page-link"
+        >
+          <i class="fas fa-chevron-left"></i> Trước
+        </a>
+        {% endif %}
+
+        <span class="page-info">Trang {{ current_page }} / {{ pages }}</span>
+
+        {% if current_page < pages %}
+        <a
+          href="?{{ query_params|urlencode }}&page={{ current_page + 1 }}"
+          class="page-link"
+        >
+          Sau <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </section>
+    {% else %}
+
+    <!-- Default Featured Listings (shows when not searching) -->
+    <section class="product-section">
+      <div class="section-header">
+        <h2 class="section-title">Xe điện nổi bật</h2>
+        <a href="#" class="view-all">Xem tất cả</a>
+      </div>
+
+      <div class="product-grid">
+        {% if cars and cars|length %} {% for p in cars %}
+        <div class="product-card" style="position: relative">
+          {% if p.verified %}
+          <span class="badge-verified">ĐÃ KIỂM ĐỊNH</span>
+          {% endif %} {% if p.item_type == 'vehicle' %}
+          <span class="badge-type">Ô TÔ</span>
+          {% elif p.item_type == 'battery' %}
+          <span class="badge-type battery">PIN</span>
+          {% endif %}
+
+          <!-- Action Buttons -->
+          <div
+            class="product-actions"
+            onclick="event.preventDefault(); event.stopPropagation();"
+          >
+            {% set is_fav = favorites_ids and (p.id in favorites_ids) %}
+            <button
+              class="product-action-btn favorite-btn {% if is_fav %}favorited{% endif %}"
+              data-item-id="{{ p.id }}"
+              data-item-type="{{ p.item_type }}"
+              data-fav-id="{{ favorites_map.get(p.id) }}"
+              onclick="toggleFavorite(this, {{ p.id }}, '{{ p.item_type }}')"
+              title="Yêu thích"
+            >
+              <i
+                class="{% if is_fav %}fas{% else %}far{% endif %} fa-heart"
+              ></i>
+            </button>
+            <button
+              class="product-action-btn"
+              onclick="toggleCompare({{ p.id }})"
+              title="So sánh"
+            >
+              <i class="fas fa-chart-bar"></i>
+            </button>
+            <!-- Purchase actions moved below to avoid overlapping -->
+          </div>
+
+          <a
+            href="/listings/{{ p.id }}"
+            style="text-decoration: none; color: inherit"
+          >
+            <img
+              src="{{ p.main_image_url or '/static/images/logo.png' }}"
+              alt="{{ p.name }}"
+              class="product-image"
+              onerror="this.onerror=null;this.src='/static/images/logo.png'"
+            />
+            <div class="product-info">
+              <h3 class="product-title">{{ p.name }}</h3>
+              <div class="product-price">{{ "{:,.0f}".format(p.price) }} đ</div>
+              <div class="product-location">
+                <i class="fas fa-map-marker-alt"></i> {{ p.province or '—' }}
+              </div>
+            </div>
+          </a>
+          <div class="product-card-actions">
+            <button
+              class="btn-buy-now"
+              onclick="event.stopPropagation(); buyNowFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+            >
+              <i class="fas fa-bolt"></i> Mua ngay
+            </button>
+            <button
+              class="btn-add-cart"
+              onclick="event.stopPropagation(); addToCartFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+            >
+              <i class="fas fa-shopping-cart"></i> Giỏ hàng
+            </button>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <p>Chưa có xe nào được duyệt.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- =========== PIN XE ĐIỆN =========== -->
+    <section class="product-section">
+      <div class="section-header">
+        <h2 class="section-title">Pin xe điện mới về</h2>
+        <a href="#" class="view-all">Xem tất cả</a>
+      </div>
+
+      <div class="product-grid">
+        {% if batts and batts|length %} {% for p in batts %}
+        <div class="product-card" style="position: relative">
+          {% if p.verified %}
+          <span class="badge-verified">ĐÃ KIỂM ĐỊNH</span>
+          {% endif %} {% if p.item_type == 'vehicle' %}
+          <span class="badge-type">Ô TÔ</span>
+          {% elif p.item_type == 'battery' %}
+          <span class="badge-type battery">PIN</span>
+          {% endif %}
+
+          <!-- Action Buttons -->
+          <div
+            class="product-actions"
+            onclick="event.preventDefault(); event.stopPropagation();"
+          >
+            {% set is_fav_b = favorites_ids and (p.id in favorites_ids) %}
+            <button
+              class="product-action-btn favorite-btn {% if is_fav_b %}favorited{% endif %}"
+              data-item-id="{{ p.id }}"
+              data-item-type="{{ p.item_type }}"
+              data-fav-id="{{ favorites_map.get(p.id) }}"
+              onclick="toggleFavorite(this, {{ p.id }}, '{{ p.item_type }}')"
+              title="Yêu thích"
+            >
+              <i
+                class="{% if is_fav_b %}fas{% else %}far{% endif %} fa-heart"
+              ></i>
+            </button>
+            <button
+              class="product-action-btn"
+              onclick="toggleCompare({{ p.id }})"
+              title="So sánh"
+            >
+              <i class="fas fa-chart-bar"></i>
+            </button>
+            <!-- Purchase actions moved below to avoid overlapping -->
+          </div>
+
+          <a
+            href="/listings/{{ p.id }}"
+            style="text-decoration: none; color: inherit"
+          >
+            <img
+              src="{{ p.main_image_url or '/static/images/logo.png' }}"
+              alt="{{ p.name }}"
+              class="product-image"
+              onerror="this.onerror=null;this.src='/static/images/logo.png'"
+            />
+            <div class="product-info">
+              <h3 class="product-title">{{ p.name }}</h3>
+              <div class="product-price">{{ "{:,.0f}".format(p.price) }} đ</div>
+              <div class="product-location">
+                <i class="fas fa-map-marker-alt"></i> {{ p.province or '—' }}
+              </div>
+            </div>
+          </a>
+          <div class="product-card-actions">
+            <button
+              class="btn-buy-now"
+              onclick="event.stopPropagation(); buyNowFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+            >
+              <i class="fas fa-bolt"></i> Mua ngay
+            </button>
+            <button
+              class="btn-add-cart"
+              onclick="event.stopPropagation(); addToCartFromCard('{{ p.item_type }}', {{ p.id }}, {{ p.price }})"
+            >
+              <i class="fas fa-shopping-cart"></i> Giỏ hàng
+            </button>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <p>Chưa có pin nào được duyệt.</p>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+    <!-- End of featured sections -->
+
+    <div id="authModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span
+          class="close"
+          onclick="document.getElementById('authModal').style.display='none'"
+          >&times;</span
+        >
+        <div class="auth-tabs">
+          <button onclick="showTab('login')">Đăng nhập</button>
+          <button onclick="showTab('register')">Đăng ký</button>
+        </div>
+        <div id="loginTab" class="tab-content">
+          <form
+            id="loginForm"
+            method="POST"
+            action="{{ url_for('login_page') }}"
+          >
+            <input
+              type="text"
+              name="username"
+              placeholder="Tên đăng nhập hoặc email"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Mật khẩu"
+              required
+            />
+            <button type="submit">Đăng nhập</button>
+          </form>
+        </div>
+        <div id="registerTab" class="tab-content" style="display: none">
+          <form
+            id="registerForm"
+            method="POST"
+            action="{{ url_for('register_page') }}"
+          >
+            <input
+              type="text"
+              name="username"
+              placeholder="Tên đăng nhập"
+              required
+            />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="text" name="phone" placeholder="Số điện thoại" />
+            <input
+              type="password"
+              name="password"
+              placeholder="Mật khẩu"
+              required
+            />
+            <input
+              type="password"
+              name="confirm_password"
+              placeholder="Xác nhận mật khẩu"
+              required
+            />
+            <button type="submit">Đăng ký</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="profileModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span
+          class="close"
+          onclick="document.getElementById('profileModal').style.display='none'"
+          >&times;</span
+        >
+        <h2>Hồ sơ cá nhân</h2>
+        <form id="profileForm">
+          <input type="text" name="name" placeholder="Tên" />
+          <input type="date" name="dob" placeholder="Ngày sinh" />
+          <input type="text" name="address" placeholder="Địa chỉ" />
+          <input type="file" name="avatar" accept="image/*" />
+          <button type="submit">Cập nhật hồ sơ</button>
+        </form>
+        <div id="roleInfo"></div>
+      </div>
+    </div>
+
+   <footer class="footer">
+      <div class="footer-container">
+
+        <div class="footer-col">
+          <h3>Liên hệ</h3>
+          <ul>
+            <li><i class="fas fa-phone"></i> Hotline: <strong>0901 234 567</strong></li>
+            <li><i class="fas fa-envelope"></i> Email: support@evplatform.vn</li>
+            <li><i class="fas fa-map-marker-alt"></i> 450 Lê Văn Việt, TP. Thủ Đức, TP.HCM</li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Hỗ trợ người dùng</h3>
+          <ul>
+            <li><i class="fas fa-clock"></i> Giờ hỗ trợ: 08:00 - 21:00</li>
+            <li>
+              <i class="fas fa-file-alt"></i>
+              <a href="{{ url_for('policy_page') }}">Chính sách sàn giao dịch</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Kết nối với chúng tôi</h3>
+          <div class="footer-social">
+            <a href="#"><i class="fab fa-facebook-square"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+            <a href="#"><i class="fab fa-tiktok"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        © 2025 EV Trading Platform. Tất cả quyền được bảo lưu.
+      </div>
+    </footer>
+
+
+    <script>
+      function showTab(tab) {
+        document.getElementById("loginTab").style.display =
+          tab === "login" ? "block" : "none";
+        document.getElementById("registerTab").style.display =
+          tab === "register" ? "block" : "none";
+      }
+      function openAuthModal() {
+        showTab("login");
+        document.getElementById("authModal").style.display = "block";
+      }
+      function toggleUserMenu(e) {
+        e.preventDefault();
+        const dd = document.getElementById("userDropdown");
+        dd.style.display =
+          !dd.style.display || dd.style.display === "none" ? "block" : "none";
+      }
+      document.addEventListener("click", function (ev) {
+        const wrap = document.querySelector(".user-avatar-wrap");
+        const dd = document.getElementById("userDropdown");
+        if (!wrap || !dd) return;
+        if (!wrap.contains(ev.target)) dd.style.display = "none";
+      });
+
+      // Advanced Filters Toggle
+      function toggleAdvancedFilters() {
+        const filters = document.getElementById("advancedFilters");
+        if (filters.style.display === "none") {
+          filters.style.display = "block";
+        } else {
+          filters.style.display = "none";
+        }
+      }
+
+      // Apply Advanced Filters
+      function applyAdvancedFilters() {
+        const params = new URLSearchParams(window.location.search);
+
+        // Get values from advanced filter inputs
+        const brand = document.getElementById("brand").value;
+        const minPrice = document.getElementById("min_price").value;
+        const maxPrice = document.getElementById("max_price").value;
+        const yearFrom = document.getElementById("year_from").value;
+        const yearTo = document.getElementById("year_to").value;
+        const mileageMax = document.getElementById("mileage_max").value;
+        const batteryMin = document.getElementById(
+          "battery_capacity_min"
+        ).value;
+        const batteryMax = document.getElementById(
+          "battery_capacity_max"
+        ).value;
+        const sort = document.getElementById("sort").value;
+
+        // Build query params
+        const newParams = new URLSearchParams();
+        if (brand) newParams.set("brand", brand);
+        if (minPrice) newParams.set("min_price", minPrice);
+        if (maxPrice) newParams.set("max_price", maxPrice);
+        if (yearFrom) newParams.set("year_from", yearFrom);
+        if (yearTo) newParams.set("year_to", yearTo);
+        if (mileageMax) newParams.set("mileage_max", mileageMax);
+        if (batteryMin) newParams.set("battery_capacity_min", batteryMin);
+        if (batteryMax) newParams.set("battery_capacity_max", batteryMax);
+        if (sort && sort !== "newest") newParams.set("sort", sort);
+
+        // Keep existing q, province, item_type from main form
+        const q = document.querySelector('input[name="q"]').value;
+        const provinceEl = document.querySelector('select[name="province"]');
+        const province = provinceEl ? provinceEl.value : "";
+        const itemType = document.querySelector(
+          'select[name="item_type"]'
+        ).value;
+
+        if (q) newParams.set("q", q);
+        if (province) newParams.set("province", province);
+        if (itemType) newParams.set("item_type", itemType);
+
+        // Reload page with new params
+        window.location.href = "?" + newParams.toString();
+      }
+
+      // Reset Filters
+      function resetFilters() {
+        document.getElementById("brand").value = "";
+        document.getElementById("min_price").value = "";
+        document.getElementById("max_price").value = "";
+        document.getElementById("year_from").value = "";
+        document.getElementById("year_to").value = "";
+        document.getElementById("mileage_max").value = "";
+        document.getElementById("battery_capacity_min").value = "";
+        document.getElementById("battery_capacity_max").value = "";
+        document.getElementById("sort").value = "newest";
+
+        // Also reset main form
+        document.querySelector('input[name="q"]').value = "";
+        const provEl = document.querySelector('select[name="province"]');
+        if (provEl) provEl.value = "";
+        document.querySelector('select[name="item_type"]').value = "";
+
+        // Reload without params
+        window.location.href = window.location.pathname;
+      }
+
+      // Favorites state preload from server-render
+      var FAVORITES_IDS = new Set([
+        {% if favorites_ids %}{% for fid in favorites_ids %}{{ fid }},{% endfor %}{% endif %}
+      ]);
+      var FAVORITES_MAP = { {% if favorites_map %}{% for k,v in favorites_map.items() %} {{ k }}: {{ v }},{% endfor %}{% endif %} };
+
+      function toggleFavorite(btn, itemId, itemType) {
+        if (!btn) return;
+        const isFav = btn.classList.contains('favorited');
+        if (isFav) {
+          // Remove
+            fetch('/favorites/remove_by_item', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ item_id: itemId })
+            })
+            .then(r => r.json().then(j => ({ok: r.ok, j})))
+            .then(res => {
+              if (res.ok && res.j.ok) {
+                FAVORITES_IDS.delete(itemId);
+                delete FAVORITES_MAP[itemId];
+                btn.classList.remove('favorited');
+                const icon = btn.querySelector('i');
+                if (icon) { icon.classList.remove('fas'); icon.classList.add('far'); }
+              } else {
+                alert('Không xóa được yêu thích: ' + (res.j.error || 'lỗi')); }
+            })
+            .catch(() => alert('Lỗi kết nối khi xóa yêu thích'));
+        } else {
+          // Add
+          fetch('/favorites/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: itemId, item_type: itemType || 'vehicle' })
+          })
+          .then(r => r.json().then(j => ({ok: r.ok, status: r.status, j})))
+          .then(res => {
+            if (res.ok || res.status === 201) {
+              FAVORITES_IDS.add(itemId);
+              if (res.j.id) FAVORITES_MAP[itemId] = res.j.id;
+              btn.classList.add('favorited');
+              const icon = btn.querySelector('i');
+              if (icon) { icon.classList.remove('far'); icon.classList.add('fas'); }
+            } else if (res.status === 409) {
+              // already exists treat as success and reflect state
+              FAVORITES_IDS.add(itemId);
+              btn.classList.add('favorited');
+              const icon = btn.querySelector('i');
+              if (icon) { icon.classList.remove('far'); icon.classList.add('fas'); }
+            } else {
+              alert('Không thể thêm yêu thích: ' + (res.j.error || 'lỗi'));
+            }
+          })
+          .catch(() => alert('Lỗi kết nối khi thêm yêu thích'));
+        }
+      }
+
+      // Compare items
+      let compareList = JSON.parse(localStorage.getItem("compareList") || "[]");
+
+      function toggleCompare(itemId) {
+        // Ensure itemId is a number
+        itemId = parseInt(itemId);
+        if (isNaN(itemId)) return;
+
+        const idx = compareList.indexOf(itemId);
+        if (idx > -1) {
+          compareList.splice(idx, 1);
+          alert("Đã xóa khỏi danh sách so sánh");
+        } else {
+          if (compareList.length >= 4) {
+            alert("Chỉ có thể so sánh tối đa 4 sản phẩm");
+            return;
+          }
+          compareList.push(itemId);
+          alert("Đã thêm vào danh sách so sánh");
+        }
+        localStorage.setItem("compareList", JSON.stringify(compareList));
+        updateCompareButton();
+      }
+
+      function updateCompareButton() {
+        const btn = document.getElementById("compareBtn");
+        if (btn) {
+          btn.style.display = compareList.length > 0 ? "block" : "none";
+          btn.textContent = `So sánh (${compareList.length})`;
+        }
+      }
+
+      function goToCompare() {
+        if (compareList.length < 2) {
+          alert("Vui lòng chọn ít nhất 2 sản phẩm để so sánh");
+          return;
+        }
+        // Ensure all IDs are numbers
+        const validIds = compareList
+          .filter((id) => !isNaN(parseInt(id)))
+          .map((id) => parseInt(id));
+        window.location.href = "/compare?ids=" + validIds.join(",");
+      }
+
+      // Initialize compare button
+      document.addEventListener("DOMContentLoaded", function () {
+        updateCompareButton();
+        // update header cart count from localStorage
+        try {
+          const cart = JSON.parse(localStorage.getItem('cart')||'[]');
+          const el = document.getElementById('hdrCartCount');
+          if (el) el.textContent = (cart && cart.length) ? cart.length : 0;
+        } catch(e){}
+      });
+
+      // --- Purchase helper functions ---
+      function buyNowFromCard(itemType, itemId, price) {
+        // Add item to client-side cart (qty=1 or increment) then go to cart for checkout
+        try { itemId = parseInt(itemId); } catch (e) {}
+        if (!itemId) return alert('Sản phẩm không hợp lệ');
+        try {
+          const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+          const idx = cart.findIndex(c => Number(c.item_id) === Number(itemId));
+          if (idx >= 0) {
+            // Item already in cart, do not increment (only 1 allowed) — navigate to cart
+            window.location.href = '/cart';
+            return;
+          } else {
+            cart.push({ item_type: itemType, item_id: itemId, price: price || 0, qty: 1 });
+          }
+          localStorage.setItem('cart', JSON.stringify(cart));
+          // update header badge if present
+          try {
+            const el = document.getElementById('hdrCartCount');
+            if (el) el.textContent = cart.reduce((s, c) => s + (c.qty || 0), 0);
+          } catch (e) {}
+        } catch (e) {
+          console.error('cart error', e);
+        }
+        // send user to cart to complete checkout
+        window.location.href = '/cart';
+      }
+
+      function addToCartFromCard(itemType, itemId, price) {
+        try {
+          itemId = parseInt(itemId);
+        } catch (e) {}
+        if (!itemId) return alert('Sản phẩm không hợp lệ');
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const exists = cart.find(c => Number(c.item_id) === Number(itemId));
+        if (exists) {
+          alert('Sản phẩm đã có trong giỏ hàng');
+          return;
+        }
+        cart.push({ item_type: itemType, item_id: itemId, price: price || 0, qty: 1 });
+        localStorage.setItem('cart', JSON.stringify(cart));
+        // update header badge if present
+        try {
+          const el = document.getElementById('hdrCartCount');
+          if (el) el.textContent = cart.reduce((s, c) => s + (c.qty || 0), 0);
+        } catch (e) {}
+        alert('Đã thêm vào giỏ hàng');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin • EV & Battery Platform</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <img src="/static/images/logo.png" alt="EV Trading" class="logo"/>
+      </div>
+      <div class="user-menu">
+        {% if is_admin %}
+          <a href="{{ url_for('admin_logout') }}" class="user-menu-item">Đăng xuất</a>
+        {% else %}
+          <a href="#" class="user-menu-item" onclick="openAdminLogin(event)">Đăng nhập</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="container admin-container">
+    <div class="admin-heading">
+      <div>
+        <h1 class="page-title">Bảng điều khiển Admin</h1>
+        <p class="page-subtitle">Quản trị nền tảng giao dịch EV & Pin đã qua sử dụng</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-label">Thành viên</span>
+          <span class="stat-value">{{ users|length if users is defined else 0 }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tin chờ duyệt</span>
+          <span class="stat-value">
+            {% if products is defined %}
+              {{ products | selectattr('approved', 'equalto', False) | list | length }}
+            {% else %}0{% endif %}
+          </span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Giao dịch</span>
+          <span class="stat-value">{{ transactions|length if transactions is defined else 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" id="adminTabs">
+      <a class="tab active" data-tab="overview"><i class="fa-solid fa-gauge"></i> Tổng quan</a>
+      <a class="tab" data-tab="users"><i class="fa-solid fa-users"></i> Thành viên</a>
+      <a class="tab" data-tab="products"><i class="fa-solid fa-car"></i> Bài đăng</a>
+      <a class="tab" data-tab="transactions"><i class="fa-solid fa-receipt"></i> Giao dịch</a>
+    </div>
+
+    <!-- ===== THÀNH VIÊN ===== -->
+    <section class="admin-card" id="users">
+      <div class="section-head">
+        <h2 class="section-title"><i class="fa-solid fa-users"></i> Quản lý thành viên</h2>
+      </div>
+      <div class="section-tools">
+        <select id="filterUsers" class="select">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="pending">Chờ duyệt</option>
+          <option value="approved">Đã duyệt</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên đăng nhập</th>
+              <th>Email</th>
+              <th>Quyền</th>
+              <th>Trạng thái</th>
+              <th class="th-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if users is defined and users|length %}
+              {% for user in users %}
+              <tr data-status="{{ 'approved' if user.approved else 'pending' }}">
+                <td>{{ user.id }}</td>
+                <td class="td-strong">{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="chip {{ 'chip-success' if user.is_admin else 'chip-muted' }}">
+                    {{ 'Admin' if user.is_admin else 'Member' }}
+                  </span>
+                </td>
+                <td>
+                  {% if user.approved %}
+                    <span class="chip chip-success">Đã duyệt</span>
+                  {% else %}
+                    <span class="chip chip-warning">Chờ duyệt</span>
+                    <form action="{{ url_for('approve_user', user_id=user.id) }}" method="post" style="display:inline">
+                      <button class="btn btn-ghost success" type="submit">
+                        <i class="fa-regular fa-circle-check"></i> Duyệt
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+                <td class="td-actions">
+                  <a class="btn btn-ghost danger" 
+                    href="{{ url_for('delete_user', user_id=user.id) }}"
+                    onclick="return confirm('Bạn có chắc chắn muốn khóa tài khoản này?')">
+                    <i class="fa-regular fa-trash-can"></i> Khóa
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="6" class="td-empty">Chưa có dữ liệu</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== BÀI ĐĂNG ===== -->
+    <section class="admin-card" id="products">
+      <div class="section-head">
+        <h2 class="section-title"><i class="fa-solid fa-car"></i> Bài đăng</h2>
+        {% if is_admin %}
+          <div class="section-tools">
+            <select id="filterPostsStatus" class="select">
+              <option value=""  {{ ''==cur_status and 'selected' or '' }}>Tất cả trạng thái</option>
+              <option value="pending"  {{ 'pending'==cur_status and 'selected' or '' }}>Chờ duyệt</option>
+              <option value="approved" {{ 'approved'==cur_status and 'selected' or '' }}>Đã duyệt</option>
+              <option value="spam"     {{ 'spam'==cur_status and 'selected' or '' }}>Spam</option>
+            </select>
+            <select id="filterPostsVerified" class="select">
+              <option value=""  {{ ''==cur_verified and 'selected' or '' }}>Tất cả kiểm định</option>
+              <option value="1" {{ '1'==cur_verified and 'selected' or '' }}>Đã kiểm định</option>
+              <option value="0" {{ '0'==cur_verified and 'selected' or '' }}>Chưa kiểm định</option>
+            </select>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if not is_admin %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tên sản phẩm</th>
+                <th>Chủ sở hữu</th>
+                <th>Giá</th>
+                <th>Trạng thái</th>
+                <th class="th-actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" class="td-empty">Chưa có dữ liệu</td></tr>
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tên sản phẩm</th>
+                <th>Chủ sở hữu</th>
+                <th>Giá</th>
+                <th>Trạng thái</th>
+                <th class="th-actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if products is defined and products|length %}
+                {% for p in products %}
+                {% set row_status = 'spam' if p.status == 'spam' else ('approved' if p.approved else 'pending') %}
+                <tr data-status="{{ row_status }}" data-verified="{{ '1' if p.verified else '0' }}">
+                  <td>{{ p.id }}</td>
+                  <td class="td-strong">
+                    <a href="{{ url_for('product_detail', pid=p.id) }}">{{ p.name }}</a>
+                    {% if p.verified %}
+                      <span class="chip chip-success" style="margin-left:6px;">ĐÃ KIỂM ĐỊNH</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ p.owner.username if p.owner is mapping else p.owner }}</td>
+                  <td style="white-space:nowrap; font-size:18px; letter-spacing:1px;">
+                    {{ "{:,.0f}".format(p.price) }} đ
+                  </td>
+                  <td>
+                    <span class="chip {{ 'chip-success' if p.approved else 'chip-warning' }}">
+                      {{ 'Đã duyệt' if p.approved else 'Chờ duyệt' }}
+                    </span>
+                  </td>
+                  <td class="td-actions">
+                    {% if not p.approved %}
+                      <a class="btn btn-ghost success" href="/admin/approve/{{ p.id }}">
+                        <i class="fa-regular fa-circle-check"></i> Duyệt
+                      </a>
+                    {% endif %}
+
+                    {% if p.status == 'spam' %}
+                      <form action="{{ url_for('unspam', pid=p.id) }}" method="post" style="display:inline">
+                        <button class="btn btn-ghost warning"><i class="fa-solid fa-rotate-left"></i> Bỏ spam</button>
+                      </form>
+                    {% else %}
+                      <form action="{{ url_for('mark_spam', pid=p.id) }}" method="post" style="display:inline">
+                        <button class="btn btn-ghost warning"><i class="fa-solid fa-ban"></i> Spam</button>
+                      </form>
+                    {% endif %}
+
+                    {% if p.verified %}
+                      <form action="{{ url_for('unverify', pid=p.id) }}" method="post" style="display:inline">
+                        <button class="btn btn-ghost danger"><i class="fa-regular fa-circle-xmark"></i> Bỏ kiểm định</button>
+                      </form>
+                    {% else %}
+                      <form action="{{ url_for('verify', pid=p.id) }}" method="post" style="display:inline">
+                        <button class="btn btn-ghost success"><i class="fa-solid fa-shield-halved"></i> Gắn kiểm định</button>
+                      </form>
+                    {% endif %}
+
+                    <a class="btn btn-ghost danger" href="/admin/delete/{{ p.id }}">
+                      <i class="fa-regular fa-trash-can"></i> Xóa
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="6" class="td-empty">Chưa có dữ liệu</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- ===== GIAO DỊCH / DOANH THU ===== -->
+    <section class="admin-card" id="transactions">
+      <div class="section-head">
+        <h2 class="section-title"><i class="fa-solid fa-receipt"></i> Báo cáo giao dịch</h2>
+      </div>
+
+      {% if is_admin %}
+      <!-- Tổng quan doanh thu -->
+      <div class="stats-row stats-row-sm" id="revenueSummary">
+        <div class="stat-card stat-card-soft">
+          <span class="stat-label">Tổng giá trị giao dịch</span>
+          <span class="stat-value" id="totalGross">0 đ</span>
+        </div>
+        <div class="stat-card stat-card-soft">
+          <span class="stat-label">Doanh thu nền tảng (VAT)</span>
+          <span class="stat-value" id="totalVat">0 đ</span>
+        </div>
+        <div class="stat-card stat-card-soft">
+          <span class="stat-label">Tiền thực nhận của người bán</span>
+          <span class="stat-value" id="totalSellerNet">0 đ</span>
+        </div>
+      </div>
+
+      <!-- Bảng chi tiết giao dịch -->
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Sản phẩm</th>
+              <th>Người mua</th>
+              <th>Người bán</th>
+              <th>Ngày giao dịch</th>
+              <th>Trạng thái</th>
+              <th>Số tiền</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="tx-body">
+            <tr><td colspan="8" style="text-align:center;color:#999">Đang tải dữ liệu…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <script>
+      (async function loadReports(){
+        try {
+          const r = await fetch('/payment/admin/reports?limit=100', { credentials: 'omit' });
+          if (!r.ok) {
+            const text = await r.text();
+            throw new Error(`HTTP ${r.status} ${r.statusText} - ${text.slice(0,120)}`);
+          }
+
+          const d = await r.json();
+          const tbody  = document.getElementById('tx-body');
+
+          const IS_ADMIN = true; // đã kiểm tra bằng Jinja ở ngoài
+          const fmtMoney = v => (v || 0).toLocaleString('vi-VN');
+          const fmtDate  = iso => iso ? new Date(iso).toLocaleString('vi-VN') : '';
+          const chip = s => {
+            const mapColor = { pending: '#f59e0b', paid: '#16a34a', canceled: '#ef4444', failed: '#ef4444', refunded: '#2563eb' };
+            const labels   = { pending: 'Chờ duyệt', paid: 'Đã thanh toán', canceled: 'Đã hủy', failed: 'Thất bại', refunded: 'Đã hoàn tiền' };
+            const key = (s || '').toLowerCase();
+            const color = mapColor[key] || '#6b7280';
+            const label = labels[key] || s || '';
+            return `<span class="chip" style="padding:2px 8px;border-radius:999px;color:#fff;background:${color};font-size:12px">${label}</span>`;
+          };
+
+          const items = d.items || [];
+
+          // Tính tổng trên FE nếu backend không trả totals
+          let totals = d.totals;
+          if (!totals) {
+            const isPaidLike = (st) => {
+              const s = String(st || '').toLowerCase().trim();
+              return ['paid', 'completed', 'done'].includes(s);
+            };
+            let paidRows = items.filter(it => isPaidLike(it.status));
+            if (!paidRows.length && items.length) paidRows = items;
+
+            const sum = fn => paidRows.reduce((acc, it) => acc + (fn(it) || 0), 0);
+            totals = {
+              total_gross:      sum(it => it.amount),
+              total_vat:        sum(it => it.vat_amount),
+              total_seller_net: sum(it => it.seller_net_amount),
+            };
+          }
+
+          // Gán 3 ô tổng
+          const grossEl  = document.getElementById('totalGross');
+          const vatEl    = document.getElementById('totalVat');
+          const sellerEl = document.getElementById('totalSellerNet');
+
+          if (grossEl)  grossEl.textContent  = fmtMoney(totals.total_gross || 0) + ' đ';
+          if (vatEl)    vatEl.textContent    = fmtMoney(totals.total_vat || 0) + ' đ';
+          if (sellerEl) sellerEl.textContent = fmtMoney(totals.total_seller_net || 0) + ' đ';
+
+          // Bảng chi tiết
+          if (!items.length) {
+            tbody.innerHTML = `<tr><td colspan="8" class="td-empty">Chưa có dữ liệu</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = items.map((t, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td class="td-strong">${t.product_name || ('Đơn ' + t.order_id)}</td>
+              <td>${t.buyer_name || ('#' + (t.buyer_id ?? ''))}</td>
+              <td>${t.seller_name || ('#' + (t.seller_id ?? ''))}</td>
+              <td>${fmtDate(t.created_at)}</td>
+              <td>${chip(t.status)}</td>
+              <td>
+                <div><b>${fmtMoney(t.amount)} đ</b></div>
+                <div class="money-meta">
+                  VAT nền tảng: ${fmtMoney(t.vat_amount || 0)} đ<br>
+                  Người bán nhận: ${fmtMoney(t.seller_net_amount || 0)} đ
+                </div>
+              </td>
+              <td>
+                <a href="${t.pay_url}" target="_blank" class="btn btn-sm">Xem</a>
+                <button onclick="approve(${t.id})" class="btn btn-sm btn-success">Duyệt</button>
+                <button onclick="reject(${t.id})" class="btn btn-sm btn-danger">Từ chối</button>
+              </td>
+            </tr>
+          `).join('');
+
+        } catch (e) {
+          console.error(e);
+          document.getElementById('tx-body').innerHTML =
+            `<tr><td colspan="8" style="text-align:center;color:red">Không tải được: ${e.message}</td></tr>`;
+        }
+      })();
+
+      async function approve(id) {
+        const r = await fetch(`/payment/admin/approve/${id}`, { method: 'POST' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { alert(d.error || 'Lỗi duyệt'); return; }
+        alert('✅ Đã duyệt');
+        location.reload();
+      }
+
+      async function reject(id) {
+        const r = await fetch(`/payment/admin/reject/${id}`, { method: 'POST' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { alert(d.error || 'Lỗi từ chối'); return; }
+        alert('⛔ Đã từ chối');
+        location.reload();
+      }
+      </script>
+
+      {% else %}
+      <!-- Non-admin: chỉ hiển thị thông báo, không gọi API -->
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Sản phẩm</th>
+              <th>Người mua</th>
+              <th>Người bán</th>
+              <th>Ngày giao dịch</th>
+              <th>Trạng thái</th>
+              <th>Số tiền</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="8" class="td-empty">
+                Chưa có dữ liệu
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </section>
+
+  </main>
+
+  <!-- Modal đăng nhập admin -->
+  <div id="adminLoginModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:420px;margin:auto;">
+      <span class="close" onclick="closeAdminLogin()">&times;</span>
+      <h2 style="margin-top:0;">Đăng nhập Quản trị</h2>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages" style="margin:10px 0;">
+            {% for category, message in messages %}
+              <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('admin_login') }}">
+        <input type="text" name="username" placeholder="Tên đăng nhập" required
+              style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin:8px 0;">
+        <input type="password" name="password" placeholder="Mật khẩu" required
+              style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin:8px 0;">
+        <button type="submit"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer">
+          <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openAdminLogin(e){ if(e) e.preventDefault(); document.getElementById('adminLoginModal').style.display='block'; }
+    function closeAdminLogin(){ document.getElementById('adminLoginModal').style.display='none'; }
+    window.addEventListener('click', function(ev){
+      const m = document.getElementById('adminLoginModal');
+      if (ev.target === m) m.style.display = 'none';
+    });
+
+    // Tabs: Tổng quan / Thành viên / Bài đăng / Giao dịch
+    (function(){
+      const TITLE_MAP = [
+        { key: 'users',        includes: ['Quản lý thành viên','Quản lí thành viên','Thành viên'] },
+        { key: 'products',     includes: ['Duyệt bài đăng','Bài đăng'] },
+        { key: 'transactions', includes: ['Báo cáo giao dịch','Giao dịch'] },
+      ];
+      const VALID = ['overview','users','products','transactions'];
+
+      const tabs = Array.from(document.querySelectorAll('#adminTabs .tab, .tabs .tab, .tabs a, .tabs button'))
+        .filter(el => /tổng quan|thành viên|bài đăng|giao dịch/i.test(el.textContent || ''));
+
+      tabs.forEach(el => {
+        const t = (el.dataset.tab || el.textContent || '').toLowerCase();
+        if (!el.dataset.tab) {
+          if (/tổng quan/i.test(t)) el.dataset.tab = 'overview';
+          else if (/thành viên/i.test(t)) el.dataset.tab = 'users';
+          else if (/bài đăng/i.test(t)) el.dataset.tab = 'products';
+          else if (/giao dịch/i.test(t)) el.dataset.tab = 'transactions';
+        }
+      });
+
+      const cardSelectors = '.admin-card, section, .card';
+      const cards = Array.from(document.querySelectorAll(cardSelectors))
+        .filter(el => {
+          const heading = el.querySelector('h1,h2,h3,h4,.card-title,.title,.header');
+          return heading && heading.textContent && heading.textContent.trim().length > 0;
+        });
+
+      const panels = [];
+      cards.forEach(card => {
+        const heading = card.querySelector('h1,h2,h3,h4,.card-title,.title,.header');
+        const text = (heading.textContent || '').trim();
+        for (const m of TITLE_MAP) {
+          if (m.includes.some(s => text.toLowerCase().includes(s.toLowerCase()))) {
+            card.dataset.section = m.key;
+            panels.push(card);
+            break;
+          }
+        }
+      });
+      if (panels.length === 0) return;
+
+      function activate(view){
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === view));
+        if (view === 'overview') {
+          panels.forEach(p => p.classList.remove('is-hidden'));
+        } else {
+          panels.forEach(p => p.classList.toggle('is-hidden', p.dataset.section !== view));
+        }
+      }
+      function initFromHash(){
+        const h = (location.hash || '#overview').slice(1);
+        const view = VALID.includes(h) ? h : 'overview';
+        activate(view);
+      }
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          const view = tab.dataset.tab;
+          if (!VALID.includes(view)) return;
+          history.replaceState(null, '', '#' + view);
+          activate(view);
+        });
+      });
+      window.addEventListener('hashchange', initFromHash);
+      initFromHash();
+    })();
+
+    // Bộ lọc Users
+    (function(){
+      function setupStatusFilter(selectId, sectionSelector){
+        const sel = document.getElementById(selectId);
+        const section = document.querySelector(sectionSelector);
+        if (!sel || !section) return;
+        const rows = Array.from(section.querySelectorAll('tbody tr'));
+
+        function ensureStatus(tr){
+          if (tr.dataset.status) return tr.dataset.status;
+          const t = (tr.innerText || '').toLowerCase();
+          if (t.includes('chờ duyệt')) return tr.dataset.status = 'pending';
+          if (t.includes('đã duyệt')) return tr.dataset.status = 'approved';
+          return tr.dataset.status = 'unknown';
+        }
+        rows.forEach(ensureStatus);
+
+        function apply(){
+          const v = sel.value;
+          rows.forEach(tr => {
+            const st = tr.dataset.status || ensureStatus(tr);
+            tr.classList.toggle('is-hidden', !(v === 'all' || v === st));
+          });
+        }
+        sel.addEventListener('change', apply);
+        window.addEventListener('hashchange', apply);
+        apply();
+      }
+      setupStatusFilter('filterUsers', '#users');
+    })();
+
+    // Bộ lọc Bài đăng
+    (function(){
+      const section = document.querySelector('#products');
+      if (!section) return;
+
+      const selStatus   = document.getElementById('filterPostsStatus');
+      const selVerified = document.getElementById('filterPostsVerified');
+
+      const rows = Array.from(section.querySelectorAll('tbody tr'))
+        .filter(tr => !tr.querySelector('.td-empty'));
+
+      function ensureDataset(tr){
+        if (!tr.dataset.status){
+          const stCell = tr.querySelector('td:nth-child(5)');
+          const txt = (stCell ? stCell.textContent : '').toLowerCase();
+          if (txt.includes('đã duyệt')) tr.dataset.status = 'approved';
+          else if (txt.includes('chờ duyệt')) tr.dataset.status = 'pending';
+          else if (txt.includes('spam')) tr.dataset.status = 'spam';
+          else tr.dataset.status = 'unknown';
+        }
+        if (!tr.dataset.verified){
+          const nameCell = tr.querySelector('td:nth-child(2)');
+          tr.dataset.verified = (nameCell && /đã kiểm định/i.test(nameCell.textContent)) ? '1' : '0';
+        }
+      }
+      rows.forEach(ensureDataset);
+
+      function applyFilter(){
+        const wantStatus   = selStatus   ? (selStatus.value   || '') : '';
+        const wantVerified = selVerified ? (selVerified.value || '') : '';
+
+        rows.forEach(tr => {
+          ensureDataset(tr);
+          const okStatus   = !wantStatus   || tr.dataset.status   === wantStatus;
+          const okVerified = !wantVerified || tr.dataset.verified === wantVerified;
+          tr.classList.toggle('is-hidden', !(okStatus && okVerified));
+        });
+      }
+
+      if (selStatus)   selStatus.addEventListener('change', applyFilter);
+      if (selVerified) selVerified.addEventListener('change', applyFilter);
+      applyFilter();
+    })();
+  </script>
+
+  <style>
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:none}
+    .modal-content{background:#fff;border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+    .close{float:right;font-size:24px;cursor:pointer}
+    .flash-message{padding:10px;border-radius:10px;margin-bottom:8px}
+    .flash-success{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+    .flash-error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .is-hidden { display: none !important; }
+    .tab.active { font-weight: 700; }
+    .section-head{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .section-tools{ margin-left:auto; display:flex; gap:8px; }
+
+    /* Nhóm card doanh thu nhỏ ở phần giao dịch */
+    .stats-row-sm {
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-card-soft {
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+    }
+    .stat-card-soft .stat-label {
+      font-size:12px;
+      color:#92400e;
+      text-transform:uppercase;
+    }
+    .stat-card-soft .stat-value {
+      font-size:18px;
+      font-weight:700;
+      color:#b45309;
+    }
+    .money-meta {
+      font-size:12px;
+      color:#6b7280;
+      margin-top:4px;
+      line-height:1.4;
+    }
+  </style>
+
+  <footer class="footer">
+    <p>© 2025 EV Trading Platform. Tất cả quyền được bảo lưu.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hồ sơ cá nhân</title>
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --card: #fff;
+        --text: #111827;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --primary: #111827;
+        --ok: #059669;
+        --err: #b91c1c;
+        --chip: #eef2ff;
+        --chip-text: #3730a3;
+        --chip2: #ecfeff;
+        --chip2-text: #155e75;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Ubuntu, Cantarell, Noto Sans, sans-serif;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .hidden {
+        display: none;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 28px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      header .subtitle {
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .btn {
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 10px;
+        border: 1px solid var(--primary);
+        background: var(--primary);
+        color: #fff;
+        cursor: pointer;
+      }
+      .btn.ghost {
+        background: #fff;
+        color: var(--primary);
+        border-color: var(--border);
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .btn.sm {
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        margin-bottom: 14px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .tab-btn {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .tab-btn.active {
+        background: #111827;
+        color: #fff;
+        border-color: #111827;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* Profile */
+      .profile-section {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+      }
+      .avatar-wrap {
+        position: relative;
+        display: block;
+        width: 180px;
+      }
+      .avatar {
+        width: 180px;
+        height: 180px;
+        border-radius: 14px;
+        object-fit: cover;
+        border: 1px solid var(--border);
+        background: #f9fafb;
+      }
+      .avatar-edit {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        text-align: center;
+        font-size: 13px;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 10px;
+      }
+      .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: 100%;
+      }
+      .info-row {
+        display: grid;
+        grid-template-columns: 160px 1fr auto;
+        align-items: center;
+        gap: 10px;
+      }
+      .info-row label {
+        font-weight: 600;
+        color: #4b5563;
+      }
+      .value {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        font-size: 16px;
+        width: 100%;
+      }
+      .input-lg,
+      .select-lg {
+        height: 48px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-size: 16px;
+        width: 100%;
+        background: #fff;
+        outline: none;
+      }
+      .icon-btn {
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: #fff;
+      }
+      .edit-group {
+        display: none;
+        gap: 8px;
+      }
+      .has-editing .edit-group {
+        display: flex;
+      }
+      .status {
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      /* Ẩn/hiện per-field */
+      .info-row .edit-only {
+        display: none;
+      }
+      .info-row.editing .edit-only {
+        display: block;
+      }
+      .info-row.editing .view-only {
+        display: none;
+      }
+
+      /* Listings */
+      .listings {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      /* Purchases */
+      .purchase-listings {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .purchase-card {
+        display: flex;
+        gap: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        align-items: center;
+        background: var(--card);
+      }
+      .purchase-card img {
+        width: 120px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #f3f4f6;
+        flex: 0 0 120px;
+      }
+      .purchase-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1 1 auto;
+      }
+      .purchase-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      /* Modal for quick review */
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal .card {
+        width: 480px;
+        max-width: 95%;
+      }
+      .modal .stars {
+        font-size: 24px;
+      }
+      .modal .star-btn {
+        font-size: 24px;
+      }
+
+      .listing {
+        display: flex;
+        gap: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .listing img {
+        width: 120px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #f3f4f6;
+      }
+      .chip {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--chip-text);
+        font-size: 12px;
+      }
+      .chip2 {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--chip2);
+        color: var(--chip2-text);
+        font-size: 12px;
+      }
+
+      /* Table */
+      .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+      }
+      .table th {
+        font-size: 12px;
+        color: #6b7280;
+        text-align: left;
+        padding: 0 10px;
+      }
+      .table td {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: none;
+        border-right: none;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      @media (max-width: 980px) {
+        .profile-section {
+          flex-direction: column;
+          align-items: center;
+        }
+        .avatar-wrap,
+        .avatar {
+          width: 140px;
+          height: 140px;
+        }
+        .listings {
+          grid-template-columns: 1fr;
+        }
+        .info-row {
+          grid-template-columns: 120px 1fr auto;
+        }
+      }
+    </style>
+  </head>
+  <body
+    data-auth-base="/auth"
+    data-listings-base="/listings"
+    data-payments-base="/payments"
+  >
+    <div class="container">
+      <header>
+        <div>
+          <h1>Hồ sơ cá nhân</h1>
+          <p class="subtitle">
+            Xem bài đăng, giao dịch và chỉnh sửa thông tin của bạn
+          </p>
+        </div>
+        <!-- Quick link: My Orders -->
+        <div style="display: flex; align-items: center; gap: 8px">
+          <button id="myOrdersBtn" class="btn sm" title="Đơn hàng của tôi">
+            Đơn hàng của tôi
+          </button>
+        </div>
+        {% if GATEWAY_DEBUG_SESSION %} {% set actual_user = session.get('user')
+        %}
+        <div
+          style="
+            background: #333;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 13px;
+            text-align: center;
+          "
+        >
+          <strong>DEBUG SESSION</strong>
+          {% if actual_user %} — Logged in as: {{ actual_user.get('username') }}
+          {% if actual_user.get('role') %} ({{ actual_user.get('role') }}){%
+          endif %} {% else %} — Not signed in {% endif %}
+        </div>
+        {% endif %}
+      </header>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="info">
+          Thông tin cá nhân
+        </button>
+        <button class="tab-btn" data-tab="listings">Bài đăng của tôi</button>
+        <button class="tab-btn" data-tab="transactions">
+          Lịch sử giao dịch
+        </button>
+      </div>
+
+      <!-- Thông tin cá nhân -->
+      <section class="card tab-panel active" id="panel-info">
+        <div class="profile-section">
+          <div class="avatar-col">
+            <label
+              class="avatar-wrap"
+              for="avatarInput"
+              title="Đổi ảnh đại diện"
+            >
+              <img id="avatarImg" alt="Avatar" class="avatar" />
+              <input
+                id="avatarInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+              />
+              <span class="avatar-edit">Đổi ảnh</span>
+            </label>
+          </div>
+
+          <form id="profileForm" style="flex: 1">
+            <div class="row" style="margin-bottom: 10px">
+              <h3 style="margin: 0">Thông tin cá nhân</h3>
+              <div class="edit-group" id="editGroup">
+                <button class="btn sm" type="submit" id="btnSave">
+                  Lưu thay đổi
+                </button>
+                <button class="btn sm ghost" type="button" id="btnCancel">
+                  Hủy
+                </button>
+              </div>
+            </div>
+
+            <div class="info-list" id="infoList">
+              <div class="info-row" data-field="full_name" id="row_full_name">
+                <label>Họ tên</label>
+                <span id="full_name_view" class="value view-only"></span>
+                <input
+                  id="full_name"
+                  class="input-lg edit-only"
+                  type="text"
+                  placeholder="Nguyễn Văn A"
+                />
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+              <div class="info-row" data-field="email" id="row_email">
+                <label>Email</label>
+                <span id="email_view" class="value view-only"></span>
+                <input
+                  id="email"
+                  class="input-lg edit-only"
+                  type="email"
+                  disabled
+                />
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+              <div class="info-row" data-field="phone" id="row_phone">
+                <label>Số điện thoại</label>
+                <span id="phone_view" class="value view-only"></span>
+                <input
+                  id="phone"
+                  class="input-lg edit-only"
+                  type="tel"
+                  placeholder="0xxxxxxxx"
+                />
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+              <div class="info-row" data-field="address" id="row_address">
+                <label>Địa chỉ</label>
+                <span id="address_view" class="value view-only"></span>
+                <input
+                  id="address"
+                  class="input-lg edit-only"
+                  type="text"
+                  placeholder="Số nhà, đường, quận/huyện, tỉnh/thành"
+                />
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+              <div class="info-row" data-field="birthdate" id="row_birthdate">
+                <label>Ngày sinh</label>
+                <span id="birthdate_view" class="value view-only"></span>
+                <input id="birthdate" class="input-lg edit-only" type="date" />
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+              <div class="info-row" data-field="gender" id="row_gender">
+                <label>Giới tính</label>
+                <span id="gender_view" class="value view-only"></span>
+                <select id="gender" class="select-lg edit-only">
+                  <option value="">— Chọn —</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+                <button
+                  type="button"
+                  class="icon-btn edit-btn"
+                  title="Chỉnh sửa"
+                >
+                  ✏️
+                </button>
+              </div>
+            </div>
+            <p class="status" id="status"></p>
+          </form>
+        </div>
+      </section>
+
+      <!-- Quick review modal -->
+      <div id="reviewModal" class="modal">
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <h3 style="margin: 0">Gửi đánh giá</h3>
+            <button id="modalCloseBtn" class="btn sm ghost">Đóng</button>
+          </div>
+          <div style="margin-top: 8px">
+            <div style="font-weight: 600">Sản phẩm</div>
+            <div id="modalProductTitle" style="margin-top: 6px"></div>
+          </div>
+          <form id="modalReviewForm" style="margin-top: 8px">
+            <input type="hidden" name="product_id" id="modal_product_id" />
+            <input type="hidden" name="seller_id" id="modal_seller_id" />
+            <!-- Optional dev field -->
+            <div style="margin-top: 8px; display: none" id="modalBuyerDev">
+              <label for="modalBuyerId">Buyer id (dev only)</label>
+              <input
+                type="text"
+                id="modalBuyerId"
+                name="buyer_id"
+                placeholder="123 (dev only)"
+                class="input-lg"
+              />
+            </div>
+            <div style="margin-top: 8px">
+              <label>Đánh giá</label>
+              <div
+                id="modalRatingStars"
+                class="stars"
+                style="margin-top: 6px"
+              ></div>
+              <select name="rating" id="modal_rating" style="display: none">
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+            <div style="margin-top: 8px">
+              <label for="modalComment">Nhận xét</label>
+              <textarea
+                id="modalComment"
+                name="comment"
+                placeholder="Nhận xét..."
+                style="min-height: 80px"
+              ></textarea>
+            </div>
+            <div
+              style="
+                margin-top: 8px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+              "
+            >
+              <button type="button" id="modalCancel" class="btn sm ghost">
+                Hủy
+              </button>
+              <button type="submit" class="btn sm">Gửi đánh giá</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Bài đăng của tôi -->
+      <section class="card tab-panel" id="panel-listings">
+        <div class="row" style="margin-bottom: 8px">
+          <h3 style="margin: 0">Bài đăng của tôi</h3>
+          <div class="row" style="gap: 8px">
+            <!-- Không có nút reload / đánh giá ở đây theo yêu cầu -->
+          </div>
+        </div>
+        <!-- Listings container (rendered by JS) -->
+        <div
+          id="listingsWrap"
+          class="listings"
+          style="margin-bottom: 12px"
+        ></div>
+        <p id="listingsStatus" class="muted"></p>
+      </section>
+
+      <!-- Lịch sử giao dịch -->
+      <section class="card tab-panel" id="panel-transactions">
+        <div class="row" style="margin-bottom: 8px">
+          <h3 style="margin: 0">Lịch sử giao dịch</h3>
+          <button id="btnReloadTx" class="btn sm ghost">Tải lại</button>
+        </div>
+        <!-- Purchases grid shown when user clicks 'Đơn hàng của tôi' -->
+        <div
+          id="purchasesWrap"
+          class="listings"
+          style="margin-bottom: 12px"
+        ></div>
+        <div style="overflow-x: auto">
+          <table class="table" id="txTable">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Mã đơn / Liên quan</th>
+                <th>Loại</th>
+                <th>Số tiền</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="txTbody"></tbody>
+          </table>
+        </div>
+        <p class="muted" id="txStatus"></p>
+      </section>
+    </div>
+
+    <script>
+      const API = {
+        me: "/auth/me",
+        profile: "/auth/profile",
+        myListings: "/listings/mine",
+        myPayments: "/payments/mine",
+      };
+
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => document.querySelectorAll(s);
+      const statusEl = $("#status");
+      const avatarImg = $("#avatarImg");
+      const fallbackAvatar =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="100%" height="100%" fill="#f3f4f6"/><circle cx="90" cy="70" r="40" fill="#d1d5db"/><rect x="30" y="120" width="120" height="50" rx="12" fill="#d1d5db"/></svg>`
+        );
+      const AUTH_BASE = document.body.getAttribute("data-auth-base") || "";
+
+      function resolveAvatar(src) {
+        if (!src) return null;
+        if (src.startsWith("data:")) return src;
+        if (/^https?:\/\//i.test(src)) return src;
+        if (src.startsWith("/")) return src;
+        return `${AUTH_BASE}/avatar/${src}`;
+      }
+
+      function setAvatar(src) {
+        const r = resolveAvatar(src);
+        avatarImg.onerror = function () {
+          avatarImg.onerror = null;
+          avatarImg.src = fallbackAvatar;
+        };
+        avatarImg.src = r || fallbackAvatar;
+      }
+
+      function setAvatarByUsername(username) {
+        if (!username) return setAvatar(null);
+        const name = encodeURIComponent(username);
+        const base = AUTH_BASE || "";
+        const tryPaths = [
+          `${base}/avatar/${name}.jpg`,
+          `${base}/avatar/${name}.png`,
+          `${base}/avatar/${name}`,
+        ];
+        let idx = 0;
+        avatarImg.onerror = function () {
+          idx += 1;
+          if (idx < tryPaths.length) {
+            avatarImg.src = tryPaths[idx];
+          } else {
+            avatarImg.onerror = null;
+            avatarImg.src = fallbackAvatar;
+          }
+        };
+        avatarImg.src = tryPaths[0];
+      }
+
+      function setStatus(msg, ok = true) {
+        statusEl.textContent = msg || "";
+        statusEl.style.color = ok ? "var(--ok)" : "var(--err)";
+      }
+
+      function fmtVND(n) {
+        const x = Number(n || 0);
+        return x.toLocaleString("vi-VN", {
+          style: "currency",
+          currency: "VND",
+          maximumFractionDigits: 0,
+        });
+      }
+
+      function fmtDate(dt) {
+        try {
+          if (!dt) return "";
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(dt)) {
+            dt = dt + "Z";
+          }
+          const d = new Date(dt);
+          if (isNaN(d)) return dt || "";
+          return d.toLocaleString("vi-VN");
+        } catch {
+          return dt || "";
+        }
+      }
+
+      function badge(text, kind = "1") {
+        return `<span class="${
+          kind === "2" ? "chip2" : "chip"
+        }">${text}</span>`;
+      }
+
+      async function fetchWithAuth(url, init = {}) {
+        return fetch(url, { credentials: "include", ...init });
+      }
+
+      async function apiGet(url, params) {
+        const q = params ? "?" + new URLSearchParams(params) : "";
+        const res = await fetchWithAuth(url + q);
+        if (res.status === 401) {
+          location.href =
+            "/login?next=" + encodeURIComponent(location.pathname);
+          throw new Error("401");
+        }
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+
+      async function apiPut(url, body) {
+        const res = await fetchWithAuth(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+
+      async function apiUpload(url, formData) {
+        const res = await fetchWithAuth(url, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+
+      let state = { user: {}, profile: {}, listings: [], tx: [] };
+
+      const gTxt = (v) =>
+        ({ male: "Nam", female: "Nữ", other: "Khác" }[v] || "");
+
+      function renderProfileView() {
+        const p = state.profile || {},
+          u = state.user || {};
+        $("#full_name_view").textContent = p.full_name || "";
+        $("#email_view").textContent = u.email || "";
+        $("#phone_view").textContent = u.phone || "";
+        $("#address_view").textContent = p.address || "";
+        $("#birthdate_view").textContent = (p.birthdate || "").slice(0, 10);
+        $("#gender_view").textContent = gTxt(p.gender);
+
+        const raw = p.avatar_url || "";
+        if (raw) {
+          setAvatar(raw);
+        } else if (u && u.username) {
+          setAvatarByUsername(u.username);
+        } else {
+          setAvatar(null);
+        }
+      }
+
+      function renderProfileInputs() {
+        const p = state.profile || {},
+          u = state.user || {};
+        $("#full_name").value = p.full_name || "";
+        $("#email").value = u.email || "";
+        $("#phone").value = u.phone || "";
+        $("#address").value = p.address || "";
+        $("#birthdate").value = (p.birthdate || "").slice(0, 10);
+        $("#gender").value = p.gender || "";
+      }
+
+      function anyEditing() {
+        return !!$(".info-row.editing");
+      }
+
+      function updateEditGroup() {
+        $("#panel-info").classList.toggle("has-editing", anyEditing());
+        $(".avatar-edit").style.display = anyEditing() ? "block" : "none";
+        $("#avatarInput").classList.toggle("hidden", !anyEditing());
+      }
+
+      function startEditRow(row) {
+        $$(".info-row.editing").forEach((r) => r.classList.remove("editing"));
+        renderProfileInputs();
+        row.classList.add("editing");
+        updateEditGroup();
+        const inp = row.querySelector(".input-lg,.select-lg");
+        if (inp) {
+          inp.focus();
+          if (inp.select) inp.select();
+        }
+      }
+
+      function cancelAllEdits() {
+        $$(".info-row.editing").forEach((r) => r.classList.remove("editing"));
+        renderProfileInputs();
+        updateEditGroup();
+      }
+
+      function buildPayloadForRow(row) {
+        const field = row.dataset.field;
+        const p = {};
+        if (!field) return p;
+        if (field === "full_name") {
+          p.full_name = (
+            document.getElementById("full_name").value || ""
+          ).trim();
+        } else if (field === "address") {
+          p.address = (document.getElementById("address").value || "").trim();
+        } else if (field === "birthdate") {
+          p.birthdate = (
+            document.getElementById("birthdate").value || ""
+          ).trim();
+        } else if (field === "gender") {
+          p.gender = (document.getElementById("gender").value || "").trim();
+        } else if (field === "phone") {
+          p.phone = (document.getElementById("phone").value || "").trim();
+        }
+        return p;
+      }
+
+      $$(".edit-btn").forEach((b) => {
+        b.addEventListener("click", (e) => {
+          const row = e.target.closest(".info-row");
+          if (row) startEditRow(row);
+        });
+      });
+
+      // ---- Bài đăng của tôi: chỉ 1 renderListings, dùng main_image_url/sub_image_urls ----
+      function renderListings() {
+        const wrap = $("#listingsWrap");
+        if (!wrap) return;
+        const list = state.listings || [];
+        if (!Array.isArray(list) || list.length === 0) {
+          wrap.innerHTML = `<div class="muted">Bạn chưa có bài đăng nào. <a href="/listings/new">Đăng bài ngay</a>.</div>`;
+          return;
+        }
+        const placeholder =
+          "data:image/svg+xml;utf8," +
+          encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><rect width="100%" height="100%" fill="#f3f4f6"/></svg>'
+          );
+        wrap.innerHTML = list
+          .map((item) => {
+            const main =
+              item.main_image_url ||
+              (item.sub_image_urls && item.sub_image_urls[0]) ||
+              item.cover_url ||
+              item.image ||
+              "";
+            let imgSrc = "";
+            if (main) {
+              if (/^https?:\/\//i.test(main)) imgSrc = main;
+              else if (main.startsWith("/")) imgSrc = main;
+              else imgSrc = "/static/uploads/" + main;
+            }
+            const typ = (item.type || item.category || "")
+              .toString()
+              .toLowerCase();
+            const isCar = typ.includes("car") || typ.includes("xe");
+            const chipType = isCar ? badge("Xe", "1") : badge("Pin", "2");
+            const status = item.status ? badge(item.status) : "";
+            const price = item.price != null ? fmtVND(item.price) : "—";
+            const urlView = `/listings/${item.id}`;
+            const urlEdit = `/listings/${item.id}/edit`;
+            return `
+              <article class="listing">
+                <img alt="" src="${
+                  imgSrc || placeholder
+                }" onerror="this.onerror=null;this.src='${placeholder}'" />
+                <div style="flex:1">
+                  <div class="row">
+                    <a href="${urlView}" style="font-weight:600">${
+              item.title || item.name || "Bài đăng"
+            }</a>
+                    <div style="display:flex;gap:6px">${chipType}${status}</div>
+                  </div>
+                  <div class="muted" style="margin:6px 0">${
+                    item.location || ""
+                  }</div>
+                  <div class="row">
+                    <div style="font-weight:700">${price}</div>
+                    <div class="row" style="gap:6px">
+                      <a class="btn sm ghost" href="${urlView}">Xem</a>
+                      <a class="btn sm" href="${urlEdit}">Sửa</a>
+                    </div>
+                  </div>
+                </div>
+              </article>`;
+          })
+          .join("");
+      }
+
+      $("#profileForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+          setStatus("Đang lưu...", true);
+
+          const file = $("#avatarInput").files[0];
+          if (file) {
+            const fd = new FormData();
+            fd.append("avatar", file);
+            const up = await apiUpload(API.profile, fd);
+            if (up?.profile) state.profile = up.profile;
+            if (up?.user) state.user = up.user;
+            if (up?.avatar_src) setAvatar(up.avatar_src);
+          }
+
+          const row = $(".info-row.editing");
+          if (row) {
+            const payload = buildPayloadForRow(row);
+            if (Object.keys(payload).length) {
+              const updated = await apiPut(API.profile, payload);
+              if (updated?.profile) state.profile = updated.profile;
+              if (updated?.user) state.user = updated.user;
+            }
+          }
+
+          cancelAllEdits();
+          renderProfileView();
+          setStatus("Đã lưu hồ sơ!", true);
+          setTimeout(() => location.reload(), 400);
+        } catch (err) {
+          setStatus("Không thể lưu: " + (err.message || err), false);
+        }
+      });
+
+      async function loadProfile() {
+        setStatus("Đang tải hồ sơ...", true);
+        const res = await apiGet(API.profile);
+        state.user = res.user || state.user || {};
+        state.profile = res.profile || res || {};
+        renderProfileView();
+        setStatus("");
+      }
+
+      function _stripHtml(s) {
+        try {
+          return (s || "")
+            .toString()
+            .replace(/<[^>]*>/g, "")
+            .trim();
+        } catch {
+          return s || "";
+        }
+      }
+
+      async function loadListings() {
+        const statusEl = document.getElementById("listingsStatus");
+        if (statusEl) statusEl.textContent = "Đang tải bài đăng...";
+        try {
+          const res = await apiGet(API.myListings);
+          state.listings = Array.isArray(res.items)
+            ? res.items
+            : Array.isArray(res)
+            ? res
+            : res.data || [];
+          renderListings();
+          if (statusEl) statusEl.textContent = "";
+        } catch (e) {
+          if (statusEl)
+            statusEl.textContent =
+              "Không tải được bài đăng: " + _stripHtml(e.message || e);
+        }
+      }
+
+      function localizeStatus(s) {
+        const t = (s || "").toString().toLowerCase();
+        const m = {
+          paid: "Đã thanh toán",
+          pending: "Đang chờ",
+          failed: "Không thành công",
+          cancelled: "Đã hủy",
+          refunded: "Đã hoàn tiền",
+          new: "Mới",
+          processing: "Đang xử lý",
+        };
+        return m[t] || s || "—";
+      }
+
+      function localizeKind(k) {
+        const t = (k || "").toString().toLowerCase();
+        const m = {
+          banking: "Chuyển khoản",
+          bank: "Chuyển khoản",
+          card: "Thẻ",
+          cash: "Tiền mặt",
+          momo: "Momo",
+          vnpay: "VNPAY",
+        };
+        return m[t] || k || "—";
+      }
+
+      function renderTx() {
+        const tb = $("#txTbody");
+        const rows = (state.tx || [])
+          .map((tx) => {
+            const amount = fmtVND(tx.amount);
+            const status = badge(localizeStatus(tx.status || "—"), "1");
+            const kind = badge(localizeKind(tx.method || tx.type || "—"), "2");
+            const order = tx.order_id || tx.reference || tx.id;
+            const who =
+              tx.counterparty || tx.seller_name || tx.buyer_name || "";
+            const when = fmtDate(tx.created_at || tx.updated_at || tx.paid_at);
+            const view =
+              tx.detail_url ||
+              (tx.contract_id
+                ? `/contracts/${tx.contract_id}`
+                : `/payments/${tx.id}`);
+            return `<tr>
+              <td>${when}</td>
+              <td>#${order}${who ? ` — ${who}` : ""}</td>
+              <td>${kind}</td>
+              <td style="font-weight:700">${amount}</td>
+              <td>${status}</td>
+            </tr>`;
+          })
+          .join("");
+        tb.innerHTML =
+          rows ||
+          `<tr><td colspan="5" class="muted">Chưa có giao dịch nào.</td></tr>`;
+      }
+
+      async function loadTx() {
+        $("#txStatus").textContent = "Đang tải giao dịch...";
+        try {
+          const res = await apiGet(API.myPayments);
+          state.tx = Array.isArray(res.items)
+            ? res.items
+            : Array.isArray(res)
+            ? res
+            : res.data || [];
+          renderTx();
+          $("#txStatus").textContent = "";
+        } catch (e) {
+          $("#txStatus").textContent =
+            "Không tải được giao dịch: " + _stripHtml(e.message || e);
+        }
+      }
+
+      $$(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          $$(".tab-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const tab = btn.dataset.tab;
+          $$(".tab-panel").forEach((p) => p.classList.remove("active"));
+          $("#panel-" + tab).classList.add("active");
+          if (tab === "listings" && !state._loadedListings) {
+            state._loadedListings = true;
+            loadListings();
+          }
+          if (tab === "transactions" && !state._loadedTx) {
+            state._loadedTx = true;
+            loadTx();
+          }
+        });
+      });
+
+      // My Orders button -> mở tab giao dịch + load purchases
+      (function () {
+        const btn = document.getElementById("myOrdersBtn");
+        if (btn) {
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const tab = document.querySelector(
+              '.tab-btn[data-tab="transactions"]'
+            );
+            if (tab) tab.click();
+            try {
+              loadPurchases();
+            } catch (e) {
+              console.warn("loadPurchases error", e);
+            }
+            const panel = document.getElementById("panel-transactions");
+            if (panel)
+              panel.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
+      })();
+
+      // Quick review modal logic (giữ nguyên)
+      (function () {
+        function buildStars(container, selectEl) {
+          container.innerHTML = "";
+          for (let i = 1; i <= 5; i++) {
+            const span = document.createElement("span");
+            span.className =
+              "star-btn" + (i <= Number(selectEl.value) ? " active" : "");
+            span.dataset.value = i;
+            span.innerText = "★";
+            span.addEventListener("click", function () {
+              selectEl.value = this.dataset.value;
+              const children = container.querySelectorAll(".star-btn");
+              children.forEach((c, idx) =>
+                c.classList.toggle("active", idx < Number(this.dataset.value))
+              );
+            });
+            container.appendChild(span);
+          }
+        }
+        const modal = document.getElementById("reviewModal");
+        const modalClose = document.getElementById("modalCloseBtn");
+        const modalCancel = document.getElementById("modalCancel");
+        const modalForm = document.getElementById("modalReviewForm");
+        const modalTitle = document.getElementById("modalProductTitle");
+        const ratingStars = document.getElementById("modalRatingStars");
+        const ratingSelect = document.getElementById("modal_rating");
+        const productInput = document.getElementById("modal_product_id");
+        const sellerInput = document.getElementById("modal_seller_id");
+        const commentInput = document.getElementById("modalComment");
+
+        if (ratingStars && ratingSelect) buildStars(ratingStars, ratingSelect);
+
+        function openModal(productId, sellerId, title) {
+          if (productInput) productInput.value = productId || "";
+          if (sellerInput) sellerInput.value = sellerId || "";
+          if (modalTitle)
+            modalTitle.textContent = title || "Sản phẩm #" + (productId || "");
+          modal.classList.add("active");
+        }
+        function closeModal() {
+          modal.classList.remove("active");
+        }
+        document.body.addEventListener("click", function (e) {
+          const btn = e.target.closest('[data-action="open-review"]');
+          if (!btn) return;
+          e.preventDefault();
+          const pid = btn.getAttribute("data-product-id");
+          const sid = btn.getAttribute("data-seller-id");
+          const titleEl =
+            btn.closest(".listing")?.querySelector("a")?.textContent || "";
+          openModal(pid, sid, titleEl);
+        });
+        if (modalClose) modalClose.addEventListener("click", closeModal);
+        if (modalCancel) modalCancel.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeModal();
+        });
+
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (
+            urlParams.get("debug") === "1" ||
+            urlParams.get("force_form") === "1"
+          ) {
+            const devEl = document.getElementById("modalBuyerDev");
+            if (devEl) devEl.style.display = "block";
+          }
+        } catch (e) {}
+
+        if (modalForm) {
+          modalForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const pid = productInput.value;
+            const sid = sellerInput.value;
+            const rating = ratingSelect.value || "5";
+            const comment = commentInput.value || "";
+            const buyerId =
+              document.getElementById("modalBuyerId")?.value || null;
+            try {
+              const body = {
+                product_id: pid,
+                seller_id: sid,
+                rating: Number(rating),
+                comment,
+              };
+              if (buyerId) body.buyer_id = Number(buyerId);
+              const res = await fetch("/reviews/api/reviews", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              });
+              if (res.ok) {
+                closeModal();
+                setTimeout(() => location.reload(), 400);
+              } else {
+                const j = await res.json().catch(() => null);
+                alert(
+                  "Không thể gửi đánh giá: " +
+                    (j && j.detail
+                      ? j.detail
+                      : res.status + " " + res.statusText)
+                );
+              }
+            } catch (err) {
+              alert("Lỗi gửi đánh giá: " + (err.message || err));
+            }
+          });
+        }
+      })();
+
+      // Load purchases (giữ nguyên)
+      async function loadPurchases() {
+        const wrap = document.getElementById("purchasesWrap");
+        wrap.innerHTML = "";
+        try {
+          const res = await apiGet(API.myPayments);
+          const items = Array.isArray(res.items) ? res.items : res || [];
+          const paymentsWithItems = (items || []).filter(
+            (p) => p && p.items && Array.isArray(p.items) && p.items.length > 0
+          );
+          const purchases = [];
+          const curUserId =
+            state.user &&
+            (state.user.id || state.user.sub || state.user.user_id);
+          paymentsWithItems.forEach((p) => {
+            const pStatus = (p.status || "").toString().toLowerCase();
+            const buyerId =
+              p.buyer_id || p.buyer || (p.buyer && p.buyer.id) || null;
+            if (
+              !curUserId ||
+              String(buyerId) !== String(curUserId) ||
+              pStatus !== "paid"
+            ) {
+              return;
+            }
+            p.items.forEach((it) => {
+              purchases.push(
+                Object.assign(
+                  {
+                    _payment_id: p.id,
+                    _order_id: p.order_id,
+                    _payment_status: p.status,
+                    _buyer_id: buyerId,
+                    _seller_id:
+                      p.seller_id ||
+                      p.seller ||
+                      (p.seller && p.seller.id) ||
+                      it.seller_id ||
+                      it.seller ||
+                      null,
+                  },
+                  it
+                )
+              );
+            });
+          });
+          if (!purchases.length) {
+            wrap.innerHTML = `<div class="muted">Bạn chưa có sản phẩm đã mua hoặc thanh toán chưa được xác nhận.</div>`;
+            return;
+          }
+          wrap.classList.remove("listings");
+          wrap.classList.add("purchase-listings");
+
+          const sellers = [
+            ...new Set(purchases.map((p) => p._seller_id).filter(Boolean)),
+          ];
+          window.__reviewsBySeller = window.__reviewsBySeller || {};
+          try {
+            await Promise.all(
+              sellers.map(async (sid) => {
+                try {
+                  const r = await apiGet(
+                    `/reviews/api/reviews?seller_id=${encodeURIComponent(sid)}`
+                  );
+                  const items = Array.isArray(r.items)
+                    ? r.items
+                    : r.items || [];
+                  const count = items.length;
+                  const avg = count
+                    ? items.reduce((s, it) => s + Number(it.rating || 0), 0) /
+                      count
+                    : 0;
+                  window.__reviewsBySeller[String(sid)] = {
+                    avg: avg || 0,
+                    count: count,
+                  };
+                } catch (e) {
+                  window.__reviewsBySeller[String(sid)] = { avg: 0, count: 0 };
+                }
+              })
+            );
+          } catch (e) {
+            console.warn("Error loading reviews summary", e);
+          }
+
+          wrap.innerHTML = purchases
+            .map((it) => {
+              const img = it.thumbnail || it.image || it.cover_url || "";
+              const imgSrc = img
+                ? img.startsWith("http") || img.startsWith("/")
+                  ? img
+                  : `/static/uploads/${img}`
+                : "";
+              const title =
+                it.title ||
+                it.name ||
+                it.product_name ||
+                `Sản phẩm #${it.item_id || ""}`;
+              const url = `/listings/${it.item_id || ""}`;
+              const price =
+                it.price != null ? fmtVND(it.price * (it.quantity || 1)) : "—";
+              const payStatus = (it._payment_status || "").toString();
+              const payStatusLabel = localizeStatus(payStatus);
+              const sellerId = it._seller_id || "";
+              const reviewMeta =
+                window.__reviewsBySeller && sellerId
+                  ? window.__reviewsBySeller[String(sellerId)] || {
+                      avg: 0,
+                      count: 0,
+                    }
+                  : { avg: 0, count: 0 };
+              const starStr = Array.from({ length: 5 })
+                .map((_, i) =>
+                  i < Math.round(reviewMeta.avg || 0) ? "★" : "☆"
+                )
+                .join("");
+              const productId = it.product_id || it.item_id || it.id || "";
+              const thumb =
+                imgSrc ||
+                "data:image/svg+xml;utf8," +
+                  encodeURIComponent(
+                    "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90'><rect width='100%' height='100%' fill='#f3f4f6'/></svg>"
+                  );
+              return `
+              <article class="purchase-card">
+                <img alt="${title}" src="${thumb}" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,${encodeURIComponent(
+                "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90'><rect width='100%' height='100%' fill='#f3f4f6'/></svg>"
+              )}'" />
+                <div class="purchase-info">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-weight:700"><a href="${url}">${title}</a></div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      ${badge("Mua", "1")}${
+                payStatus ? badge(payStatusLabel, "2") : ""
+              }
+                      ${
+                        reviewMeta.count
+                          ? `<span class="chip" style="display:flex;align-items:center;gap:6px;"><span class="stars">${starStr}</span><span style="margin-left:6px;font-weight:700">${(
+                              reviewMeta.avg || 0
+                            ).toFixed(1)}</span><span class="muted">(${
+                              reviewMeta.count
+                            })</span></span>`
+                          : ""
+                      }
+                    </div>
+                  </div>
+                  <div class="muted">Đơn #${it._order_id || ""} • Số lượng: ${
+                it.quantity || 1
+              }</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-weight:700">${price}</div>
+                    <div class="purchase-actions">
+                      <a class="btn sm ghost" href="${url}">Xem</a>
+                      <a class="btn sm" href="${
+                        sellerId
+                          ? `/reviews/seller/${encodeURIComponent(
+                              sellerId
+                            )}?product_id=${encodeURIComponent(productId)}`
+                          : `/reviews/product/${encodeURIComponent(productId)}`
+                      }">Đánh giá</a>
+                    </div>
+                  </div>
+                </div>
+              </article>`;
+            })
+            .join("");
+        } catch (e) {
+          wrap.innerHTML = `<div class="muted">Không tải được đơn hàng: ${_stripHtml(
+            e.message || e
+          )}</div>`;
+        }
+      }
+
+      (async function () {
+        setAvatar(fallbackAvatar);
+        try {
+          await apiGet(API.me);
+        } catch {
+          return;
+        }
+        await loadProfile();
+        renderProfileInputs();
+        updateEditGroup();
+      })();
+    </script>
+  </body>
+</html>

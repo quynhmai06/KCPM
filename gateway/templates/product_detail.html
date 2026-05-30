@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ item.name }} — Chi tiết</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css" />
+
+    <style>
+      .detail-wrap {
+        max-width: 1100px;
+        margin: 28px auto;
+còn product-detail
+        padding: 0 16px;
+      }
+
+      .detail-breadcrumb {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        color: #667085;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      .detail-breadcrumb a {
+        color: #667085;
+        text-decoration: none;
+      }
+      .detail-breadcrumb a:hover {
+        color: #111827;
+      }
+
+      .detail-grid {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+      }
+
+      .detail-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      }
+      .detail-box {
+        padding: 16px 18px;
+      }
+
+      /* ảnh chính */
+      .detail-cover {
+        aspect-ratio: 16/10;
+        background: #fafafa;
+      }
+      .detail-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* list ảnh nhỏ */
+      .detail-thumbs {
+        display: flex;
+        gap: 10px;
+        padding: 10px 18px;
+        background: #fafafa;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+      }
+      .detail-thumbs img {
+        width: 88px;
+        height: 66px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      }
+      .detail-thumbs img:hover {
+        transform: translateY(-2px);
+      }
+
+      /* khối mô tả + thông số */
+      .detail-descblock {
+        padding: 12px 18px 18px;
+      }
+
+      /* tiêu đề phụ "Mô tả", "Thông số nhanh" */
+      .detail-h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 10px 0;
+      }
+
+      /* phần mô tả - list dòng */
+      .detail-desc {
+        padding-left: 0;
+        text-indent: 0;
+        text-align: left;
+        margin-bottom: 16px;
+      }
+      .desc-line {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #1e293b;
+        margin: 0 0 8px 0;
+      }
+
+      /* lưới thông số nhanh */
+      .detail-specs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .detail-spec {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .detail-spec .k {
+        color: #667085;
+        font-size: 12px;
+      }
+      .detail-spec .v {
+        font-weight: 700;
+        color: #111827;
+      }
+
+      /* cột phải (thông tin tóm tắt) */
+      .detail-sticky {
+        position: relative;
+      }
+      @media (min-width: 1024px) {
+        .detail-sticky {
+          position: sticky;
+          top: 18px;
+        }
+      }
+
+      .detail-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 6px;
+      }
+
+      .detail-badge {
+        background: rgba(244, 178, 7, 0.14);
+        color: #a97400;
+        border: 1px solid rgba(244, 178, 7, 0.35);
+        font-weight: 600;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+
+      .detail-price {
+        font-weight: 800;
+        font-size: 26px;
+        color: #d10c0c;
+        margin: 10px 0 2px;
+      }
+
+      .detail-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 8px;
+        color: #111827;
+        font-size: 14px;
+      }
+      .detail-meta div {
+        padding: 10px 12px;
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+      }
+
+      .detail-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      /* nút quay về */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid transparent;
+      }
+      .btn-ghost {
+        background: #fff;
+        border-color: #e5e7eb;
+        color: #111827;
+      }
+      .btn-ghost:hover {
+        border-color: #d1d5db;
+      }
+
+      /* responsive */
+      @media (max-width: 860px) {
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+        .detail-meta {
+          grid-template-columns: 1fr 1fr;
+        }
+        .detail-specs {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    {% if GATEWAY_DEBUG_SESSION %}
+    {% set actual_user = session.get('user') %}
+    <div style="background:#333;color:#fff;padding:6px 10px;font-size:13px;text-align:center;">
+      <strong>DEBUG SESSION</strong>
+      {% if actual_user %}
+        — Logged in as: {{ actual_user.get('username') }}
+        {% if actual_user.get('role') %} ({{ actual_user.get('role') }}){% endif %}
+      {% else %}
+        — Not signed in
+      {% endif %}
+    </div>
+    {% endif %}
+    {# Chuẩn hoá nhãn loại sản phẩm để tái dùng #} {% set type_label = 'Xe điện'
+    if item.product_type == 'car' else ('Pin xe điện' if item.product_type ==
+    'battery' else (item.product_type or 'Sản phẩm')) %}
+
+    <div class="detail-wrap">
+      <!-- Breadcrumb -->
+      <nav class="detail-breadcrumb">
+        <a href="/">Trang chủ</a> <span>/</span>
+        <a href="/?approved=1">{{ type_label }}</a> <span>/</span>
+        <span>{{ item.name }}</span>
+      </nav>
+
+      <div class="detail-grid">
+        <!-- LEFT: ảnh + mô tả -->
+        <section class="detail-card">
+          <!-- Ảnh chính -->
+          <div class="detail-cover">
+            <img
+              id="heroImg"
+              src="{{ item.main_image_url or '/static/images/logo.png' }}"
+              alt="{{ item.name }}"
+              onerror="this.onerror=null;this.src='/static/images/logo.png'"
+            />
+          </div>
+
+          <!-- Ảnh phụ -->
+          {% set thumbs = (item.sub_image_urls or []) %} {% if thumbs|length %}
+          <div class="detail-thumbs">
+
+        <!-- Fetch seller info and populate seller block -->
+        <script>
+          document.addEventListener('DOMContentLoaded', function(){
+            (function(){
+              const sellerUsername = "{{ (item.owner or item.owner_username) | e }}";
+              if (!sellerUsername) return;
+              const el = document.getElementById('sellerInfo');
+              const nameSpan = document.getElementById('sellerName');
+              const avatarImg = document.getElementById('sellerAvatar');
+              const emailDiv = document.getElementById('sellerEmail');
+              const contactA = document.getElementById('sellerContact');
+              if (!el || !nameSpan) return;
+              fetch('/seller/info?username=' + encodeURIComponent(sellerUsername), {credentials: 'include'})
+                .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                .then(data => {
+                  if (!data) return;
+                    if (data.full_name) nameSpan.textContent = data.full_name;
+                    // populate email and phone (if provided by /seller/info)
+                    if (data.email) {
+                      emailDiv.textContent = data.email;
+                    } else {
+                      emailDiv.textContent = '';
+                    }
+                    if (data.phone) {
+                      // display phone below email
+                      const phoneEl = document.getElementById('sellerPhone');
+                      if (phoneEl) phoneEl.textContent = data.phone;
+                    } else {
+                      const phoneEl = document.getElementById('sellerPhone');
+                      if (phoneEl) phoneEl.textContent = '';
+                    }
+                    // Configure contact link: prefer email, fallback to phone (tel:)
+                    if (data.email) {
+                      contactA.href = 'mailto:' + encodeURIComponent(data.email);
+                      contactA.style.display = 'inline-block';
+                    } else if (data.phone) {
+                      contactA.href = 'tel:' + encodeURIComponent(data.phone.replace(/\s+/g, ''));
+                      contactA.style.display = 'inline-block';
+                    } else {
+                      contactA.href = '#';
+                      contactA.style.display = 'none';
+                    }
+                  if (data.avatar_src) {
+                    avatarImg.src = data.avatar_src;
+                  } else if (sellerUsername) {
+                    // Try predictable avatar paths by username (.jpg -> .png -> without ext)
+                    const uname = encodeURIComponent(sellerUsername);
+                    const tryPaths = [`/auth/avatar/${uname}.jpg`, `/auth/avatar/${uname}.png`, `/auth/avatar/${uname}`];
+                    let ti = 0;
+                    avatarImg.onerror = function() {
+                      ti += 1;
+                      if (ti < tryPaths.length) avatarImg.src = tryPaths[ti];
+                      else { avatarImg.onerror = null; /* keep placeholder */ }
+                    };
+                    avatarImg.src = tryPaths[0];
+                  }
+                }).catch(()=>{
+                  // ignore -- keep username as-is
+                });
+            })();
+          });
+        </script>
+            <img
+              onclick="swapImg(this)"
+              src="{{ item.main_image_url or '/static/images/logo.png' }}"
+              onerror="this.style.display='none'"
+            />
+            {% for u in thumbs %}
+            <img
+              onclick="swapImg(this)"
+              src="{{ u }}"
+              onerror="this.style.display='none'"
+            />
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Mô tả + Thông số nhanh -->
+          <div class="detail-descblock">
+            <h3 class="detail-h3">Mô tả</h3>
+
+            <div class="detail-desc">
+              {% if item.description %} {% for line in
+              item.description.split('\n') %}
+              <p class="desc-line">{{ line }}</p>
+              {% endfor %} {% else %}
+              <p class="desc-line">Người bán chưa cung cấp mô tả chi tiết.</p>
+              {% endif %}
+            </div>
+
+            <h3 class="detail-h3" style="margin-top: 16px">Thông số nhanh</h3>
+
+            <div class="detail-specs">
+              <div class="detail-spec">
+                <div class="k">Thương hiệu</div>
+                <div class="v">{{ item.brand or "-" }}</div>
+              </div>
+
+              <div class="detail-spec">
+                <div class="k">Khu vực</div>
+                <div class="v">{{ item.province or "-" }}</div>
+              </div>
+
+              {% if item.product_type == 'battery' %}
+              <div class="detail-spec">
+                <div class="k">Dung lượng</div>
+                <div class="v">{{ item.battery_capacity or "-" }}</div>
+              </div>
+              {% else %}
+              <div class="detail-spec">
+                <div class="k">Năm SX</div>
+                <div class="v">{{ item.year or "-" }}</div>
+              </div>
+
+              <div class="detail-spec">
+                <div class="k">Số km</div>
+                <div class="v">{{ item.mileage or 0 }}</div>
+              </div>
+
+              <div class="detail-spec">
+                <div class="k">Pin</div>
+                <div class="v">{{ item.battery_capacity or "-" }}</div>
+              </div>
+              {% endif %}
+
+              <div class="detail-spec">
+                <div class="k">Trạng thái</div>
+                <div class="v">
+                  {{ "Đã duyệt" if item.approved else "Chờ duyệt" }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: thông tin tóm tắt / giá -->
+        <aside class="detail-card detail-sticky">
+          <div class="detail-box">
+            <div class="detail-title">
+              <span class="detail-badge">{{ type_label|upper }}</span>
+              <h1 style="margin: 0; font-size: 22px">{{ item.name }}</h1>
+            </div>
+
+            <!-- Seller info (populated via gateway /seller/info) -->
+            {% set seller_username = (item.owner or item.owner_username) %}
+            <div id="sellerInfo" style="margin-top:12px;">
+              <div id="sellerCard" style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e6e9ee;padding:10px;border-radius:10px;box-shadow:0 4px 10px rgba(15,23,42,0.03);">
+                  <div style="width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f3f4f6;">
+                  <!-- Use inline SVG placeholder initially to avoid browser broken-image icon; JS will replace src with real avatar or username-based attempts -->
+                  <img id="sellerAvatar" data-username="{{ seller_username | e }}" src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='56'%20height='56'%3E%3Crect%20width='100%25'%20height='100%25'%20fill='%23f3f4f6'/%3E%3Ccircle%20cx='28'%20cy='20'%20r='12'%20fill='%23d1d5db'/%3E%3Crect%20x='10'%20y='36'%20width='36'%20height='12'%20rx='6'%20fill='%23d1d5db'/%3E%3C/svg%3E" alt="avatar" style="width:56px;height:56px;object-fit:cover;display:block;" />
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+                    <div style="font-weight:700;color:#0f172a;font-size:15px" id="sellerName">{{ item.owner or item.owner_username or '-' }}</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <a id="smallReviewsBtn" href="/reviews/product/{{ item.id }}" data-username="{{ seller_username | e }}" title="Xem đánh giá" style="font-size:12px;color:#111827;padding:6px 8px;border-radius:8px;border:1px solid #e6e9ee;background:#fff;display:inline-flex;align-items:center;gap:6px"><span style="font-size:10px">Bài đánh giá</span></a>
+                      <div style="font-size:12px;color:#6b7280;padding:4px 8px;background:#fffbeb;border:1px solid #f8e3b8;border-radius:999px">Người bán</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <div id="sellerEmail" style="font-size:13px;color:#6b7280;">{{ item.email or '' }}</div>
+                    <div id="sellerPhone" style="font-size:13px;color:#6b7280;">{{ item.phone or '' }}</div>
+                  </div>
+                </div>
+                <!-- contact button removed as requested -->
+              </div>
+            </div>
+
+            <!-- Nút Đánh giá người bán - sẽ được hiển thị bằng JS nếu đủ điều kiện -->
+            <div id="reviewButtonContainer" style="margin-top: 16px; display: none;">
+              <a href="#" id="reviewLink" class="btn" style="background-color: #10b981; color: white; width: 100%; text-align: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9_M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                Viết đánh giá cho người bán
+              </a>
+            </div>
+
+            <div class="detail-price">{{ "{:,.0f}".format(item.price) }} đ</div>
+
+            <div class="detail-meta">
+              <div>Hãng: <b>{{ item.brand or "-" }}</b></div>
+              <div>Khu vực: <b>{{ item.province or "-" }}</b></div>
+
+              {% if item.product_type == 'battery' %}
+              <div>Dung lượng: <b>{{ item.battery_capacity or "-" }}</b></div>
+              {% else %}
+              <div>Năm SX: <b>{{ item.year or "-" }}</b></div>
+              <div>Số km: <b>{{ item.mileage or 0 }}</b></div>
+              <div>Pin: <b>{{ item.battery_capacity or "-" }}</b></div>
+              {% endif %}
+
+              <div>
+                Trạng thái:
+                <b>{{ "Đã duyệt" if item.approved else "Chờ duyệt" }}</b>
+              </div>
+            </div>
+
+      <div class="detail-actions">
+  <a class="btn btn-ghost" href="/">← Về trang chủ</a>
+  <button id="buyNowBtn" class="btn"
+    style="background:linear-gradient(135deg,#ff6b35,#ff8c61);color:white;border:none;">
+     Mua ngay
+  </button>
+</div>
+
+
+    <script>
+      function swapImg(el) {
+        const hero = document.getElementById("heroImg");
+        if (!hero || !el || !el.src) return;
+        const tmp = hero.src;
+        hero.src = el.src;
+        el.src = tmp;
+      }
+    </script>
+
+    <!-- Ensure seller contact is populated even if earlier script didn't run -->
+    <script>
+      (function(){
+        try {
+          const sellerUsername = "{{ (item.owner or item.owner_username) | e }}";
+          if (!sellerUsername) return;
+          // fetch via gateway so auth/gateway logic applies
+          fetch('/seller/info?username=' + encodeURIComponent(sellerUsername), {credentials: 'include'})
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(data => {
+              if (!data) return;
+              const nameEl = document.getElementById('sellerName');
+              const emailEl = document.getElementById('sellerEmail');
+              const phoneEl = document.getElementById('sellerPhone');
+              const avatarEl = document.getElementById('sellerAvatar');
+              const contactA = document.getElementById('sellerContact');
+
+              if (nameEl && data.full_name) nameEl.textContent = data.full_name;
+              if (emailEl) emailEl.textContent = data.email || '';
+              if (phoneEl) phoneEl.textContent = data.phone || '';
+
+              // configure contact button: prefer email, then phone
+              if (contactA) {
+                if (data.email) {
+                  contactA.href = 'mailto:' + encodeURIComponent(data.email);
+                  contactA.style.display = 'inline-block';
+                } else if (data.phone) {
+                  contactA.href = 'tel:' + encodeURIComponent((data.phone||'').replace(/\s+/g, ''));
+                  contactA.style.display = 'inline-block';
+                } else {
+                  contactA.href = '#';
+                  contactA.style.display = 'none';
+                }
+              }
+
+              // avatar: use provided avatar_src or try predictable username paths
+              if (avatarEl) {
+                if (data.avatar_src) {
+                  avatarEl.src = data.avatar_src;
+                } else {
+                  const uname = encodeURIComponent(sellerUsername);
+                  const tryPaths = [`/auth/avatar/${uname}.jpg`, `/auth/avatar/${uname}.png`, `/auth/avatar/${uname}`];
+                  let ti = 0;
+                  avatarEl.onerror = function() { ti += 1; if (ti < tryPaths.length) avatarEl.src = tryPaths[ti]; else avatarEl.onerror = null; };
+                  avatarEl.src = tryPaths[0];
+                }
+              }
+            }).catch(()=>{/* ignore errors */});
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+
+    <!-- LẤY USER ID TỪ SESSION (KHÔNG ĐỘNG VÀO HTML KHÁC) -->
+    <script>
+      const CURRENT_USER_ID = {{ (session.get('user') or {}).get('id') or 'null' }};
+    </script>
+
+    <!-- CHỈ SỬA HÀM THANH TOÁN: BỔ SUNG buyer_id & seller_id -->
+    <script>
+async function handleBuyNow() {
+  // Lấy thông tin sản phẩm từ template Jinja
+  const item = {
+    id: {{ item.id }},
+    item_type: {{ (item.item_type or item.product_type or 'vehicle')|tojson }},
+    name: {{ (item.name or '')|tojson }},
+    price: Number({{ item.price or 0 }}),
+    // mở rộng fallback seller: seller_id || owner_id || user_id
+    seller_id: {{ item.seller_id or item.owner_id or item.user_id or 'null' }},
+  };
+  // seller username available from template (used as fallback to resolve seller_id)
+  const sellerUsername = "{{ (item.owner or item.owner_username) | e }}";
+
+  // --- Lấy buyer_id từ session, nếu chưa có thì fallback /auth/me ---
+  let buyer_id = CURRENT_USER_ID;
+  if (!buyer_id) {
+    try {
+      const r = await fetch("/auth/me");
+      if (r.ok) {
+        const me = await r.json();
+        buyer_id = me && (me.sub || me.id);
+      }
+    } catch (_) {}
+  }
+  if (!buyer_id) {
+    // chưa đăng nhập
+    return (window.location.href = "/login?next=" + encodeURIComponent(window.location.pathname));
+  }
+
+  // --- Xác nhận seller_id ---
+  if (!item.seller_id) {
+    // try to resolve seller_id via gateway /seller/info (may return id when admin or public endpoint)
+    if (sellerUsername) {
+      try {
+        const r = await fetch('/seller/info?username=' + encodeURIComponent(sellerUsername), {credentials: 'include'});
+        if (r.ok) {
+          const d = await r.json();
+          if (d && d.id) item.seller_id = d.id;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (!item.seller_id) {
+      alert("Không xác định được người bán (seller_id).");
+      return;
+    }
+  }
+
+  // Payload gửi sang payment-service (BỔ SUNG buyer_id & seller_id)
+  const payload = {
+    order_id: "ORD-" + Date.now(),   // tạm sinh mã đơn
+    amount: Math.round(item.price),
+    method: "momo",                  // hoặc "banking" nếu cần
+    items: [{
+      item_id: item.id,
+      item_type: item.item_type,
+      qty: 1,
+      price: item.price,
+      name: item.name
+    }],
+    buyer_id: Number(buyer_id),
+    seller_id: Number(item.seller_id),
+    note: "Buy now from product detail page"
+  };
+
+  try {
+    const res = await fetch("/payment/create", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    if (res.status === 401) {
+      // Nếu chưa đăng nhập, chuyển hướng login
+      return window.location.href = "/login?next=" + encodeURIComponent(window.location.pathname);
+    }
+
+    const data = await res.json();
+    console.log("Payment create result:", data);
+
+    if (res.ok && data.checkout_url) {
+      // Clear item from local cart because payment has been created for this item
+      try {
+        const c = JSON.parse(localStorage.getItem('cart') || '[]');
+        const newCart = c.filter(x => Number(x.item_id) !== Number(item.id));
+        localStorage.setItem('cart', JSON.stringify(newCart));
+        try { const el = document.getElementById('hdrCartCount'); if (el) el.textContent = newCart.reduce((s, it) => s + (it.qty || 0), 0); } catch(e){}
+      } catch (e) {}
+      // Đi tới trang checkout UI
+      window.location.href = data.checkout_url; // /payment/checkout/<payment_id>
+    } else if (data.payment_id) {
+      try {
+        const c = JSON.parse(localStorage.getItem('cart') || '[]');
+        const newCart = c.filter(x => Number(x.item_id) !== Number(item.id));
+        localStorage.setItem('cart', JSON.stringify(newCart));
+        try { const el = document.getElementById('hdrCartCount'); if (el) el.textContent = newCart.reduce((s, it) => s + (it.qty || 0), 0); } catch(e){}
+      } catch (e) {}
+      window.location.href = "/payment/checkout/" + data.payment_id;
+    } else {
+      alert(data.error || "Không tạo được thanh toán.");
+    }
+  } catch (e) {
+    console.error("Payment create failed:", e);
+    alert("Lỗi kết nối đến payment-service");
+  }
+}
+
+// Gán sự kiện cho nút Mua ngay
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("buyNowBtn");
+  if (btn) btn.addEventListener("click", (e)=>{ e.preventDefault(); handleBuyNow(); });
+  const rbtn = document.getElementById('reviewsBtn');
+  if (rbtn){
+    rbtn.addEventListener('click', function(e){
+      e.preventDefault();
+      const pid = {{ item.id }};
+      // prefer direct seller review page when seller id available
+      const seller = {{ (item.seller_id or item.owner_id or 'null') }};
+      if (seller) {
+        window.location.href = '/reviews/seller/' + encodeURIComponent(seller) + '?product_id=' + encodeURIComponent(pid);
+      } else {
+        window.location.href = '/reviews/product/' + pid;
+      }
+    });
+  }
+  const smallBtn = document.getElementById('smallReviewsBtn');
+  if (smallBtn){
+    smallBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      const pid = {{ item.id }};
+      // Navigate to product review page which now shows seller reviews for that product
+      window.location.href = '/reviews/product/' + encodeURIComponent(pid);
+    });
+  }
+});
+</script>
+
+<!-- Script để kiểm tra và hiển thị nút đánh giá -->
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const reviewButtonContainer = document.getElementById('reviewButtonContainer');
+    const reviewLink = document.getElementById('reviewLink');
+
+    // 1. Lấy thông tin sản phẩm và người bán từ template
+    const product_id = {{ item.id }};
+    let seller_id = {{ item.seller_id or item.owner_id or item.user_id or 'null' }};
+    const sellerUsername = "{{ (item.owner or item.owner_username) | e }}";
+
+    if (!reviewButtonContainer || !reviewLink) return;
+
+    // 2. Lấy thông tin người dùng đang đăng nhập
+    let buyer_id = null;
+    try {
+        const r = await fetch("/auth/me");
+        if (r.ok) {
+            const me = await r.json();
+            buyer_id = me && (me.sub || me.id);
+        }
+    } catch (e) {
+        console.warn("Chưa đăng nhập hoặc lỗi khi fetch /auth/me", e);
+        return; // Không đăng nhập, không hiển thị nút
+    }
+
+    if (!buyer_id) {
+        return; // Không có người dùng, không làm gì cả
+    }
+
+    // 3. Nếu seller_id chưa có, thử lấy qua username
+    if (!seller_id && sellerUsername) {
+        try {
+            const r = await fetch('/auth/users/' + encodeURIComponent(sellerUsername));
+            if (r.ok) {
+                const u = await r.json();
+                if (u && u.id) seller_id = u.id;
+            }
+        } catch (err) { /* ignore */ }
+    }
+
+    if (!seller_id) {
+        console.warn("Không xác định được seller_id để kiểm tra đánh giá.");
+        return;
+    }
+
+    // 4. Kiểm tra xem người dùng đã mua và được duyệt sản phẩm này chưa
+    try {
+        const params = new URLSearchParams({
+            buyer_id: buyer_id,
+            seller_id: seller_id,
+            status: 'paid'
+        });
+        const paymentResponse = await fetch('/payments/mine', { credentials: 'include' });
+        if (!paymentResponse.ok) {
+            return; // Lỗi khi gọi payment service
+        }
+
+        const paymentData = await paymentResponse.json();
+        const payments = paymentData.items || [];
+
+        let hasPurchased = false;
+        for (const payment of payments) {
+          // filter by seller if provided
+          if (seller_id && String(payment.seller_id || payment.seller || '') !== String(seller_id)) continue;
+          if ((payment.status || '').toLowerCase() !== 'paid') continue;
+          const items = payment.items || [];
+          if (items.some(it => String((it.item_id || it.id || it.itemId) || '') === String(product_id))) {
+            hasPurchased = true;
+            break;
+          }
+        }
+
+        // 5. Nếu đã mua, hiển thị nút
+        if (hasPurchased) {
+            reviewLink.href = `/reviews/seller/${seller_id}?product_id=${product_id}`;
+            reviewButtonContainer.style.display = 'block';
+        }
+
+    } catch (e) {
+        console.error("Lỗi khi kiểm tra điều kiện hiển thị nút đánh giá:", e);
+    }
+});
+</script>
+
+  </body>
+</html>

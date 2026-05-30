@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Giỏ hàng - EV Trading</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .cart-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 30px;
+      }
+      @media (max-width: 968px) {
+        .cart-container {
+          grid-template-columns: 1fr;
+        }
+      }
+      .cart-items {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .cart-summary {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
+      .cart-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #1a1a1a;
+      }
+      .cart-item {
+        display: flex;
+        gap: 16px;
+        padding: 20px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .cart-item:last-child {
+        border-bottom: none;
+      }
+      .cart-item-img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+      .cart-item-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cart-item-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+      }
+      .cart-item-price {
+        font-size: 18px;
+        font-weight: 600;
+        color: #ff6b35;
+      }
+      .cart-item-meta {
+        font-size: 14px;
+        color: #666;
+      }
+      .cart-qty-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      /* Removed increment/decrement buttons by design; keep minimal styling for qty display */
+      .qty-display {
+        font-size: 16px;
+        font-weight: 600;
+        min-width: 30px;
+        text-align: center;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid #f0f0f0;
+      }
+      .remove-btn {
+        background: transparent;
+        border: none;
+        color: #ff4444;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+      .remove-btn:hover {
+        background: #fff0f0;
+      }
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        font-size: 15px;
+      }
+      .summary-row.total {
+        border-top: 2px solid #eee;
+        margin-top: 12px;
+        padding-top: 16px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+      .checkout-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+      }
+      .checkout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+      }
+      .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+      }
+      .empty-cart i {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-container">
+        <div class="logo-section">
+          <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+          <img src="/static/images/logo.png" alt="EV Trading" class="logo" />
+        </div>
+        <div class="user-menu">
+          <a href="/favorites" class="user-menu-item"
+            ><i class="fas fa-heart"></i> Yêu thích</a
+          >
+          <a href="/cart" class="user-menu-item"
+            ><i class="fas fa-shopping-cart"></i> Giỏ hàng</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <div class="cart-container">
+      <div class="cart-items">
+        <h2 class="cart-title">
+          <i class="fas fa-shopping-bag"></i> Giỏ hàng của bạn
+        </h2>
+        {% if items %} {% for line in items %} {% set it = line.item %}
+        <div class="cart-item">
+          {% set img_url = it.main_image_url if it else None %}
+          <img
+            src="{{ img_url or '/static/images/placeholder.png' }}"
+            alt="{{ (it.name if it else 'Sản phẩm') or 'Sản phẩm' }}"
+            class="cart-item-img"
+            onerror="this.onerror=null;this.src='/static/images/placeholder.png'"
+          />
+          <div class="cart-item-details">
+            <h3 class="cart-item-name">
+              {{ (it.name if it else 'Sản phẩm') or 'Sản phẩm' }}
+            </h3>
+            {% if it %}
+            <div class="cart-item-meta">
+              <i class="fas fa-map-marker-alt"></i>
+              {{ it.province or 'Không rõ địa điểm' }}
+            </div>
+            {% if line.item_type == 'vehicle' %}
+            <div class="cart-item-meta">
+              <i class="fas fa-gas-pump"></i>
+              Pin: {{ it.battery_capacity or it.battery_capacity_kwh or 'N/A' }}
+              kWh •
+              <i class="fas fa-road" style="margin-left: 8px"></i>
+              {{ it.mileage or it.km or 0 }} km
+            </div>
+            {% elif line.item_type == 'battery' %}
+            <div class="cart-item-meta">
+              <i class="fas fa-bolt"></i>
+              Công suất: {{ it.capacity_kwh or it.battery_capacity or 'N/A' }}
+              kWh {% if it.health_percent %} •
+              <i class="fas fa-heartbeat" style="margin-left: 8px"></i>
+              {{ it.health_percent }}% {% endif %} {% if it.cycles %} • {{
+              it.cycles }} chu kỳ {% endif %}
+            </div>
+            {% endif %} {% endif %}
+            <div class="cart-item-price">
+              {{ "{:,.0f}".format(((line.price or 0)|float)) }} đ
+            </div>
+            <div class="cart-qty-controls">
+              <span class="qty-display">{{ line.qty }}</span>
+              <button
+                class="remove-btn"
+                onclick="removeItem('{{ line.item_type }}', {{ line.item_id }})"
+              >
+                <i class="fas fa-trash"></i> Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="empty-cart">
+          <i class="fas fa-shopping-cart"></i>
+          <p>Giỏ hàng trống</p>
+          <a href="/" style="color: #ff6b35">← Tiếp tục mua sắm</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Cart summary -->
+      <div
+        id="cartSummary"
+        class="cart-summary"
+        style="{% if not items %}display:none;{% endif %}"
+      >
+        <h3 class="cart-title">Tóm tắt đơn hàng</h3>
+        <div class="summary-row">
+          <span>Tạm tính</span>
+          <span id="summarySubtotal"
+            >{% if items %}{{ (subtotal or 0) | int | string }} đ{% else %}0 đ{%
+            endif %}</span
+          >
+        </div>
+        <div class="summary-row">
+          <span>Phí vận chuyển</span>
+          <span>Miễn phí</span>
+        </div>
+        <div class="summary-row total">
+          <span>Tổng cùng</span>
+          <span id="summaryTotal" style="color: #ff6b35"
+            >{% if items %}{{ (subtotal or 0) | int | string }} đ{% else %}0 đ{%
+            endif %}</span
+          >
+        </div>
+        <button id="checkoutBtn" type="button" class="checkout-btn">
+          <i class="fas fa-lock"></i> Tiến hành thanh toán
+        </button>
+
+        <a
+          href="/"
+          style="
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #666;
+            text-decoration: none;
+          "
+        >
+          <i class="fas fa-arrow-left"></i> Tiếp tục mua sắm
+        </a>
+      </div>
+    </div>
+
+    <!-- expose user id từ session -->
+    <script>
+      const CURRENT_USER_ID =
+        {{ (session.get('user') or {}).get('id') or 'null' }};
+    </script>
+
+    <script>
+      // ===== Local cart utils =====
+      function getCart() {
+        try {
+          return JSON.parse(localStorage.getItem("cart") || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveCart(cart) {
+        localStorage.setItem("cart", JSON.stringify(cart || []));
+      }
+
+      async function fetchListing(id) {
+        try {
+          const r = await fetch("/api/listings/" + id);
+          if (!r.ok) return null;
+          const j = await r.json();
+          return j;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function formatVnd(n) {
+        try {
+          return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + " đ";
+        } catch (e) {
+          return (n || 0) + " đ";
+        }
+      }
+
+      // ===== Render cart (client) =====
+      async function renderCart() {
+        let cart = getCart();
+        const container = document.querySelector(".cart-items");
+        const summary = document.getElementById("cartSummary");
+        if (!container) return;
+
+        if (!cart || cart.length === 0) {
+          container.innerHTML = `
+            <div class="empty-cart">
+              <i class="fas fa-shopping-cart"></i>
+              <p>Giỏ hàng trống</p>
+              <a href="/" style="color: #ff6b35">← Tiếp tục mua sắm</a>
+            </div>`;
+          if (summary) summary.style.display = "none";
+          try {
+            const el = document.getElementById("hdrCartCount");
+            if (el) el.textContent = 0;
+          } catch (e) {}
+          return;
+        }
+
+        if (summary) summary.style.display = "";
+
+        // Lấy chi tiết listing cho từng item
+        const details = await Promise.all(
+          cart.map((c) => fetchListing(c.item_id))
+        );
+
+        // LỌC BỎ SẢN PHẨM ĐÃ BÁN HOẶC KHÔNG CÒN TỒN TẠI
+        const filteredCart = [];
+        const filteredDetails = [];
+
+        for (let i = 0; i < cart.length; i++) {
+          const line = cart[i];
+          const it = details[i];
+
+          // Nếu không tải được listing, bỏ luôn
+          if (!it) continue;
+
+          const isSold =
+            it.is_sold === true ||
+            it.mark_sold === true ||
+            it.status === "sold" ||
+            it.status === "inactive";
+
+          if (isSold) {
+            console.log("Remove sold item from cart:", line.item_id);
+            continue;
+          }
+
+          filteredCart.push(line);
+          filteredDetails.push(it);
+        }
+
+        // cập nhật lại giỏ hàng (xoá hết item đã bán)
+        cart = filteredCart;
+        saveCart(cart);
+
+        if (!cart || cart.length === 0) {
+          container.innerHTML = `
+            <div class="empty-cart">
+              <i class="fas fa-shopping-cart"></i>
+              <p>Giỏ hàng trống</p>
+              <a href="/" style="color: #ff6b35">← Tiếp tục mua sắm</a>
+            </div>`;
+          if (summary) summary.style.display = "none";
+          return;
+        }
+
+        let subtotal = 0;
+        const html = cart
+          .map((line, idx) => {
+            const it = filteredDetails[idx];
+            const img =
+              it && it.main_image_url
+                ? it.main_image_url
+                : "/static/images/logo.png";
+            const name = it && it.name ? it.name : "Sản phẩm " + line.item_id;
+            const price = Number(line.price || (it && it.price) || 0);
+            subtotal += price * (line.qty || 1);
+            return `
+              <div class="cart-item">
+                <img src="${img}" class="cart-item-img"
+                     onerror="this.onerror=null;this.src='/static/images/logo.png'" />
+                <div class="cart-item-details">
+                  <h3 class="cart-item-name">${name}</h3>
+                  <div class="cart-item-meta">${
+                    it && it.province
+                      ? '<i class="fas fa-map-marker-alt"></i> ' + it.province
+                      : ""
+                  }</div>
+                  <div class="cart-item-price">${formatVnd(price)}</div>
+                  <div class="cart-qty-controls">
+                    <span class="qty-display">${line.qty || 1}</span>
+                    <button class="remove-btn" data-id="${
+                      line.item_id
+                    }"><i class="fas fa-trash"></i> Xóa</button>
+                  </div>
+                </div>
+              </div>`;
+          })
+          .join("\n");
+
+        container.innerHTML = html;
+        // Update header cart count to reflect number of items (qtys currently always 1)
+        try {
+          const el = document.getElementById("hdrCartCount");
+          if (el) el.textContent = cart.reduce((s, c) => s + (c.qty || 0), 0);
+        } catch (e) {}
+
+        const subtotalEl = document.getElementById("summarySubtotal");
+        const totalEl = document.getElementById("summaryTotal");
+        if (subtotalEl) subtotalEl.textContent = formatVnd(subtotal);
+        if (totalEl) totalEl.textContent = formatVnd(subtotal);
+
+        // No increment/decrement buttons — only remove button is used
+
+        container.querySelectorAll(".remove-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = Number(btn.dataset.id);
+            const c = getCart().filter((x) => Number(x.item_id) !== id);
+            saveCart(c);
+            renderCart();
+          });
+        });
+      }
+
+      // Update function intentionally removed — increment/decrement not exposed in UI
+
+      function removeItem(type, id) {
+        if (!confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+        const cart = getCart().filter((c) => Number(c.item_id) !== Number(id));
+        saveCart(cart);
+        renderCart();
+      }
+
+      // ===== Checkout: luôn gửi buyer_id & seller_id =====
+      async function handleCheckout(e) {
+        e.preventDefault();
+
+        const cart = getCart();
+        if (!cart || cart.length === 0) {
+          alert("Giỏ hàng trống");
+          return;
+        }
+
+        // Phải có buyer_id
+        const buyerId =
+          typeof CURRENT_USER_ID !== "undefined" && CURRENT_USER_ID
+            ? Number(CURRENT_USER_ID)
+            : null;
+        if (!buyerId) {
+          window.location.href =
+            "/login?next=" + encodeURIComponent(location.pathname);
+          return;
+        }
+
+        let amount = 0;
+        const items = [];
+        const sellerIds = new Set();
+
+        for (const line of cart) {
+          let sId = line.seller_id ?? null;
+
+          const it = await fetchListing(line.item_id);
+          if (!it) {
+            alert("Không tải được thông tin sản phẩm #" + line.item_id);
+            return;
+          }
+
+          // Nếu sản phẩm đã bán rồi thì xoá khỏi giỏ và dừng checkout
+          const isSold =
+            it.is_sold === true ||
+            it.mark_sold === true ||
+            it.status === "sold" ||
+            it.status === "inactive";
+
+          if (isSold) {
+            alert(
+              "Sản phẩm '" +
+                (it.name || "#" + line.item_id) +
+                "' đã được bán. Hệ thống sẽ xoá khỏi giỏ hàng."
+            );
+            const newCart = getCart().filter(
+              (c) => Number(c.item_id) !== Number(line.item_id)
+            );
+            saveCart(newCart);
+            renderCart();
+            return;
+          }
+
+          const price = Number(line.price || it.price || 0);
+          const qty = Number(line.qty || 1);
+          amount += price * qty;
+
+          if (!sId) {
+            sId =
+              it.seller_id ??
+              it.owner_id ??
+              it.user_id ??
+              (it.seller && it.seller.id) ??
+              (it.owner && it.owner.id) ??
+              (it.user && it.user.id) ??
+              null;
+          }
+
+          if (!sId) {
+            alert(
+              "Lỗi: Không xác định được người bán cho sản phẩm '" +
+                (it.name || "#" + line.item_id) +
+                "'. Vui lòng liên hệ hỗ trợ."
+            );
+            console.error("Missing seller_id for item:", it);
+            return;
+          }
+
+          sellerIds.add(String(sId));
+
+          items.push({
+            item_id: line.item_id,
+            item_type: line.item_type || "vehicle",
+            qty,
+            price,
+            seller_id: sId,
+            name: it.name || "SP#" + line.item_id,
+          });
+        }
+
+        if (sellerIds.size > 1) {
+          alert(
+            "Giỏ hàng có nhiều người bán khác nhau. Vui lòng thanh toán theo từng người bán."
+          );
+          return;
+        }
+
+        const sellerId = Number([...sellerIds][0]);
+
+        const payload = {
+          order_id: "ORD-" + Date.now(),
+          method: "momo",
+          amount: Math.round(amount),
+          buyer_id: buyerId,
+          seller_id: sellerId,
+          items,
+        };
+
+        try {
+          const res = await fetch("/payment/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.status === 401) {
+            window.location.href =
+              "/login?next=" + encodeURIComponent(location.pathname);
+            return;
+          }
+
+          if (res.ok && data.checkout_url) {
+            // Payment created successfully -> clear purchased items from local cart
+            try {
+              // The payload items used for creating payment are in `items` variable above
+              const currentCart = getCart();
+              const purchasedIds = new Set(
+                items.map((it) => Number(it.item_id))
+              );
+              const newCart = currentCart.filter(
+                (c) => !purchasedIds.has(Number(c.item_id))
+              );
+              saveCart(newCart);
+              renderCart();
+            } catch (e) {
+              /* ignore local storage errors */
+            }
+            window.location.href = data.checkout_url;
+          } else if (data.payment_id) {
+            try {
+              const currentCart = getCart();
+              const purchasedIds = new Set(
+                items.map((it) => Number(it.item_id))
+              );
+              const newCart = currentCart.filter(
+                (c) => !purchasedIds.has(Number(c.item_id))
+              );
+              saveCart(newCart);
+              renderCart();
+            } catch (e) {}
+            window.location.href = "/payment/checkout/" + data.payment_id;
+          } else {
+            alert(data.error || "Không tạo được thanh toán");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Lỗi khi kết nối payment service");
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        renderCart();
+        const btn = document.getElementById("checkoutBtn");
+        if (btn) btn.addEventListener("click", handleCheckout);
+      });
+    </script>
+  </body>
+</html>
