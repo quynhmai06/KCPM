@@ -1,0 +1,1613 @@
+{
+  "info": {
+    "_postman_id": "650a96e1-37a9-457c-9e3a-88a376ca255b",
+    "name": "Auth Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50117124"
+  },
+  "item": [
+    {
+      "name": "Auth_001",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const s = Date.now();\r",
+              "pm.environment.set(\"baseUsername\", \"nguyenvannam_\" + s);\r",
+              "pm.environment.set(\"baseEmail\", \"nam_\" + s + \"@gmail.com\");\r",
+              "pm.environment.set(\"basePhone\", \"09\" + String(s).slice(-8));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_001 - Status 201\", () => pm.response.to.have.status(201));\r",
+              "\r",
+              "pm.test(\"Auth_001 - Save user id\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json).to.have.property(\"id\");\r",
+              "  pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
+              "  pm.environment.set(\"testUserId\", json.id);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_002",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Đăng ký thành công - trả về 201 Created\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"nguyenvana\",\r\n  \"email\": \"a@gmail.com\",\r\n  \"phone\": \"0849247866}\",\r\n  \"password\": \"12345\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5001/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5001",
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_003",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_003 - Status 400\", () => pm.response.to.have.status(400));\r",
+              "pm.test(\"Auth_003 - missing_fields\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"missing_email_user\",\r\n  \"phone\": \"0911111112\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_004",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_004 - Status 400\", () => pm.response.to.have.status(400));\r",
+              "pm.test(\"Auth_004 - missing_fields\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"missing_password_user\",\r\n  \"email\": \"missing_password@gmail.com\",\r\n  \"phone\": \"0911111113\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_005",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_005 - Status 400\", () => pm.response.to.have.status(400));\r",
+              "pm.test(\"Auth_005 - missing_fields\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"missing_phone_user\",\r\n  \"email\": \"missing_phone@gmail.com\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_006",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_006 - Status 409\", () => pm.response.to.have.status(409));\r",
+              "pm.test(\"Auth_006 - username_exists\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"username_exists\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"vannam@gmail.com\",\r\n  \"phone\": \"0987654321\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_007",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_007 - Status 409\", () => pm.response.to.have.status(409));\r",
+              "pm.test(\"Auth_007 - email_exists\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"email_exists\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"nguyenvannamm\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"0987654321\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_008",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_008 - Status 409\", () => pm.response.to.have.status(409));\r",
+              "pm.test(\"Auth_008 - phone_exists\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"phone_exists\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"nguyenvannamm\",\r\n  \"email\": \"vannam@gmail.com\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_009",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const s = Date.now();\r",
+              "pm.environment.set(\"upperUsername\", \"lequynam_\" + s);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_009 - Status 201\", () => pm.response.to.have.status(201));\r",
+              "pm.test(\"Auth_009 - Has id\", () => {\r",
+              "  pm.expect(pm.response.json()).to.have.property(\"id\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{upperUsername}}\",\r\n  \"email\": \"  LENAM{{upperUsername}}@GMAIL.COM  \",\r\n  \"phone\": \"0912345678\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_010",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const s = Date.now();\r",
+              "pm.environment.set(\"phone84Username\", \"phone84_\" + s);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_010 - Status 201\", () => pm.response.to.have.status(201));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"lequynam\",\r\n  \"email\": \"lenam@gmail.com\",\r\n  \"phone\": \"84982345678\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_011",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_011 - Status 200\", () => {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_011 - Save memberToken\", () => {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"access_token\");\r",
+              "    pm.environment.set(\"memberToken\", json.access_token);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_012",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_012 - Status 200\", () => {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_012 - Has access_token\", () => {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"access_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_013",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_013 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_013 - Has token\", () => {\r",
+              "  pm.expect(pm.response.json()).to.have.property(\"access_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"identifier\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_014",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_014 - Status 400\", () => pm.response.to.have.status(400));\r",
+              "pm.test(\"Auth_014 - missing_fields\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_015",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_015 - Status 400\", () => pm.response.to.have.status(400));\r",
+              "pm.test(\"Auth_015 - missing_fields\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_016",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_016 - Status 401\", () => pm.response.to.have.status(401));\r",
+              "pm.test(\"Auth_016 - invalid_credentials\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"invalid_credentials\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"sai123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_017",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_017 - Status 403\", () => {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_017 - not_approved\", () => {\r",
+              "    pm.expect(pm.response.json().error).to.eql(\"not_approved\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_018",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_018 - Status 403\", () => pm.response.to.have.status(403));\r",
+              "pm.test(\"Auth_018 - locked\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"locked\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_019",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_019 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "\r",
+              "pm.test(\"Auth_019 - Payload valid\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json).to.have.property(\"sub\");\r",
+              "  pm.expect(json).to.have.property(\"username\");\r",
+              "  pm.expect(json).to.have.property(\"role\");\r",
+              "  pm.expect(json).to.have.property(\"approved\");\r",
+              "  pm.expect(json).to.have.property(\"locked\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/me",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_020",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_020 - Status 401\", () => pm.response.to.have.status(401));\r",
+              "pm.test(\"Auth_020 - no_token\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/me",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_021",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_021 - Status 401\", () => pm.response.to.have.status(401));\r",
+              "pm.test(\"Auth_021 - invalid_token\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"invalid_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_token",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/me",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_022",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_022 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_022 - Has data\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json.data).to.be.an(\"array\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/admin/users",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "admin",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_023",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_023 - Status 401\", () => pm.response.to.have.status(401));\r",
+              "pm.test(\"Auth_023 - no_token\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/admin/users",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "admin",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_024",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_024 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_024 - ok true\", () => {\r",
+              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"status\": \"approved\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{testUserId}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_025",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_025 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_025 - ok true\", () => {\r",
+              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"status\": \"locked\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{testUserId}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_026",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_026 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_026 - ok true\", () => {\r",
+              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"status\": \"pending\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{testUserId}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_027",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_027 - Status 403\", () => pm.response.to.have.status(403));\r",
+              "pm.test(\"Auth_027 - forbidden\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"forbidden\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"status\": \"approved\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{testUserId}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_028",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_028 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_028 - Has user and profile\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json).to.have.property(\"user\");\r",
+              "  pm.expect(json).to.have.property(\"profile\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_029",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_029 - Status 401\", () => pm.response.to.have.status(401));\r",
+              "pm.test(\"Auth_029 - no_token\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_030",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_030 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_030 - Profile updated\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json.ok).to.eql(true);\r",
+              "  pm.expect(json.profile.full_name).to.eql(\"Nguyen Van Nam\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"full_name\": \"Nguyen Van Nam\",\r\n  \"address\": \"TP.HCM\",\r\n  \"gender\": \"male\",\r\n  \"birthdate\": \"2003-01-01\",\r\n  \"phone\": \"0987654321\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_031",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_031 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_031 - Has public user info\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
+              "  pm.expect(json).to.have.property(\"email\");\r",
+              "  pm.expect(json).to.have.property(\"phone\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{baseUsername}}",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{baseUsername}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_032",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_032 - Status 404\", () => pm.response.to.have.status(404));\r",
+              "pm.test(\"Auth_032 - not_found\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"not_found\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/users/nguyenvanb_not_exist",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "nguyenvanb_not_exist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_033",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_033 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_033 - Has user by id info\", () => {\r",
+              "  const json = pm.response.json();\r",
+              "  pm.expect(json).to.have.property(\"id\");\r",
+              "  pm.expect(json).to.have.property(\"username\");\r",
+              "  pm.expect(json).to.have.property(\"full_name\");\r",
+              "  pm.expect(json).to.have.property(\"avatar_url\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/users/by-id/1",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "by-id",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_034",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_034 - Status 404\", () => pm.response.to.have.status(404));\r",
+              "pm.test(\"Auth_034 - user_not_found\", () => {\r",
+              "  pm.expect(pm.response.json().error).to.eql(\"user_not_found\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{auth_url}}/auth/users/by-id/99999",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "by-id",
+            "99999"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "expectedCode",
+      "value": ""
+    }
+  ]
+}

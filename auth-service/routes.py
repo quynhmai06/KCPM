@@ -168,8 +168,16 @@ def get_user_by_id(user_id: int):
 
     avatar_url = None
     # New avatar system via UserProfile
-    if profile and profile.avatar:
-        avatar_url = url_for('static', filename=f'{AVATAR_DIR}/{profile.avatar}', _external=True)
+    if profile and profile.avatar_url:
+        raw_avatar = profile.avatar_url
+        if raw_avatar.startswith(("http://", "https://", "/")):
+            avatar_url = raw_avatar
+        else:
+            avatar_url = url_for(
+                "static",
+                filename=f"{AVATAR_DIR}/{raw_avatar}",
+                _external=True
+            )
     
     # Fallback to old avatar system if new profile avatar not found
     if not avatar_url:
