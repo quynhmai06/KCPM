@@ -6,11 +6,30 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      jira_issue_key:
+        description: Jira issue key to transition after successful tests, for example KTPM-1
+        required: false
+        type: string
 
 jobs:
   api-test:
     name: Build backend and run Postman tests
     runs-on: ubuntu-latest
+    env:
+      GATEWAY_URL: http://localhost:8000
+      AUTH_URL: http://localhost:5001
+      LISTING_URL: http://localhost:5002
+      ADMIN_URL: http://localhost:5003
+      FAVORITES_URL: http://localhost:5004
+      PAYMENT_URL: http://localhost:5008
+      PRICING_URL: http://localhost:5009
+      SEARCH_URL: http://localhost:5010
+      REVIEWS_URL: http://localhost:5011
+      ADMIN_USERNAME: admin
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin123
+      TEST_PASSWORD: "123456"
 
     steps:
       - name: Checkout source code
@@ -29,6 +48,9 @@ jobs:
           cat > .env <<'EOF'
           JWT_SECRET=ci_jwt_secret
           GATEWAY_SECRET=ci_gateway_secret
+          ADMIN_USERNAME=admin
+          ADMIN_EMAIL=admin@example.com
+          ADMIN_PASSWORD=admin123
           AUTH_URL_INTERNAL=http://auth_service:5001
           ADMIN_URL_INTERNAL=http://admin_service:5003
           LISTING_URL=http://listing_service:5002
@@ -56,40 +78,45 @@ jobs:
       - name: Wait for backend health checks
         run: |
           wait-on \
-            http://localhost:8000/health \
-            http://localhost:5001/health \
-            http://localhost:5002/ \
-            http://localhost:5003/health \
-            http://localhost:5004/favorites/ \
-            http://localhost:5008/payment/health \
-            http://localhost:5009/ \
-            http://localhost:5010/search/ \
-            http://localhost:5011/ \
+            "$GATEWAY_URL/health" \
+            "$AUTH_URL/health" \
+            "$LISTING_URL/" \
+            "$ADMIN_URL/health" \
+            "$FAVORITES_URL/favorites/" \
+            "$PAYMENT_URL/payment/health" \
+            "$PRICING_URL/" \
+            "$SEARCH_URL/search/" \
+            "$REVIEWS_URL/" \
             --timeout 180000 \
             --interval 3000
+
+      - name: Seed auth admin user
+        run: docker compose exec -T auth_service python init_db.py
 
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run Postman API tests with Newman
+      - name: Run shared Postman API tests with Newman
         run: |
           mkdir -p reports
           newman run postman/postman_collection.json \
             -e postman/postman_environment.json \
-            --env-var gatewayUrl=http://localhost:8000 \
+            --env-var gatewayUrl="$GATEWAY_URL" \
+            --env-var authUrl="$AUTH_URL" \
+            --env-var listingUrl="$LISTING_URL" \
+            --env-var adminUrl="$ADMIN_URL" \
+            --env-var favoritesUrl="$FAVORITES_URL" \
+            --env-var paymentUrl="$PAYMENT_URL" \
+            --env-var pricingUrl="$PRICING_URL" \
+            --env-var searchUrl="$SEARCH_URL" \
+            --env-var reviewsUrl="$REVIEWS_URL" \
+            --env-var adminUsername="$ADMIN_USERNAME" \
+            --env-var adminEmail="$ADMIN_EMAIL" \
+            --env-var adminPassword="$ADMIN_PASSWORD" \
+            --env-var testPassword="$TEST_PASSWORD" \
             --reporters cli,junit,htmlextra \
             --reporter-junit-export reports/newman-result.xml \
             --reporter-htmlextra-export reports/newman-report.html
-
-      - name: Move Jira issue to Done when tests pass
-        if: success()
-        run: bash scripts/transition-jira-issue.sh
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
-          JIRA_TRANSITION_PATH: In Progress,Testing,Done
 
       - name: Collect Docker logs when failed
         if: failure()
