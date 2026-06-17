@@ -97,19 +97,12 @@ jobs:
         run: docker compose ps
 
       - name: Run shared Postman API tests with Newman
+        id: newman
         run: |
           mkdir -p reports
-          newman run postman/postman_collection.json \
+          newman run postman/authservice_postman_collection.json \
             -e postman/postman_environment.json \
-            --env-var gatewayUrl="$GATEWAY_URL" \
-            --env-var authUrl="$AUTH_URL" \
-            --env-var listingUrl="$LISTING_URL" \
-            --env-var adminUrl="$ADMIN_URL" \
-            --env-var favoritesUrl="$FAVORITES_URL" \
-            --env-var paymentUrl="$PAYMENT_URL" \
-            --env-var pricingUrl="$PRICING_URL" \
-            --env-var searchUrl="$SEARCH_URL" \
-            --env-var reviewsUrl="$REVIEWS_URL" \
+            --env-var auth_url="$AUTH_URL" \
             --env-var adminUsername="$ADMIN_USERNAME" \
             --env-var adminEmail="$ADMIN_EMAIL" \
             --env-var adminPassword="$ADMIN_PASSWORD" \
