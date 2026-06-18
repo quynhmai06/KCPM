@@ -107,8 +107,9 @@ jobs:
             --env-var adminEmail="$ADMIN_EMAIL" \
             --env-var adminPassword="$ADMIN_PASSWORD" \
             --env-var testPassword="$TEST_PASSWORD" \
-            --reporters cli,junit,htmlextra \
+            --reporters cli,junit,json,htmlextra \
             --reporter-junit-export reports/newman-result.xml \
+            --reporter-json-export reports/newman-result.json \
             --reporter-htmlextra-export reports/newman-report.html
 
       - name: Collect Docker logs when failed

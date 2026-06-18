@@ -38,7 +38,7 @@ auth_response_file="$(mktemp)"
 project_response_file="$(mktemp)"
 permission_response_file="$(mktemp)"
 project_search_response_file="$(mktemp)"
-payload_file="$(mktemp)"
+payload_dir="$(mktemp -d)"
 response_file="$(mktemp)"
 sprint_payload_file="$(mktemp)"
 sprint_response_file="$(mktemp)"
@@ -49,10 +49,10 @@ cleanup() {
     "$project_response_file" \
     "$permission_response_file" \
     "$project_search_response_file" \
-    "$payload_file" \
     "$response_file" \
     "$sprint_payload_file" \
     "$sprint_response_file"
+  rm -rf "$payload_dir"
 }
 trap cleanup EXIT
 
@@ -162,66 +162,54 @@ fi
 echo "Project ${jira_project_key} and required permissions verified."
 
 run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown/repository}/actions/runs/${GITHUB_RUN_ID:-unknown}"
-summary="API automation test failed"
+python3 scripts/build-jira-issues.py \
+  --newman-report reports/newman-result.json \
+  --output-dir "$payload_dir" \
+  --project-id "$project_id" \
+  --issue-type "$jira_issue_type" \
+  --run-url "$run_url" \
+  --repository "${GITHUB_REPOSITORY:-unknown}" \
+  --workflow "${GITHUB_WORKFLOW:-unknown}"
 
-python3 - "$summary" "$run_url" "$project_id" "$jira_issue_type" > "$payload_file" <<'PY'
+shopt -s nullglob
+payload_files=("$payload_dir"/issue-*.json)
+if [ "${#payload_files[@]}" -eq 0 ]; then
+  fail "Jira payload generation failed" "No Jira issue payload was generated from the Newman report."
+fi
+
+echo "Creating ${#payload_files[@]} Jira issue(s) from failed test cases."
+issue_keys=()
+
+for issue_payload_file in "${payload_files[@]}"; do
+  issue_summary="$(python3 - "$issue_payload_file" <<'PY'
 import json
-import os
 import sys
 
-summary = sys.argv[1]
-run_url = sys.argv[2]
-project_id = sys.argv[3]
-issue_type = sys.argv[4]
-
-description = (
-    "Postman/Newman API test failed in GitHub Actions. "
-    f"Repository: {os.getenv('GITHUB_REPOSITORY', 'unknown')}. "
-    f"Workflow: {os.getenv('GITHUB_WORKFLOW', 'unknown')}. "
-    f"Run: {run_url}. "
-    "Please check the uploaded api-test-report artifact."
-)
-
-payload = {
-    "fields": {
-        "project": {"id": project_id},
-        "summary": summary,
-        "description": {
-            "type": "doc",
-            "version": 1,
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": description}],
-                }
-            ],
-        },
-        "issuetype": {"name": issue_type},
-    }
-}
-
-json.dump(payload, sys.stdout)
+with open(sys.argv[1], encoding="utf-8") as f:
+    print(json.load(f).get("fields", {}).get("summary", "API automation test failed"))
 PY
+)"
+  echo "Creating Jira issue: ${issue_summary}"
 
-if ! http_code="$(
-  curl -sS \
-    -o "$response_file" \
-    -w "%{http_code}" \
-    -X POST "$jira_base_url/rest/api/3/issue" \
-    -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-    -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    --data @"$payload_file"
-)"; then
-  fail "Jira issue creation failed" "The request to create a Jira issue could not be completed."
-fi
+  if ! http_code="$(
+    curl -sS \
+      -o "$response_file" \
+      -w "%{http_code}" \
+      -X POST "$jira_base_url/rest/api/3/issue" \
+      -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+      -H "Accept: application/json" \
+      -H "Content-Type: application/json" \
+      --data @"$issue_payload_file"
+  )"; then
+    fail "Jira issue creation failed" "The request to create a Jira issue could not be completed."
+  fi
 
-if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
-  cat "$response_file"
-  fail "Jira issue creation failed" "Jira returned HTTP ${http_code}. Check that issue type ${jira_issue_type} exists and that all required fields have defaults."
-fi
+  if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+    cat "$response_file"
+    fail "Jira issue creation failed" "Jira returned HTTP ${http_code} for ${issue_summary}."
+  fi
 
-issue_key="$(python3 - "$response_file" <<'PY'
+  issue_key="$(python3 - "$response_file" <<'PY'
 import json
 import sys
 
@@ -230,22 +218,24 @@ with open(sys.argv[1], encoding="utf-8") as f:
 PY
 )"
 
-if [ -z "$issue_key" ]; then
-  fail "Invalid Jira create response" "The issue may have been created, but Jira did not return its key."
-fi
+  if [ -z "$issue_key" ]; then
+    fail "Invalid Jira create response" "The issue may have been created, but Jira did not return its key."
+  fi
 
-echo "Jira issue ${issue_key} created successfully."
+  issue_keys+=("$issue_key")
+  echo "Jira issue ${issue_key} created successfully for ${issue_summary}."
+done
 
 if [ -z "${JIRA_SPRINT_ID:-}" ]; then
-  echo "::notice::JIRA_SPRINT_ID is not configured; issue ${issue_key} was created without a sprint."
+  echo "::notice::JIRA_SPRINT_ID is not configured; created issues were not added to a sprint."
   exit 0
 fi
 
-python3 - "$issue_key" > "$sprint_payload_file" <<'PY'
+python3 - "${issue_keys[@]}" > "$sprint_payload_file" <<'PY'
 import json
 import sys
 
-json.dump({"issues": [sys.argv[1]]}, sys.stdout)
+json.dump({"issues": sys.argv[1:]}, sys.stdout)
 PY
 
 if ! sprint_http_code="$(
@@ -258,14 +248,14 @@ if ! sprint_http_code="$(
     -H "Content-Type: application/json" \
     --data @"$sprint_payload_file"
 )"; then
-  echo "::warning::Issue ${issue_key} was created, but the sprint request could not be completed."
+  echo "::warning::Jira issues were created, but the sprint request could not be completed."
   exit 0
 fi
 
 if [ "$sprint_http_code" -lt 200 ] || [ "$sprint_http_code" -ge 300 ]; then
-  echo "::warning::Issue ${issue_key} was created, but adding it to sprint ${JIRA_SPRINT_ID} failed with HTTP ${sprint_http_code}."
+  echo "::warning::Jira issues were created, but adding them to sprint ${JIRA_SPRINT_ID} failed with HTTP ${sprint_http_code}."
   cat "$sprint_response_file"
   exit 0
 fi
 
-echo "Jira issue ${issue_key} added to sprint ${JIRA_SPRINT_ID} successfully."
+echo "Jira issues added to sprint ${JIRA_SPRINT_ID} successfully."
