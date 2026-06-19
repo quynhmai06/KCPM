@@ -96,21 +96,49 @@ jobs:
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run shared Postman API tests with Newman
+      - name: Run all Postman API collections with Newman
         id: newman
         run: |
           mkdir -p reports
-          newman run postman/authservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            --env-var auth_url="$AUTH_URL" \
-            --env-var adminUsername="$ADMIN_USERNAME" \
-            --env-var adminEmail="$ADMIN_EMAIL" \
-            --env-var adminPassword="$ADMIN_PASSWORD" \
-            --env-var testPassword="$TEST_PASSWORD" \
-            --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export reports/newman-result.xml \
-            --reporter-json-export reports/newman-result.json \
-            --reporter-htmlextra-export reports/newman-report.html
+          shopt -s nullglob
+          collections=(postman/*service_postman_collection.json)
+
+          if [ "${#collections[@]}" -eq 0 ]; then
+            echo "::error::No Postman service collections were found."
+            exit 1
+          fi
+
+          test_status=0
+          for collection in "${collections[@]}"; do
+            collection_file="$(basename "$collection")"
+            service_name="${collection_file%_postman_collection.json}"
+
+            echo "::group::Newman - ${service_name}"
+            if ! newman run "$collection" \
+              -e postman/postman_environment.json \
+              --env-var gateway_url="$GATEWAY_URL" \
+              --env-var auth_url="$AUTH_URL" \
+              --env-var listing_url="$LISTING_URL" \
+              --env-var admin_url="$ADMIN_URL" \
+              --env-var favorites_url="$FAVORITES_URL" \
+              --env-var payment_url="$PAYMENT_URL" \
+              --env-var pricing_url="$PRICING_URL" \
+              --env-var search_url="$SEARCH_URL" \
+              --env-var reviews_url="$REVIEWS_URL" \
+              --env-var adminUsername="$ADMIN_USERNAME" \
+              --env-var adminEmail="$ADMIN_EMAIL" \
+              --env-var adminPassword="$ADMIN_PASSWORD" \
+              --env-var testPassword="$TEST_PASSWORD" \
+              --reporters cli,junit,json,htmlextra \
+              --reporter-junit-export "reports/${service_name}-newman-result.xml" \
+              --reporter-json-export "reports/${service_name}-newman-result.json" \
+              --reporter-htmlextra-export "reports/${service_name}-newman-report.html"; then
+              test_status=1
+            fi
+            echo "::endgroup::"
+          done
+
+          exit "$test_status"
 
       - name: Collect Docker logs when failed
         if: failure()

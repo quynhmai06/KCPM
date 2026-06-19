@@ -162,8 +162,22 @@ fi
 echo "Project ${jira_project_key} and required permissions verified."
 
 run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown/repository}/actions/runs/${GITHUB_RUN_ID:-unknown}"
+shopt -s nullglob
+newman_reports=(reports/*-newman-result.json)
+newman_report_args=()
+
+if [ "${#newman_reports[@]}" -eq 0 ]; then
+  # Keep one missing path so the payload builder can explain that tests failed
+  # before Newman produced a report.
+  newman_report_args+=(--newman-report reports/newman-result.json)
+else
+  for newman_report in "${newman_reports[@]}"; do
+    newman_report_args+=(--newman-report "$newman_report")
+  done
+fi
+
 python3 scripts/build-jira-issues.py \
-  --newman-report reports/newman-result.json \
+  "${newman_report_args[@]}" \
   --output-dir "$payload_dir" \
   --project-id "$project_id" \
   --issue-type "$jira_issue_type" \
@@ -171,7 +185,6 @@ python3 scripts/build-jira-issues.py \
   --repository "${GITHUB_REPOSITORY:-unknown}" \
   --workflow "${GITHUB_WORKFLOW:-unknown}"
 
-shopt -s nullglob
 payload_files=("$payload_dir"/issue-*.json)
 if [ "${#payload_files[@]}" -eq 0 ]; then
   fail "Jira payload generation failed" "No Jira issue payload was generated from the Newman report."

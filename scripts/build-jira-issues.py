@@ -21,7 +21,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build one Jira issue payload for each failed Newman request."
     )
-    parser.add_argument("--newman-report", type=Path, required=True)
+    parser.add_argument(
+        "--newman-report",
+        type=Path,
+        action="append",
+        required=True,
+        help="Newman JSON report. Pass this option more than once for multiple collections.",
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--project-id", required=True)
     parser.add_argument("--issue-type", default="Bug")
@@ -282,17 +288,29 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     payloads: list[dict[str, Any]] = []
 
-    if not args.newman_report.is_file():
-        payloads.append(fallback_payload(args, "The Newman JSON report was not generated."))
-    else:
+    for newman_report in args.newman_report:
+        if not newman_report.is_file():
+            payloads.append(
+                fallback_payload(
+                    args,
+                    f"The Newman JSON report was not generated: {newman_report.name}.",
+                )
+            )
+            continue
+
         try:
-            report = json.loads(args.newman_report.read_text(encoding="utf-8"))
+            report = json.loads(newman_report.read_text(encoding="utf-8"))
             for execution in report.get("run", {}).get("executions", []):
                 failures = failed_assertions(execution)
                 if failures:
                     payloads.append(build_payload(execution, failures, args))
         except (json.JSONDecodeError, OSError, TypeError, ValueError) as error:
-            payloads.append(fallback_payload(args, f"Could not parse the Newman JSON report: {error}"))
+            payloads.append(
+                fallback_payload(
+                    args,
+                    f"Could not parse {newman_report.name}: {error}",
+                )
+            )
 
     if not payloads:
         payloads.append(
