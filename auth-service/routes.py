@@ -39,7 +39,8 @@ def normalize_phone(s: str | None) -> str | None:
 
 def _make_token(u: User) -> str:
     payload = {
-        "sub": u.id,
+        # PyJWT validates the registered subject claim as a string.
+        "sub": str(u.id),
         "username": u.username,
         "role": u.role,
         "approved": u.approved,
@@ -70,7 +71,11 @@ def _require_user():
         payload = jwt.decode(token, SECRET, algorithms=["HS256"])
     except Exception:
         return None, ({"error": "invalid_token"}, 401)
-    u = User.query.get(payload.get("sub"))
+    try:
+        user_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
+        return None, ({"error": "invalid_token"}, 401)
+    u = User.query.get(user_id)
     if not u:
         return None, ({"error": "user_not_found"}, 404)
     if u.locked:
@@ -124,10 +129,10 @@ def register():
     email = normalize_email(d.get("email"))
     phone = normalize_phone(d.get("phone"))
     password = d.get("password") or ""
-    if not username or not email or not password:
+    if not username or not email or not phone or not password:
         return {
             "error": "missing_fields",
-            "hint": "username, email, password required",
+            "hint": "username, email, phone, password required",
         }, 400
     conds = [User.username == username, User.email == email]
     if phone:

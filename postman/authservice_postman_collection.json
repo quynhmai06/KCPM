@@ -1588,7 +1588,32 @@
         "packages": {},
         "requests": {},
         "exec": [
-          ""
+          "const name = pm.info.requestName;",
+          "if (!pm.environment.get(\"testPassword\")) pm.environment.set(\"testPassword\", \"123456\");",
+          "const states = {Auth_011: \"approved\", Auth_017: \"pending\", Auth_018: \"locked\", Auth_019: \"approved\", Auth_028: \"approved\"};",
+          "const desired = states[name];",
+          "const setStatus = (token) => pm.sendRequest({",
+          "  url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + pm.environment.get(\"testUserId\") + \"/status\",",
+          "  method: \"PATCH\",",
+          "  header: {\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer \" + token},",
+          "  body: {mode: \"raw\", raw: JSON.stringify({status: desired})}",
+          "}, (error, response) => {",
+          "  if (error || response.code !== 200) console.error(name + \" setup failed\", error || response.text());",
+          "});",
+          "const loginAdmin = () => pm.sendRequest({",
+          "  url: pm.environment.get(\"auth_url\") + \"/auth/login\",",
+          "  method: \"POST\",",
+          "  header: {\"Content-Type\": \"application/json\"},",
+          "  body: {mode: \"raw\", raw: JSON.stringify({username: pm.environment.get(\"adminUsername\") || \"admin\", password: pm.environment.get(\"adminPassword\") || \"admin123\"})}",
+          "}, (error, response) => {",
+          "  if (error || response.code !== 200) return console.error(\"Admin login setup failed\", error || response.text());",
+          "  const token = response.json().access_token;",
+          "  pm.environment.set(\"adminToken\", token);",
+          "  if (desired) setStatus(token);",
+          "});",
+          "const token = pm.environment.get(\"adminToken\");",
+          "if (name === \"Auth_001\" || !token) loginAdmin();",
+          "else if (desired) setStatus(token);"
         ]
       }
     },
