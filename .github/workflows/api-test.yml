@@ -46,7 +46,7 @@ jobs:
       - name: Create CI environment file
         run: |
           cat > .env <<'EOF'
-          JWT_SECRET=ci_jwt_secret
+          JWT_SECRET=supersecret 
           GATEWAY_SECRET=ci_gateway_secret
           ADMIN_USERNAME=admin
           ADMIN_EMAIL=admin@example.com
