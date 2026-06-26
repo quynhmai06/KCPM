@@ -13,10 +13,7 @@
           "listen": "prerequest",
           "script": {
             "exec": [
-              "const s = Date.now();\r",
-              "pm.environment.set(\"baseUsername\", \"nguyenvannam_\" + s);\r",
-              "pm.environment.set(\"baseEmail\", \"nam_\" + s + \"@gmail.com\");\r",
-              "pm.environment.set(\"basePhone\", \"09\" + String(s).slice(-8));"
+              ""
             ],
             "type": "text/javascript",
             "packages": {},
@@ -27,14 +24,82 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_001 - Status 201\", () => pm.response.to.have.status(201));\r",
+              "pm.test(\"Auth_001 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
               "\r",
-              "pm.test(\"Auth_001 - Save user id\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json).to.have.property(\"id\");\r",
-              "  pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
-              "  pm.environment.set(\"testUserId\", json.id);\r",
+              "pm.test(\"Auth_001 - Response đúng auth-service\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.service).to.eql(\"auth\");\r",
+              "    pm.expect(json.status).to.eql(\"ok\");\r",
+              "    pm.expect(json.prefix).to.eql(\"/auth\");\r",
               "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_002",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_002 - Status code is 201\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_002 - Có id và username\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"id\");\r",
+              "    pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
+              "    pm.environment.set(\"testUserId\", json.id);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.environment.set(\"baseUsername\", \"nguyenvannam_\" + ts);\r",
+              "pm.environment.set(\"baseEmail\", \"nam_\" + ts + \"@gmail.com\");\r",
+              "pm.environment.set(\"basePhone\", \"09\" + String(ts).slice(-8));\r",
+              "pm.environment.set(\"basePhone84\", \"84\" + pm.environment.get(\"basePhone\").slice(1));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -44,10 +109,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -68,60 +139,29 @@
       "response": []
     },
     {
-      "name": "Auth_002",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Đăng ký thành công - trả về 201 Created\", function () {\r",
-              "    pm.response.to.have.status(201);\r",
-              "});"
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"username\": \"nguyenvana\",\r\n  \"email\": \"a@gmail.com\",\r\n  \"phone\": \"0849247866}\",\r\n  \"password\": \"12345\"\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:5001/auth/register",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "5001",
-          "path": [
-            "auth",
-            "register"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
       "name": "Auth_003",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_003 - Status 400\", () => pm.response.to.have.status(400));\r",
-              "pm.test(\"Auth_003 - missing_fields\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
-              "});"
+              "pm.test(\"Auth_003 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_003 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth003_email\", \"auth003_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth003_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -131,10 +171,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"missing_email_user\",\r\n  \"phone\": \"0911111112\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"email\": \"{{auth003_email}}\",\r\n  \"phone\": \"{{auth003_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -161,10 +207,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_004 - Status 400\", () => pm.response.to.have.status(400));\r",
-              "pm.test(\"Auth_004 - missing_fields\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
-              "});"
+              "pm.test(\"Auth_004 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_004 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth004_username\", \"auth004_\" + ts);\r",
+              "pm.variables.set(\"auth004_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -174,10 +233,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"missing_password_user\",\r\n  \"email\": \"missing_password@gmail.com\",\r\n  \"phone\": \"0911111113\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{auth004_username}}\",\r\n  \"phone\": \"{{auth004_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -204,10 +269,24 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_005 - Status 400\", () => pm.response.to.have.status(400));\r",
-              "pm.test(\"Auth_005 - missing_fields\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
-              "});"
+              "pm.test(\"Auth_005 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_005 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth005_username\", \"auth005_\" + ts);\r",
+              "pm.variables.set(\"auth005_email\", \"auth005_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth005_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -217,10 +296,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"missing_phone_user\",\r\n  \"email\": \"missing_phone@gmail.com\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{auth005_username}}\",\r\n  \"email\": \"{{auth005_email}}\",\r\n  \"phone\": \"{{auth005_phone}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -247,10 +332,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_006 - Status 409\", () => pm.response.to.have.status(409));\r",
-              "pm.test(\"Auth_006 - username_exists\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"username_exists\");\r",
-              "});"
+              "pm.test(\"Auth_006 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_006 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth006_username\", \"auth006_\" + ts);\r",
+              "pm.variables.set(\"auth006_email\", \"auth006_\" + ts + \"@gmail.com\");"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -260,10 +358,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"vannam@gmail.com\",\r\n  \"phone\": \"0987654321\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{auth006_username}}\",\r\n  \"email\": \"{{auth006_email}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -290,10 +394,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_007 - Status 409\", () => pm.response.to.have.status(409));\r",
-              "pm.test(\"Auth_007 - email_exists\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"email_exists\");\r",
-              "});"
+              "pm.test(\"Auth_007 - Status code is 409\", function () {\r",
+              "    pm.response.to.have.status(409);\r",
+              "});\r",
+              "pm.test(\"Auth_007 - username_exists\", () => pm.expect(pm.response.json().error).to.eql(\"username_exists\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth007_email\", \"auth007_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth007_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -303,10 +420,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"nguyenvannamm\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"0987654321\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"email\": \"{{auth007_email}}\",\r\n  \"phone\": \"{{auth007_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -333,10 +456,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_008 - Status 409\", () => pm.response.to.have.status(409));\r",
-              "pm.test(\"Auth_008 - phone_exists\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"phone_exists\");\r",
-              "});"
+              "pm.test(\"Auth_008 - Status code is 409\", function () {\r",
+              "    pm.response.to.have.status(409);\r",
+              "});\r",
+              "pm.test(\"Auth_008 - email_exists\", () => pm.expect(pm.response.json().error).to.eql(\"email_exists\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth008_username\", \"auth008_\" + ts);\r",
+              "pm.variables.set(\"auth008_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -346,10 +482,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"nguyenvannamm\",\r\n  \"email\": \"vannam@gmail.com\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{auth008_username}}\",\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"phone\": \"{{auth008_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -376,8 +518,9 @@
           "listen": "prerequest",
           "script": {
             "exec": [
-              "const s = Date.now();\r",
-              "pm.environment.set(\"upperUsername\", \"lequynam_\" + s);"
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth009_username\", \"auth009_\" + ts);\r",
+              "pm.variables.set(\"auth009_email\", \"auth009_\" + ts + \"@gmail.com\");"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -388,10 +531,10 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_009 - Status 201\", () => pm.response.to.have.status(201));\r",
-              "pm.test(\"Auth_009 - Has id\", () => {\r",
-              "  pm.expect(pm.response.json()).to.have.property(\"id\");\r",
-              "});"
+              "pm.test(\"Auth_009 - Status code is 409\", function () {\r",
+              "    pm.response.to.have.status(409);\r",
+              "});\r",
+              "pm.test(\"Auth_009 - phone_exists\", () => pm.expect(pm.response.json().error).to.eql(\"phone_exists\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -401,10 +544,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{upperUsername}}\",\r\n  \"email\": \"  LENAM{{upperUsername}}@GMAIL.COM  \",\r\n  \"phone\": \"0912345678\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam\",\r\n  \"username\": \"{{auth009_username}}\",\r\n  \"email\": \"{{auth009_email}}\",\r\n  \"phone\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -431,8 +580,9 @@
           "listen": "prerequest",
           "script": {
             "exec": [
-              "const s = Date.now();\r",
-              "pm.environment.set(\"phone84Username\", \"phone84_\" + s);"
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth010_username\", \"auth010_\" + ts);\r",
+              "pm.variables.set(\"auth010_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -443,7 +593,10 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_010 - Status 201\", () => pm.response.to.have.status(201));"
+              "pm.test(\"Auth_010 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_010 - Không tạo user\", () => pm.expect(pm.response.json()).to.not.have.property(\"id\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -453,10 +606,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"lequynam\",\r\n  \"email\": \"lenam@gmail.com\",\r\n  \"phone\": \"84982345678\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Lê Quý Nam\",\r\n  \"username\": \"{{auth010_username}}\",\r\n  \"email\": \"abc\",\r\n  \"phone\": \"{{auth010_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -483,15 +642,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_011 - Status 200\", () => {\r",
-              "    pm.response.to.have.status(200);\r",
+              "pm.test(\"Auth_011 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
               "});\r",
-              "\r",
-              "pm.test(\"Auth_011 - Save memberToken\", () => {\r",
-              "    const json = pm.response.json();\r",
-              "    pm.expect(json).to.have.property(\"access_token\");\r",
-              "    pm.environment.set(\"memberToken\", json.access_token);\r",
-              "});"
+              "pm.test(\"Auth_011 - Không tạo user\", () => pm.expect(pm.response.json()).to.not.have.property(\"id\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth011_username\", \"auth011_\" + ts);\r",
+              "pm.variables.set(\"auth011_email\", \"auth011_\" + ts + \"@gmail.com\");"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -510,16 +677,16 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+          "raw": "{\r\n  \"full_name\": \"Lê Quý Nam\",\r\n  \"username\": \"{{auth011_username}}\",\r\n  \"email\": \"{{auth011_email}}\",\r\n  \"phone\": \"abc-xyz\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -532,14 +699,24 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_012 - Status 200\", () => {\r",
-              "    pm.response.to.have.status(200);\r",
+              "pm.test(\"Auth_012 - Status code is 201\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
               "});\r",
               "\r",
-              "pm.test(\"Auth_012 - Has access_token\", () => {\r",
-              "    const json = pm.response.json();\r",
-              "    pm.expect(json).to.have.property(\"access_token\");\r",
-              "});"
+              "pm.test(\"Auth_012 - Có id\", () => pm.expect(pm.response.json()).to.have.property(\"id\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth012_username\", \"auth012_\" + ts);\r",
+              "pm.variables.set(\"auth012_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -558,16 +735,16 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+          "raw": "{\r\n  \"full_name\": \"Lê Quý Nam\",\r\n  \"username\": \"{{auth012_username}}\",\r\n  \"email\": \"LENAM{{auth012_username}}@GMAIL.COM \",\r\n  \"phone\": \"{{auth012_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -580,7 +757,10 @@
           "listen": "prerequest",
           "script": {
             "exec": [
-              ""
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth013_username\", \"auth013_\" + ts);\r",
+              "pm.variables.set(\"auth013_email\", \"auth013_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth013_phone84\", \"849\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -591,10 +771,10 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_013 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_013 - Has token\", () => {\r",
-              "  pm.expect(pm.response.json()).to.have.property(\"access_token\");\r",
-              "});"
+              "pm.test(\"Auth_013 - Status code is 201\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});\r",
+              "pm.test(\"Auth_013 - Có id\", () => pm.expect(pm.response.json()).to.have.property(\"id\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -613,7 +793,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"identifier\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Lê Quý Nam\",\r\n  \"username\": \"{{auth013_username}}\",\r\n  \"email\": \"{{auth013_email}}\",\r\n  \"phone\": \"{{auth013_phone84}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -621,13 +801,13 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -640,10 +820,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_014 - Status 400\", () => pm.response.to.have.status(400));\r",
-              "pm.test(\"Auth_014 - missing_fields\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "pm.test(\"Auth_014 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
               "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth014_username\", \"u\".repeat(81));\r",
+              "pm.variables.set(\"auth014_email\", \"auth014_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth014_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -662,16 +855,16 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn A\",\r\n  \"username\": \"{{auth014_username}}\",\r\n  \"email\": \"{{auth014_email}}\",\r\n  \"phone\": \"{{auth014_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -684,10 +877,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_015 - Status 400\", () => pm.response.to.have.status(400));\r",
-              "pm.test(\"Auth_015 - missing_fields\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"missing_fields\");\r",
+              "pm.test(\"Auth_015 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
               "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth015_username\", \"auth015_\" + ts);\r",
+              "pm.variables.set(\"auth015_email\", \"a\".repeat(111) + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth015_phone\", \"09\" + String(ts).slice(-8));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -706,16 +912,16 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\"\r\n}"
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn A\",\r\n  \"username\": \"{{auth015_username}}\",\r\n  \"email\": \"{{auth015_email}}\",\r\n  \"phone\": \"{{auth015_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -728,10 +934,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_016 - Status 401\", () => pm.response.to.have.status(401));\r",
-              "pm.test(\"Auth_016 - invalid_credentials\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"invalid_credentials\");\r",
+              "pm.test(\"Auth_016 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
               "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth016_username\", \"auth016_\" + ts);\r",
+              "pm.variables.set(\"auth016_email\", \"auth016_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"auth016_phone\", \"0\" + \"9\".repeat(20));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -750,7 +969,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"sai123\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn A\",\r\n  \"username\": \"{{auth016_username}}\",\r\n  \"email\": \"{{auth016_email}}\",\r\n  \"phone\": \"{{auth016_phone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -758,13 +977,13 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/login",
+          "raw": "{{auth_url}}/auth/register",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
-            "login"
+            "register"
           ]
         }
       },
@@ -777,12 +996,56 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_017 - Status 403\", () => {\r",
-              "    pm.response.to.have.status(403);\r",
+              "pm.test(\"Auth_017 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
               "});\r",
               "\r",
-              "pm.test(\"Auth_017 - not_approved\", () => {\r",
-              "    pm.expect(pm.response.json().error).to.eql(\"not_approved\");\r",
+              "pm.test(\"Auth_017 - Có access_token và role\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"access_token\");\r",
+              "    pm.expect(json).to.have.property(\"role\");\r",
+              "    pm.environment.set(\"memberToken\", json.access_token);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const userId = pm.environment.get(\"testUserId\");\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (err || res.code !== 200 || !userId) return;\r",
+              "    const token = res.json().access_token;\r",
+              "    pm.environment.set(\"adminToken\", token);\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + userId + \"/status\",\r",
+              "        method: \"PATCH\",\r",
+              "        header: {\r",
+              "            \"Content-Type\": \"application/json\",\r",
+              "            \"Authorization\": \"Bearer \" + token\r",
+              "        },\r",
+              "        body: { mode: \"raw\", raw: JSON.stringify({ status: \"approved\" }) }\r",
+              "    }, function (patchErr, patchRes) {\r",
+              "        if (!patchErr && patchRes.code === 200) {\r",
+              "            pm.environment.set(\"baseUserApproved\", \"true\");\r",
+              "        }\r",
+              "    });\r",
               "});"
             ],
             "type": "text/javascript",
@@ -824,10 +1087,10 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_018 - Status 403\", () => pm.response.to.have.status(403));\r",
-              "pm.test(\"Auth_018 - locked\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"locked\");\r",
-              "});"
+              "pm.test(\"Auth_018 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_018 - Có token\", () => pm.expect(pm.response.json()).to.have.property(\"access_token\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -837,10 +1100,16 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "raw": "{\r\n  \"email\": \"{{baseEmail}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -867,16 +1136,538 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_019 - Status 200\", () => pm.response.to.have.status(200));\r",
+              "pm.test(\"Auth_019 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_019 - Có token\", () => pm.expect(pm.response.json()).to.have.property(\"access_token\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"identifier\": \"{{basePhone}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_020",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_020 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_020 - Có token\", () => pm.expect(pm.response.json()).to.have.property(\"access_token\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"identifier\": \"{{phone84Username}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_021",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_021 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_021 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_022",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_022 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_022 - missing_fields\", () => pm.expect(pm.response.json().error).to.be.oneOf([\"missing_field\", \"missing_fields\"]));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_023",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_023 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "pm.test(\"Auth_023 - invalid_credentials\", () => pm.expect(pm.response.json().error).to.eql(\"invalid_credentials\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{baseUsername}}\",\r\n  \"password\": \"sai123\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_024",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.environment.set(\"pendingUsername\", \"pending_\" + ts);\r",
+              "pm.variables.set(\"pendingEmail\", \"pending_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"pendingPhone\", \"07\" + String(ts).slice(-8));\r",
               "\r",
-              "pm.test(\"Auth_019 - Payload valid\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json).to.have.property(\"sub\");\r",
-              "  pm.expect(json).to.have.property(\"username\");\r",
-              "  pm.expect(json).to.have.property(\"role\");\r",
-              "  pm.expect(json).to.have.property(\"approved\");\r",
-              "  pm.expect(json).to.have.property(\"locked\");\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"pendingUsername\"),\r",
+              "            email: pm.variables.get(\"pendingEmail\"),\r",
+              "            phone: pm.variables.get(\"pendingPhone\"),\r",
+              "            password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 201) {\r",
+              "        pm.environment.set(\"pendingUserId\", res.json().id);\r",
+              "    }\r",
               "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_024 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "pm.test(\"Auth_024 - not_approved\", () => pm.expect(pm.response.json().error).to.eql(\"not_approved\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{pendingUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_025",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_025 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "pm.test(\"Auth_025 - locked\", () => pm.expect(pm.response.json().error).to.eql(\"locked\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.environment.set(\"lockedUsername\", \"locked_\" + ts);\r",
+              "pm.variables.set(\"lockedEmail\", \"locked_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"lockedPhone\", \"06\" + String(ts).slice(-8));\r",
+              "\r",
+              "function loginAdminAndLock(userId) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "                password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (loginErr, loginRes) {\r",
+              "        if (loginErr || loginRes.code !== 200) return;\r",
+              "        const token = loginRes.json().access_token;\r",
+              "        pm.environment.set(\"adminToken\", token);\r",
+              "        pm.sendRequest({\r",
+              "            url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + userId + \"/status\",\r",
+              "            method: \"PATCH\",\r",
+              "            header: {\r",
+              "                \"Content-Type\": \"application/json\",\r",
+              "                \"Authorization\": \"Bearer \" + token\r",
+              "            },\r",
+              "            body: { mode: \"raw\", raw: JSON.stringify({ status: \"locked\" }) }\r",
+              "        }, function (patchErr, patchRes) {\r",
+              "            if (!patchErr && patchRes.code === 200) {\r",
+              "                pm.environment.set(\"lockedUserReady\", \"true\");\r",
+              "            }\r",
+              "        });\r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"lockedUsername\"),\r",
+              "            email: pm.variables.get(\"lockedEmail\"),\r",
+              "            phone: pm.variables.get(\"lockedPhone\"),\r",
+              "            password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 201) {\r",
+              "        pm.environment.set(\"lockedUserId\", res.json().id);\r",
+              "        loginAdminAndLock(res.json().id);\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{lockedUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_026",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_026 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_026 - Role admin và lưu adminToken\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.role).to.eql(\"admin\");\r",
+              "    pm.expect(json).to.have.property(\"access_token\");\r",
+              "    pm.environment.set(\"adminToken\", json.access_token);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{adminUsername}}\",\r\n  \"password\": \"{{adminPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_027",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_027 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_027 - Payload token có đủ thông tin\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"sub\");\r",
+              "    pm.expect(json).to.have.property(\"username\");\r",
+              "    pm.expect(json).to.have.property(\"role\");\r",
+              "    pm.expect(json).to.have.property(\"approved\");\r",
+              "    pm.expect(json).to.have.property(\"locked\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -907,20 +1698,27 @@
       "response": []
     },
     {
-      "name": "Auth_020",
+      "name": "Auth_028",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_020 - Status 401\", () => pm.response.to.have.status(401));\r",
-              "pm.test(\"Auth_020 - no_token\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
-              "});"
+              "pm.test(\"Auth_028 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "pm.test(\"Auth_028 - no_token\", () => pm.expect(pm.response.json().error).to.eql(\"no_token\"));"
             ],
             "type": "text/javascript",
             "packages": {},
             "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "packages": {},
+            "type": "text/javascript"
           }
         }
       ],
@@ -941,16 +1739,16 @@
       "response": []
     },
     {
-      "name": "Auth_021",
+      "name": "Auth_029",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_021 - Status 401\", () => pm.response.to.have.status(401));\r",
-              "pm.test(\"Auth_021 - invalid_token\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"invalid_token\");\r",
-              "});"
+              "pm.test(\"Auth_029 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "pm.test(\"Auth_029 - invalid_token\", () => pm.expect(pm.response.json().error).to.eql(\"invalid_token\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -981,16 +1779,41 @@
       "response": []
     },
     {
-      "name": "Auth_022",
+      "name": "Auth_030",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_022 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_022 - Has data\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json.data).to.be.an(\"array\");\r",
+              "pm.test(\"Auth_030 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_030 - data là array\", () => pm.expect(pm.response.json().data).to.be.an(\"array\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 200) {\r",
+              "        pm.environment.set(\"adminToken\", res.json().access_token);\r",
+              "    }\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1023,16 +1846,16 @@
       "response": []
     },
     {
-      "name": "Auth_023",
+      "name": "Auth_031",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_023 - Status 401\", () => pm.response.to.have.status(401));\r",
-              "pm.test(\"Auth_023 - no_token\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
-              "});"
+              "pm.test(\"Auth_031 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "pm.test(\"Auth_031 - no_token\", () => pm.expect(pm.response.json().error).to.eql(\"no_token\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1058,13 +1881,16 @@
       "response": []
     },
     {
-      "name": "Auth_024",
+      "name": "Auth_032",
       "event": [
         {
-          "listen": "prerequest",
+          "listen": "test",
           "script": {
             "exec": [
-              ""
+              "pm.test(\"Auth_032 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_032 - approved\", () => { const j=pm.response.json(); pm.expect(j.ok).to.eql(true); pm.expect(j.status).to.eql(\"approved\"); });"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1072,12 +1898,49 @@
           }
         },
         {
-          "listen": "test",
+          "listen": "prerequest",
           "script": {
             "exec": [
-              "pm.test(\"Auth_024 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_024 - ok true\", () => {\r",
-              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"statusUsername\", \"status_\" + ts);\r",
+              "pm.variables.set(\"statusEmail\", \"status_\" + ts + \"@gmail.com\");\r",
+              "pm.variables.set(\"statusPhone\", \"05\" + String(ts).slice(-8));\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.variables.get(\"statusUsername\"),\r",
+              "            email: pm.variables.get(\"statusEmail\"),\r",
+              "            phone: pm.variables.get(\"statusPhone\"),\r",
+              "            password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 201) {\r",
+              "        pm.environment.set(\"statusTargetUserId\", res.json().id);\r",
+              "    }\r",
+              "});\r",
+              "\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 200) {\r",
+              "        pm.environment.set(\"adminToken\", res.json().access_token);\r",
+              "    }\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1110,14 +1973,14 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "raw": "{{auth_url}}/auth/users/{{statusTargetUserId}}/status",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
             "users",
-            "{{testUserId}}",
+            "{{statusTargetUserId}}",
             "status"
           ]
         }
@@ -1125,15 +1988,41 @@
       "response": []
     },
     {
-      "name": "Auth_025",
+      "name": "Auth_033",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_025 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_025 - ok true\", () => {\r",
-              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "pm.test(\"Auth_033 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_033 - locked\", () => { const j=pm.response.json(); pm.expect(j.ok).to.eql(true); pm.expect(j.status).to.eql(\"locked\"); });"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 200) {\r",
+              "        pm.environment.set(\"adminToken\", res.json().access_token);\r",
+              "    }\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1146,13 +2035,13 @@
         "method": "PATCH",
         "header": [
           {
-            "key": "Authorization",
-            "value": "Bearer {{adminToken}}",
+            "key": "Content-Type",
+            "value": "application/json",
             "type": "text"
           },
           {
-            "key": "Content-Type",
-            "value": "application/json",
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
             "type": "text"
           }
         ],
@@ -1166,14 +2055,14 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "raw": "{{auth_url}}/auth/users/{{statusTargetUserId}}/status",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
             "users",
-            "{{testUserId}}",
+            "{{statusTargetUserId}}",
             "status"
           ]
         }
@@ -1181,15 +2070,41 @@
       "response": []
     },
     {
-      "name": "Auth_026",
+      "name": "Auth_034",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_026 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_026 - ok true\", () => {\r",
-              "  pm.expect(pm.response.json().ok).to.eql(true);\r",
+              "pm.test(\"Auth_034 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_034 - pending\", () => { const j=pm.response.json(); pm.expect(j.ok).to.eql(true); pm.expect(j.status).to.eql(\"pending\"); });"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (!err && res.code === 200) {\r",
+              "        pm.environment.set(\"adminToken\", res.json().access_token);\r",
+              "    }\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1222,14 +2137,14 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "raw": "{{auth_url}}/auth/users/{{statusTargetUserId}}/status",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
             "users",
-            "{{testUserId}}",
+            "{{statusTargetUserId}}",
             "status"
           ]
         }
@@ -1237,16 +2152,44 @@
       "response": []
     },
     {
-      "name": "Auth_027",
+      "name": "Auth_035",
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_027 - Status 403\", () => pm.response.to.have.status(403));\r",
-              "pm.test(\"Auth_027 - forbidden\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"forbidden\");\r",
-              "});"
+              "pm.test(\"Auth_035 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "pm.test(\"Auth_035 - forbidden\", () => pm.expect(pm.response.json().error).to.eql(\"forbidden\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1258,13 +2201,13 @@
         "method": "PATCH",
         "header": [
           {
-            "key": "Content-Type",
-            "value": "application/json",
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
             "type": "text"
           },
           {
-            "key": "Authorization",
-            "value": "Bearer {{memberToken}}",
+            "key": "Content-Type",
+            "value": "application/json",
             "type": "text"
           }
         ],
@@ -1278,14 +2221,14 @@
           }
         },
         "url": {
-          "raw": "{{auth_url}}/auth/users/{{testUserId}}/status",
+          "raw": "{{auth_url}}/auth/users/{{statusTargetUserId}}/status",
           "host": [
             "{{auth_url}}"
           ],
           "path": [
             "auth",
             "users",
-            "{{testUserId}}",
+            "{{statusTargetUserId}}",
             "status"
           ]
         }
@@ -1293,18 +2236,44 @@
       "response": []
     },
     {
-      "name": "Auth_028",
+      "name": "Auth_036",
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_028 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_028 - Has user and profile\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json).to.have.property(\"user\");\r",
-              "  pm.expect(json).to.have.property(\"profile\");\r",
-              "});"
+              "pm.test(\"Auth_036 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_036 - Có user và profile\", () => { const j=pm.response.json(); pm.expect(j).to.have.property(\"user\"); pm.expect(j).to.have.property(\"profile\"); });"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1335,16 +2304,16 @@
       "response": []
     },
     {
-      "name": "Auth_029",
+      "name": "Auth_037",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_029 - Status 401\", () => pm.response.to.have.status(401));\r",
-              "pm.test(\"Auth_029 - no_token\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"no_token\");\r",
-              "});"
+              "pm.test(\"Auth_037 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "pm.test(\"Auth_037 - no_token\", () => pm.expect(pm.response.json().error).to.eql(\"no_token\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1369,17 +2338,48 @@
       "response": []
     },
     {
-      "name": "Auth_030",
+      "name": "Auth_038",
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_030 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_030 - Profile updated\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json.ok).to.eql(true);\r",
-              "  pm.expect(json.profile.full_name).to.eql(\"Nguyen Van Nam\");\r",
+              "pm.test(\"Auth_038 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_038 - full_name được cập nhật\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.ok).to.eql(true);\r",
+              "    pm.expect(json.profile.full_name).to.eql(\"Nguyễn Văn Automation\");\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1404,7 +2404,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"full_name\": \"Nguyen Van Nam\",\r\n  \"address\": \"TP.HCM\",\r\n  \"gender\": \"male\",\r\n  \"birthdate\": \"2003-01-01\",\r\n  \"phone\": \"0987654321\"\r\n}",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Anh\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -1425,18 +2425,585 @@
       "response": []
     },
     {
-      "name": "Auth_031",
+      "name": "Auth_039",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_039 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_039 - gender male\", () => pm.expect(pm.response.json().profile.gender).to.eql(\"male\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"gender\": \"male\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_040",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_040 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_040 - gender female\", () => pm.expect(pm.response.json().profile.gender).to.eql(\"female\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"gender\": \"female\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_041",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_041 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Auth_041 - birthdate hợp lệ\", () => pm.expect(pm.response.json().profile.birthdate).to.eql(\"2024-02-29\"));\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"birthdate\": \"2024-02-29\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_042",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_042 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});\r",
+              "pm.test(\"Auth_042 - invalid_birthdate_format\", () => pm.expect(pm.response.json().error).to.eql(\"invalid_birthdate_format\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"birthdate\": \"2023-02-29\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_043",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "pm.variables.set(\"auth043_full_name\", \"A\".repeat(121));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_043 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"full_name\": \"{{auth043_full_name}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_044",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "pm.variables.set(\"auth044_address\", \"A\".repeat(256));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_044 - Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"address\": \"{{auth044_address}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_045",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"memberToken\")) {\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: { \"Content-Type\": \"application/json\" },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"baseUsername\"),\r",
+              "                password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (err, res) {\r",
+              "        if (!err && res.code === 200) {\r",
+              "            pm.environment.set(\"memberToken\", res.json().access_token);\r",
+              "        }\r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "const ts = Date.now();\r",
+              "pm.variables.set(\"auth045_phone\", \"03\" + String(ts).slice(-8));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_045 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_045 - Profile được cập nhật\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.ok).to.eql(true);\r",
+              "    pm.expect(json.profile.full_name).to.eql(\"Nguyễn Văn Nam Automation\");\r",
+              "    pm.expect(json.profile.gender).to.eql(\"male\");\r",
+              "    pm.expect(json.profile.birthdate).to.eql(\"2000-01-01\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{memberToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"full_name\": \"Nguyễn Văn Nam Automation\",\r\n  \"address\": \"TP.HCM\",\r\n  \"gender\": \"male\",\r\n  \"birthdate\": \"2000-01-01\",\r\n  \"phone\": \"{{auth045_phone}}\"\r\n}"
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_046",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_031 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_031 - Has public user info\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
-              "  pm.expect(json).to.have.property(\"email\");\r",
-              "  pm.expect(json).to.have.property(\"phone\");\r",
+              "pm.test(\"Auth_046 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_046 - Có public user info\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.username).to.eql(pm.environment.get(\"baseUsername\"));\r",
+              "    pm.expect(json).to.have.property(\"id\");\r",
+              "    pm.expect(json).to.have.property(\"email\");\r",
+              "    pm.expect(json).to.have.property(\"phone\");\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1463,16 +3030,16 @@
       "response": []
     },
     {
-      "name": "Auth_032",
+      "name": "Auth_047",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_032 - Status 404\", () => pm.response.to.have.status(404));\r",
-              "pm.test(\"Auth_032 - not_found\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"not_found\");\r",
-              "});"
+              "pm.test(\"Auth_047 - Status code is 404\", function () {\r",
+              "    pm.response.to.have.status(404);\r",
+              "});\r",
+              "pm.test(\"Auth_047 - not_found\", () => pm.expect(pm.response.json().error).to.eql(\"not_found\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1498,19 +3065,22 @@
       "response": []
     },
     {
-      "name": "Auth_033",
+      "name": "Auth_048",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_033 - Status 200\", () => pm.response.to.have.status(200));\r",
-              "pm.test(\"Auth_033 - Has user by id info\", () => {\r",
-              "  const json = pm.response.json();\r",
-              "  pm.expect(json).to.have.property(\"id\");\r",
-              "  pm.expect(json).to.have.property(\"username\");\r",
-              "  pm.expect(json).to.have.property(\"full_name\");\r",
-              "  pm.expect(json).to.have.property(\"avatar_url\");\r",
+              "pm.test(\"Auth_048 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_048 - Có user theo ID\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"id\");\r",
+              "    pm.expect(json).to.have.property(\"username\");\r",
+              "    pm.expect(json).to.have.property(\"full_name\");\r",
+              "    pm.expect(json).to.have.property(\"avatar_url\");\r",
               "});"
             ],
             "type": "text/javascript",
@@ -1521,15 +3091,9 @@
       ],
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
+        "header": [],
         "url": {
-          "raw": "{{auth_url}}/auth/users/by-id/1",
+          "raw": "{{auth_url}}/auth/users/by-id/{{testUserId}}",
           "host": [
             "{{auth_url}}"
           ],
@@ -1537,23 +3101,23 @@
             "auth",
             "users",
             "by-id",
-            "1"
+            "{{testUserId}}"
           ]
         }
       },
       "response": []
     },
     {
-      "name": "Auth_034",
+      "name": "Auth_049",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Auth_034 - Status 404\", () => pm.response.to.have.status(404));\r",
-              "pm.test(\"Auth_034 - user_not_found\", () => {\r",
-              "  pm.expect(pm.response.json().error).to.eql(\"user_not_found\");\r",
-              "});"
+              "pm.test(\"Auth_049 - Status code is 404\", function () {\r",
+              "    pm.response.to.have.status(404);\r",
+              "});\r",
+              "pm.test(\"Auth_049 - user_not_found\", () => pm.expect(pm.response.json().error).to.eql(\"user_not_found\"));"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1578,6 +3142,526 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Auth_050",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_050 - Status code is 401\", function () {\r",
+              "    pm.response.to.have.status(401);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_050 - Error is invalid_token\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.error).to.eql(\"invalid_token\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_token",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_051",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "function base64url(input) {\r",
+              "    return CryptoJS.enc.Base64.stringify(input)\r",
+              "        .replace(/=+$/, \"\")\r",
+              "        .replace(/\\+/g, \"-\")\r",
+              "        .replace(/\\//g, \"_\");\r",
+              "}\r",
+              "\r",
+              "function makeJwt(payload, secret) {\r",
+              "    const header = { alg: \"HS256\", typ: \"JWT\" };\r",
+              "    const encodedHeader = base64url(CryptoJS.enc.Utf8.parse(JSON.stringify(header)));\r",
+              "    const encodedPayload = base64url(CryptoJS.enc.Utf8.parse(JSON.stringify(payload)));\r",
+              "    const unsignedToken = encodedHeader + \".\" + encodedPayload;\r",
+              "    const signature = CryptoJS.HmacSHA256(unsignedToken, secret);\r",
+              "    return unsignedToken + \".\" + base64url(signature);\r",
+              "}\r",
+              "\r",
+              "const ts = Date.now();\r",
+              "const username = \"pending_profile_\" + ts;\r",
+              "const email = \"pending_profile_\" + ts + \"@gmail.com\";\r",
+              "const phone = \"07\" + String(ts).slice(-8);\r",
+              "const password = pm.environment.get(\"testPassword\") || \"12345\";\r",
+              "const secret = pm.environment.get(\"jwtSecret\") || \"devsecret\";\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: {\r",
+              "        \"Content-Type\": \"application/json\"\r",
+              "    },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            full_name: \"Pending Profile User\",\r",
+              "            username: username,\r",
+              "            email: email,\r",
+              "            phone: phone,\r",
+              "            password: password\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    pm.expect(err).to.equal(null);\r",
+              "    pm.expect(res.code).to.eql(201);\r",
+              "\r",
+              "    const user = res.json();\r",
+              "\r",
+              "    const token = makeJwt({\r",
+              "        sub: String(user.id),\r",
+              "        username: username,\r",
+              "        role: \"member\",\r",
+              "        approved: false,\r",
+              "        locked: false,\r",
+              "        exp: Math.floor(Date.now() / 1000) + 21600\r",
+              "    }, secret);\r",
+              "\r",
+              "    pm.environment.set(\"pendingProfileUsername\", username);\r",
+              "    pm.environment.set(\"pendingProfileUserId\", user.id);\r",
+              "    pm.environment.set(\"pendingProfileToken\", token);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_051 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_051 - Error is not_approved\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.error).to.eql(\"not_approved\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{pendingProfileToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_052",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "function base64url(input) {\r",
+              "    return CryptoJS.enc.Base64.stringify(input)\r",
+              "        .replace(/=+$/, \"\")\r",
+              "        .replace(/\\+/g, \"-\")\r",
+              "        .replace(/\\//g, \"_\");\r",
+              "}\r",
+              "\r",
+              "function makeJwt(payload, secret) {\r",
+              "    const header = { alg: \"HS256\", typ: \"JWT\" };\r",
+              "    const encodedHeader = base64url(CryptoJS.enc.Utf8.parse(JSON.stringify(header)));\r",
+              "    const encodedPayload = base64url(CryptoJS.enc.Utf8.parse(JSON.stringify(payload)));\r",
+              "    const unsignedToken = encodedHeader + \".\" + encodedPayload;\r",
+              "    const signature = CryptoJS.HmacSHA256(unsignedToken, secret);\r",
+              "    return unsignedToken + \".\" + base64url(signature);\r",
+              "}\r",
+              "\r",
+              "const ts = Date.now();\r",
+              "const username = \"locked_profile_\" + ts;\r",
+              "const email = \"locked_profile_\" + ts + \"@gmail.com\";\r",
+              "const phone = \"06\" + String(ts).slice(-8);\r",
+              "const password = pm.environment.get(\"testPassword\") || \"12345\";\r",
+              "const secret = pm.environment.get(\"jwtSecret\") || \"devsecret\";\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: {\r",
+              "        \"Content-Type\": \"application/json\"\r",
+              "    },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            full_name: \"Locked Profile User\",\r",
+              "            username: username,\r",
+              "            email: email,\r",
+              "            phone: phone,\r",
+              "            password: password\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, registerRes) {\r",
+              "    pm.expect(err).to.equal(null);\r",
+              "    pm.expect(registerRes.code).to.eql(201);\r",
+              "\r",
+              "    const user = registerRes.json();\r",
+              "\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: {\r",
+              "            \"Content-Type\": \"application/json\"\r",
+              "        },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "                password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (loginErr, loginRes) {\r",
+              "        pm.expect(loginErr).to.equal(null);\r",
+              "        pm.expect(loginRes.code).to.eql(200);\r",
+              "\r",
+              "        const adminToken = loginRes.json().access_token;\r",
+              "        pm.environment.set(\"adminToken\", adminToken);\r",
+              "\r",
+              "        pm.sendRequest({\r",
+              "            url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + user.id + \"/status\",\r",
+              "            method: \"PATCH\",\r",
+              "            header: {\r",
+              "                \"Content-Type\": \"application/json\",\r",
+              "                \"Authorization\": \"Bearer \" + adminToken\r",
+              "            },\r",
+              "            body: {\r",
+              "                mode: \"raw\",\r",
+              "                raw: JSON.stringify({\r",
+              "                    status: \"locked\"\r",
+              "                })\r",
+              "            }\r",
+              "        }, function (statusErr, statusRes) {\r",
+              "            pm.expect(statusErr).to.equal(null);\r",
+              "            pm.expect(statusRes.code).to.eql(200);\r",
+              "\r",
+              "            const token = makeJwt({\r",
+              "                sub: String(user.id),\r",
+              "                username: username,\r",
+              "                role: \"member\",\r",
+              "                approved: false,\r",
+              "                locked: true,\r",
+              "                exp: Math.floor(Date.now() / 1000) + 21600\r",
+              "            }, secret);\r",
+              "\r",
+              "            pm.environment.set(\"lockedProfileUsername\", username);\r",
+              "            pm.environment.set(\"lockedProfileUserId\", user.id);\r",
+              "            pm.environment.set(\"lockedProfileToken\", token);\r",
+              "        });\r",
+              "    });\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_052 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_052 - Error is locked\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.error).to.eql(\"locked\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{lockedProfileToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_053",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "const username = \"invalid_status_\" + ts;\r",
+              "const email = \"invalid_status_\" + ts + \"@gmail.com\";\r",
+              "const phone = \"05\" + String(ts).slice(-8);\r",
+              "const password = pm.environment.get(\"testPassword\") || \"12345\";\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: {\r",
+              "        \"Content-Type\": \"application/json\"\r",
+              "    },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            full_name: \"Invalid Status User\",\r",
+              "            username: username,\r",
+              "            email: email,\r",
+              "            phone: phone,\r",
+              "            password: password\r",
+              "        })\r",
+              "    }\r",
+              "}, function (registerErr, registerRes) {\r",
+              "    pm.expect(registerErr).to.equal(null);\r",
+              "    pm.expect(registerRes.code).to.eql(201);\r",
+              "\r",
+              "    const userId = registerRes.json().id;\r",
+              "    pm.environment.set(\"statusTargetUserId\", userId);\r",
+              "\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "        method: \"POST\",\r",
+              "        header: {\r",
+              "            \"Content-Type\": \"application/json\"\r",
+              "        },\r",
+              "        body: {\r",
+              "            mode: \"raw\",\r",
+              "            raw: JSON.stringify({\r",
+              "                username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "                password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "            })\r",
+              "        }\r",
+              "    }, function (loginErr, loginRes) {\r",
+              "        pm.expect(loginErr).to.equal(null);\r",
+              "        pm.expect(loginRes.code).to.eql(200);\r",
+              "\r",
+              "        pm.environment.set(\"adminToken\", loginRes.json().access_token);\r",
+              "    });\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_053 - Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_053 - Response ok is true\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.ok).to.eql(true);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_053 - Status response is abc\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.status).to.eql(\"abc\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"status\": \"abc\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/users/{{statusTargetUserId}}/status",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "users",
+            "{{statusTargetUserId}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth_054",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();\r",
+              "pm.environment.set(\"statePendingUsername\", \"state_pending_\" + ts);\r",
+              "pm.environment.set(\"statePendingEmail\", \"state_pending_\" + ts + \"@gmail.com\");\r",
+              "pm.environment.set(\"statePendingPhone\", \"04\" + String(ts).slice(-8));\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/register\",\r",
+              "    method: \"POST\",\r",
+              "    header: {\r",
+              "        \"Content-Type\": \"application/json\"\r",
+              "    },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            full_name: \"State Pending User\",\r",
+              "            username: pm.environment.get(\"statePendingUsername\"),\r",
+              "            email: pm.environment.get(\"statePendingEmail\"),\r",
+              "            phone: pm.environment.get(\"statePendingPhone\"),\r",
+              "            password: pm.environment.get(\"testPassword\") || \"12345\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    pm.expect(err).to.equal(null);\r",
+              "    pm.expect(res.code).to.eql(201);\r",
+              "    pm.environment.set(\"statePendingUserId\", res.json().id);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth_054 - Status code is 403\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Auth_054 - Error is not_approved\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json.error).to.eql(\"not_approved\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{statePendingUsername}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/login",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
     }
   ],
   "event": [
@@ -1588,32 +3672,7 @@
         "packages": {},
         "requests": {},
         "exec": [
-          "const name = pm.info.requestName;",
-          "if (!pm.environment.get(\"testPassword\")) pm.environment.set(\"testPassword\", \"123456\");",
-          "const states = {Auth_011: \"approved\", Auth_017: \"pending\", Auth_018: \"locked\", Auth_019: \"approved\", Auth_028: \"approved\"};",
-          "const desired = states[name];",
-          "const setStatus = (token) => pm.sendRequest({",
-          "  url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + pm.environment.get(\"testUserId\") + \"/status\",",
-          "  method: \"PATCH\",",
-          "  header: {\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer \" + token},",
-          "  body: {mode: \"raw\", raw: JSON.stringify({status: desired})}",
-          "}, (error, response) => {",
-          "  if (error || response.code !== 200) console.error(name + \" setup failed\", error || response.text());",
-          "});",
-          "const loginAdmin = () => pm.sendRequest({",
-          "  url: pm.environment.get(\"auth_url\") + \"/auth/login\",",
-          "  method: \"POST\",",
-          "  header: {\"Content-Type\": \"application/json\"},",
-          "  body: {mode: \"raw\", raw: JSON.stringify({username: pm.environment.get(\"adminUsername\") || \"admin\", password: pm.environment.get(\"adminPassword\") || \"admin123\"})}",
-          "}, (error, response) => {",
-          "  if (error || response.code !== 200) return console.error(\"Admin login setup failed\", error || response.text());",
-          "  const token = response.json().access_token;",
-          "  pm.environment.set(\"adminToken\", token);",
-          "  if (desired) setStatus(token);",
-          "});",
-          "const token = pm.environment.get(\"adminToken\");",
-          "if (name === \"Auth_001\" || !token) loginAdmin();",
-          "else if (desired) setStatus(token);"
+          ""
         ]
       }
     },

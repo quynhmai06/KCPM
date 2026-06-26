@@ -101,7 +101,7 @@ jobs:
         run: |
           mkdir -p reports
           shopt -s nullglob
-          collections=(postman/*service_postman_collection.json)
+          collections=(postman/authservice_postman_collection.json)
 
           if [ "${#collections[@]}" -eq 0 ]; then
             echo "::error::No Postman service collections were found."
