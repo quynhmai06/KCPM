@@ -268,8 +268,10 @@ def login_page():
 @app.route("/register", methods=["GET", "POST"], endpoint="register_page")
 def register_page():
     if request.method == "POST":
+        full_name = request.form.get("hoten", "").strip()
         username = request.form.get("username", "").strip()
         email    = request.form.get("email", "").strip()
+        phone    = request.form.get("sdt", "").strip()
         password = request.form.get("password", "")
         confirm  = request.form.get("confirm_password", "")
         if password != confirm:
@@ -277,7 +279,13 @@ def register_page():
             return render_template("register.html")
         try:
             r = requests.post(f"{AUTH_URL}/auth/register",
-                              json={"username": username, "email": email, "password": password},
+                              json={
+                                  "full_name": full_name,
+                                  "username": username,
+                                  "email": email,
+                                  "phone": phone,
+                                  "password": password,
+                              },
                               timeout=10)
         except requests.RequestException:
             flash("Không kết nối được Auth service.", "error")

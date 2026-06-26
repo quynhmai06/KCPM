@@ -774,7 +774,12 @@
               "pm.test(\"Auth_013 - Status code is 201\", function () {\r",
               "    pm.response.to.have.status(201);\r",
               "});\r",
-              "pm.test(\"Auth_013 - Có id\", () => pm.expect(pm.response.json()).to.have.property(\"id\"));"
+              "pm.test(\"Auth_013 - Có id\", function () {\r",
+              "    const json = pm.response.json();\r",
+              "    pm.expect(json).to.have.property(\"id\");\r",
+              "    pm.environment.set(\"phone84UserId\", json.id);\r",
+              "    pm.environment.set(\"phone84Login\", pm.variables.get(\"auth013_phone84\"));\r",
+              "});"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -1194,6 +1199,50 @@
             "packages": {},
             "requests": {}
           }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const userId = pm.environment.get(\"phone84UserId\");\r",
+              "if (!pm.environment.get(\"phone84Login\")) {\r",
+              "    pm.environment.set(\"phone84Login\", pm.variables.get(\"auth013_phone84\"));\r",
+              "}\r",
+              "\r",
+              "pm.sendRequest({\r",
+              "    url: pm.environment.get(\"auth_url\") + \"/auth/login\",\r",
+              "    method: \"POST\",\r",
+              "    header: { \"Content-Type\": \"application/json\" },\r",
+              "    body: {\r",
+              "        mode: \"raw\",\r",
+              "        raw: JSON.stringify({\r",
+              "            username: pm.environment.get(\"adminUsername\") || \"admin\",\r",
+              "            password: pm.environment.get(\"adminPassword\") || \"admin123\"\r",
+              "        })\r",
+              "    }\r",
+              "}, function (err, res) {\r",
+              "    if (err || res.code !== 200 || !userId) return;\r",
+              "    const token = res.json().access_token;\r",
+              "    pm.environment.set(\"adminToken\", token);\r",
+              "    pm.sendRequest({\r",
+              "        url: pm.environment.get(\"auth_url\") + \"/auth/users/\" + userId + \"/status\",\r",
+              "        method: \"PATCH\",\r",
+              "        header: {\r",
+              "            \"Content-Type\": \"application/json\",\r",
+              "            \"Authorization\": \"Bearer \" + token\r",
+              "        },\r",
+              "        body: { mode: \"raw\", raw: JSON.stringify({ status: \"approved\" }) }\r",
+              "    }, function (patchErr, patchRes) {\r",
+              "        if (!patchErr && patchRes.code === 200) {\r",
+              "            pm.environment.set(\"phone84Approved\", \"true\");\r",
+              "        }\r",
+              "    });\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
         }
       ],
       "request": {
@@ -1207,7 +1256,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"identifier\": \"{{phone84Username}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
+          "raw": "{\r\n  \"identifier\": \"{{phone84Login}}\",\r\n  \"password\": \"{{testPassword}}\"\r\n}"
         },
         "url": {
           "raw": "{{auth_url}}/auth/login",
@@ -2379,7 +2428,7 @@
               "pm.test(\"Auth_038 - full_name được cập nhật\", function () {\r",
               "    const json = pm.response.json();\r",
               "    pm.expect(json.ok).to.eql(true);\r",
-              "    pm.expect(json.profile.full_name).to.eql(\"Nguyễn Văn Automation\");\r",
+              "    pm.expect(json.profile.full_name).to.eql(\"Nguyễn Văn Anh\");\r",
               "});"
             ],
             "type": "text/javascript",

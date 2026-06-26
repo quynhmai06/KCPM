@@ -18,6 +18,12 @@ from models import db, User, UserProfile
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "http://localhost:8000")
 ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "webp"}
 AVATAR_DIR = "uploads/avatars"  
+USERNAME_MAX_LENGTH = 80
+EMAIL_MAX_LENGTH = 120
+PHONE_MAX_LENGTH = 20
+PROFILE_FULL_NAME_MAX_LENGTH = 120
+PROFILE_ADDRESS_MAX_LENGTH = 255
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 SECRET = os.getenv("JWT_SECRET", "devsecret")  
@@ -134,6 +140,12 @@ def register():
             "error": "missing_fields",
             "hint": "username, email, phone, password required",
         }, 400
+    if len(username) > USERNAME_MAX_LENGTH:
+        return {"error": "username_too_long"}, 400
+    if len(email) > EMAIL_MAX_LENGTH or not EMAIL_RE.match(email):
+        return {"error": "invalid_email"}, 400
+    if len(phone) > PHONE_MAX_LENGTH or not phone.isdigit():
+        return {"error": "invalid_phone"}, 400
     conds = [User.username == username, User.email == email]
     if phone:
         conds.append(User.phone == phone)
@@ -372,8 +384,16 @@ def update_profile():
     if not p:
         p = UserProfile(user_id=u.id)
         db.session.add(p)
-    if "full_name" in d:  p.full_name = d.get("full_name") or None
-    if "address" in d:    p.address   = d.get("address") or None
+    if "full_name" in d:
+        full_name = d.get("full_name") or None
+        if full_name and len(full_name) > PROFILE_FULL_NAME_MAX_LENGTH:
+            return {"error": "full_name_too_long"}, 400
+        p.full_name = full_name
+    if "address" in d:
+        address = d.get("address") or None
+        if address and len(address) > PROFILE_ADDRESS_MAX_LENGTH:
+            return {"error": "address_too_long"}, 400
+        p.address = address
     if "gender" in d:     p.gender    = d.get("gender") or None
     if "birthdate" in d:
         val = d.get("birthdate")
