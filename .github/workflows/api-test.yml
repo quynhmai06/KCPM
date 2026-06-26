@@ -26,6 +26,7 @@ jobs:
       PRICING_URL: http://localhost:5009
       SEARCH_URL: http://localhost:5010
       REVIEWS_URL: http://localhost:5011
+      JWT_SECRET: supersecret
       ADMIN_USERNAME: admin
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: admin123
@@ -45,8 +46,8 @@ jobs:
 
       - name: Create CI environment file
         run: |
-          cat > .env <<'EOF'
-          JWT_SECRET=supersecret 
+          cat > .env <<EOF
+          JWT_SECRET=${JWT_SECRET}
           GATEWAY_SECRET=ci_gateway_secret
           ADMIN_USERNAME=admin
           ADMIN_EMAIL=admin@example.com
@@ -129,6 +130,7 @@ jobs:
               --env-var adminEmail="$ADMIN_EMAIL" \
               --env-var adminPassword="$ADMIN_PASSWORD" \
               --env-var testPassword="$TEST_PASSWORD" \
+              --env-var jwtSecret="$JWT_SECRET" \
               --reporters cli,junit,json,htmlextra \
               --reporter-junit-export "reports/${service_name}-newman-result.xml" \
               --reporter-json-export "reports/${service_name}-newman-result.json" \
