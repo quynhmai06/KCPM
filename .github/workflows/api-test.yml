@@ -17,15 +17,7 @@ jobs:
     name: Build backend and run Postman tests
     runs-on: ubuntu-latest
     env:
-      GATEWAY_URL: http://localhost:8000
       AUTH_URL: http://localhost:5001
-      LISTING_URL: http://localhost:5002
-      ADMIN_URL: http://localhost:5003
-      FAVORITES_URL: http://localhost:5004
-      PAYMENT_URL: http://localhost:5008
-      PRICING_URL: http://localhost:5009
-      SEARCH_URL: http://localhost:5010
-      REVIEWS_URL: http://localhost:5011
       JWT_SECRET: supersecret
       ADMIN_USERNAME: admin
       ADMIN_EMAIL: admin@example.com
@@ -52,13 +44,6 @@ jobs:
           ADMIN_USERNAME=admin
           ADMIN_EMAIL=admin@example.com
           ADMIN_PASSWORD=admin123
-          AUTH_URL_INTERNAL=http://auth_service:5001
-          ADMIN_URL_INTERNAL=http://admin_service:5003
-          LISTING_URL=http://listing_service:5002
-          SEARCH_URL=http://search_service:5003
-          PRICING_URL=http://pricing_service:5003
-          FAVORITES_URL=http://favorites_service:5004
-          PAYMENT_URL=http://payment_service:5003
           PROVIDER=none
           GOOGLE_API_KEY=
           GEMINI_MODEL=models/gemini-2.5-flash
@@ -74,20 +59,12 @@ jobs:
           EOF
 
       - name: Build and start backend services
-        run: docker compose up --build -d
+        run: docker compose up --build -d auth_service
 
       - name: Wait for backend health checks
         run: |
           wait-on \
-            "$GATEWAY_URL/health" \
             "$AUTH_URL/health" \
-            "$LISTING_URL/" \
-            "$ADMIN_URL/health" \
-            "$FAVORITES_URL/favorites/" \
-            "$PAYMENT_URL/payment/health" \
-            "$PRICING_URL/" \
-            "$SEARCH_URL/search/" \
-            "$REVIEWS_URL/" \
             --timeout 180000 \
             --interval 3000
 
@@ -97,12 +74,12 @@ jobs:
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run all Postman API collections with Newman
+      - name: Run auth-service Postman collection with Newman
         id: newman
         run: |
+          rm -rf reports
           mkdir -p reports
-          shopt -s nullglob
-          collections=(postman/authservice_postman_collection.json)
+          collections=(postman/authservice/authservice_postman_collection.json)
 
           if [ "${#collections[@]}" -eq 0 ]; then
             echo "::error::No Postman service collections were found."
@@ -117,15 +94,8 @@ jobs:
             echo "::group::Newman - ${service_name}"
             if ! newman run "$collection" \
               -e postman/postman_environment.json \
-              --env-var gateway_url="$GATEWAY_URL" \
+              -d postman/authservice/data_register.json \
               --env-var auth_url="$AUTH_URL" \
-              --env-var listing_url="$LISTING_URL" \
-              --env-var admin_url="$ADMIN_URL" \
-              --env-var favorites_url="$FAVORITES_URL" \
-              --env-var payment_url="$PAYMENT_URL" \
-              --env-var pricing_url="$PRICING_URL" \
-              --env-var search_url="$SEARCH_URL" \
-              --env-var reviews_url="$REVIEWS_URL" \
               --env-var adminUsername="$ADMIN_USERNAME" \
               --env-var adminEmail="$ADMIN_EMAIL" \
               --env-var adminPassword="$ADMIN_PASSWORD" \
@@ -165,6 +135,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
+          NEWMAN_SERVICE: authservice
 
       - name: Stop backend services
         if: always()

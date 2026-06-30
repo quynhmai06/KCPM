@@ -162,18 +162,16 @@ fi
 echo "Project ${jira_project_key} and required permissions verified."
 
 run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown/repository}/actions/runs/${GITHUB_RUN_ID:-unknown}"
-shopt -s nullglob
-newman_reports=(reports/*-newman-result.json)
+newman_service="${NEWMAN_SERVICE:-authservice}"
+newman_report_path="reports/${newman_service}-newman-result.json"
 newman_report_args=()
 
-if [ "${#newman_reports[@]}" -eq 0 ]; then
+if [ ! -f "$newman_report_path" ]; then
   # Keep one missing path so the payload builder can explain that tests failed
   # before Newman produced a report.
-  newman_report_args+=(--newman-report reports/newman-result.json)
+  newman_report_args+=(--newman-report "$newman_report_path")
 else
-  for newman_report in "${newman_reports[@]}"; do
-    newman_report_args+=(--newman-report "$newman_report")
-  done
+  newman_report_args+=(--newman-report "$newman_report_path")
 fi
 
 python3 scripts/build-jira-issues.py \

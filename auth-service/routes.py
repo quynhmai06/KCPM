@@ -20,9 +20,11 @@ ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "webp"}
 AVATAR_DIR = "uploads/avatars"  
 USERNAME_MAX_LENGTH = 80
 EMAIL_MAX_LENGTH = 120
-PHONE_MAX_LENGTH = 20
 PROFILE_FULL_NAME_MAX_LENGTH = 120
 PROFILE_ADDRESS_MAX_LENGTH = 255
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 64
+PHONE_LENGTH = 10
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -135,16 +137,18 @@ def register():
     email = normalize_email(d.get("email"))
     phone = normalize_phone(d.get("phone"))
     password = d.get("password") or ""
-    if not username or not email or not phone or not password:
+    if not username or not email or not password:
         return {
             "error": "missing_fields",
-            "hint": "username, email, phone, password required",
+            "hint": "username, email, password required",
         }, 400
     if len(username) > USERNAME_MAX_LENGTH:
         return {"error": "username_too_long"}, 400
     if len(email) > EMAIL_MAX_LENGTH or not EMAIL_RE.match(email):
         return {"error": "invalid_email"}, 400
-    if len(phone) > PHONE_MAX_LENGTH or not phone.isdigit():
+    if len(password) < PASSWORD_MIN_LENGTH or len(password) > PASSWORD_MAX_LENGTH:
+        return {"error": "invalid_password"}, 400
+    if phone is not None and (not phone.isdigit() or len(phone) != PHONE_LENGTH):
         return {"error": "invalid_phone"}, 400
     conds = [User.username == username, User.email == email]
     if phone:

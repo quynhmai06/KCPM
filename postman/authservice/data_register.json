@@ -5,7 +5,7 @@
     "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
     "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.com",
     "password": "pppppppppppppppppppppppppppppppppppp",
-    "phone": "0901234567"
+    "phone": "0901234500"
   },
   {
     "tc": "REG_TC02",
@@ -58,7 +58,7 @@
   {
     "tc": "REG_TC08",
     "description": "Username đã tồn tại",
-    "username": "alice",
+    "username": "a",
     "email": "alice2@example.com",
     "password": "pppppppppppppppppppppppppppppppppppp",
     "phone": "0901234507"
@@ -99,7 +99,7 @@
     "tc": "REG_TC13",
     "description": "Email đã tồn tại",
     "username": "newuser",
-    "email": "used@example.com",
+    "email": "minu@example.com",
     "password": "pppppppppppppppppppppppppppppppppppp",
     "phone": "0901234512"
   },
@@ -157,7 +157,7 @@
     "username": "phone84",
     "email": "phone84@example.com",
     "password": "pppppppppppppppppppppppppppppppppppp",
-    "phone": "84901234567"
+    "phone": "84901234568"
   },
   {
     "tc": "REG_TC21",
@@ -181,7 +181,7 @@
     "username": "dupPhone",
     "email": "dupphone@example.com",
     "password": "pppppppppppppppppppppppppppppppppppp",
-    "phone": "0909999999"
+    "phone": "0901234501"
   },
   {
     "tc": "REG_TC24",
