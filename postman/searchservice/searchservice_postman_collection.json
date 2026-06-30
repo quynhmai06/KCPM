@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "cac7eb68-77dc-4482-a551-f1f115a34e40",
+    "name": "Search Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55361500",
+    "_collection_link": "https://go.postman.co/collection/55361500-cac7eb68-77dc-4482-a551-f1f115a34e40?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "SEARCH_SEARCH",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const tc = pm.iterationData.get(\"tc\");\r",
+              "const desc = pm.iterationData.get(\"description\");\r",
+              "const expectedStatus = Number(pm.iterationData.get(\"expected_status\"));\r",
+              "\r",
+              "pm.test(`${tc} - ${desc} - đúng HTTP status`, function () {\r",
+              "  pm.response.to.have.status(expectedStatus);\r",
+              "});\r",
+              "\r",
+              "let json = {};\r",
+              "try {\r",
+              "  json = pm.response.json();\r",
+              "} catch (e) {}\r",
+              "\r",
+              "if (expectedStatus === 200) {\r",
+              "  pm.test(`${tc} - response có danh sách items`, function () {\r",
+              "    pm.expect(json).to.have.property(\"items\");\r",
+              "    pm.expect(json.items).to.be.an(\"array\");\r",
+              "    pm.expect(json).to.have.property(\"page\");\r",
+              "    pm.expect(json).to.have.property(\"per_page\");\r",
+              "    pm.expect(json).to.have.property(\"total\");\r",
+              "    pm.expect(json).to.have.property(\"pages\");\r",
+              "  });\r",
+              "}\r",
+              "\r",
+              "console.log(tc, desc, \"expected:\", expectedStatus, \"actual:\", pm.response.code);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "{{Authorization}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{request_body}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{search_url}}/search/listings?q={{q}}&item_type={{item_type}}&product_type={{product_type}}&min_price={{min_price}}&max_price={{max_price}}",
+          "host": [
+            "{{search_url}}"
+          ],
+          "path": [
+            "search",
+            "listings"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "{{q}}"
+            },
+            {
+              "key": "item_type",
+              "value": "{{item_type}}"
+            },
+            {
+              "key": "product_type",
+              "value": "{{product_type}}"
+            },
+            {
+              "key": "min_price",
+              "value": "{{min_price}}"
+            },
+            {
+              "key": "max_price",
+              "value": "{{max_price}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

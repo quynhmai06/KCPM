@@ -1,0 +1,252 @@
+[
+  {
+    "tc": "SEARCH_SEARCH_TC01",
+    "description": "Tất cả giá trị nominal",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "100000000",
+    "max_price": "900000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC02",
+    "description": "Không nhập từ khóa",
+    "q": "",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC03",
+    "description": "Từ khóa tại min+",
+    "q": "V",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC04",
+    "description": "Từ khóa tại max-",
+    "q": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC05",
+    "description": "Từ khóa tại max",
+    "q": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC06",
+    "description": "Từ khóa vượt giới hạn max",
+    "q": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC07",
+    "description": "Không nhập loại sản phẩm",
+    "q": "VinFast",
+    "item_type": "",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC08",
+    "description": "Loại sản phẩm là xe",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC09",
+    "description": "Loại sản phẩm là pin",
+    "q": "pin",
+    "item_type": "battery",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC10",
+    "description": "product_type=car",
+    "q": "VinFast",
+    "item_type": "",
+    "product_type": "car",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC11",
+    "description": "Loại sản phẩm sai",
+    "q": "VinFast",
+    "item_type": "phone",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC12",
+    "description": "min_price tại min",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC13",
+    "description": "min_price tại min+",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "1",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC14",
+    "description": "min_price tại max-",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "9999999999",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC15",
+    "description": "min_price tại max",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "10000000000",
+    "max_price": "10000000000",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC16",
+    "description": "min_price âm",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "-1",
+    "max_price": "10000000000",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC17",
+    "description": "min_price vượt max",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "10000000001",
+    "max_price": "10000000000",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC18",
+    "description": "min_price không phải số nguyên",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "abc",
+    "max_price": "10000000000",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC19",
+    "description": "max_price tại min",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "0",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC20",
+    "description": "max_price tại min+",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "1",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC21",
+    "description": "max_price tại max-",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "9999999999",
+    "expected_status": 200
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC22",
+    "description": "max_price âm",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "-1",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC23",
+    "description": "max_price vượt max",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "10000000001",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC24",
+    "description": "max_price không phải số nguyên",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "0",
+    "max_price": "abc",
+    "expected_status": 400
+  },
+  {
+    "tc": "SEARCH_SEARCH_TC25",
+    "description": "Khoảng giá không hợp lệ",
+    "q": "VinFast",
+    "item_type": "vehicle",
+    "product_type": "",
+    "min_price": "900000000",
+    "max_price": "100000000",
+    "expected_status": 400
+  }
+]
