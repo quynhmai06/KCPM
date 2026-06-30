@@ -1,0 +1,159 @@
+{
+  "info": {
+    "_postman_id": "ffc10cbf-4f59-4121-80d3-6b5faf6c6980",
+    "name": "Reviews Service",
+    "description": "Data-driven collection: mỗi chức năng 1 request. Test case IDs đã đổi thành LOC-TC, CREATE-TC, REPLY-TC. Chạy từng request với file runner data tương ứng.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55354245",
+    "_collection_link": "https://go.postman.co/collection/55354245-ffc10cbf-4f59-4121-80d3-6b5faf6c6980?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "REVIEWS_CREATE",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Chuẩn bị dữ liệu cho request từ file JSON Runner",
+              "function getData(name, fallback) {",
+              "    const v = pm.iterationData.get(name);",
+              "    return (v === undefined || v === null) ? fallback : v;",
+              "}",
+              "if (pm.info.iteration === 0) {",
+              "    pm.collectionVariables.set('runner_seed', String(Date.now() + Math.floor(Math.random()*1000)));",
+              "}",
+              "const seed = Number(pm.collectionVariables.get('runner_seed') || Date.now());",
+              "function expandTemplate(s) {",
+              "    if (s === undefined || s === null) return '';",
+              "    s = String(s);",
+              "    s = s.replace(/__P(\\d+)__/g, (_, n) => String(seed + Number(n)));",
+              "    s = s.replace(/__B(\\d+)__/g, (_, n) => String(seed + Number(n)));",
+              "    s = s.replace(/__DUP_PRODUCT__/g, String(seed + 9001));",
+              "    s = s.replace(/__DUP_BUYER__/g, String(seed + 9901));",
+              "    s = s.replace(/__LONGC1000__/g, 'c'.repeat(1000));",
+              "    s = s.replace(/__LONGC1001__/g, 'c'.repeat(1001));",
+              "    s = s.replace(/__LONGM1000__/g, encodeURIComponent('m'.repeat(1000)));",
+              "    s = s.replace(/__LONGM1001__/g, encodeURIComponent('m'.repeat(1001)));",
+              "    return s;",
+              "}",
+              "const caseId = getData('case_id', 'MANUAL');",
+              "const tags = getData('tags', '');",
+              "const desc = getData('description', '');",
+              "pm.collectionVariables.set('current_case_label', caseId + (tags ? ' [' + tags + ']' : '') + (desc ? ' - ' + desc : ''));",
+              "const base = (pm.collectionVariables.get('review_base_url') || pm.environment.get('review_base_url') || 'http://localhost:5011').replace(/\\/$/, '');",
+              "let bodyTemplate = getData('body_template', '{}');",
+              "let body = expandTemplate(bodyTemplate);",
+              "pm.collectionVariables.set('request_body', body);",
+              "// Setup riêng cho case review trùng: tạo review lần 1 trước, request chính là lần 2",
+              "if (String(getData('setup_duplicate', 'false')) === 'true') {",
+              "    const setupBody = expandTemplate(JSON.stringify({product_id:'__DUP_PRODUCT__', buyer_id:'__DUP_BUYER__', seller_id:2, rating:4, comment:'Review lần 1'}));",
+              "    pm.sendRequest({",
+              "        url: base + '/reviews/api/reviews',",
+              "        method: 'POST',",
+              "        header: {'Content-Type':'application/json'},",
+              "        body: {mode:'raw', raw: setupBody}",
+              "    }, function(err, res) {",
+              "        console.log('Duplicate setup status:', res && res.code, err);",
+              "    });",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const label = pm.collectionVariables.get('current_case_label') || 'CREATE';",
+              "const expected = Number(pm.iterationData.get('expected_status') || 201);",
+              "pm.test(label + ' - status code is ' + expected, function () { pm.response.to.have.status(expected); });",
+              "const expectedContains = pm.iterationData.get('expected_contains');",
+              "if (expectedContains) {",
+              "    pm.test(label + ' - response contains ' + expectedContains, function () { pm.expect(pm.response.text()).to.include(expectedContains); });",
+              "}",
+              "if (expected === 201) {",
+              "    pm.test(label + ' - response has review fields', function () {",
+              "        const json = pm.response.json();",
+              "        pm.expect(json).to.have.property('id');",
+              "        pm.expect(json).to.have.property('product_id');",
+              "        pm.expect(json).to.have.property('buyer_id');",
+              "        pm.expect(json).to.have.property('rating');",
+              "    });",
+              "}",
+              "const gap = pm.iterationData.get('gap_note');",
+              "if (gap) console.log(label + ' GAP NOTE: ' + gap);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{request_body}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{review_base_url}}/reviews/api/reviews",
+          "host": [
+            "{{review_base_url}}"
+          ],
+          "path": [
+            "reviews",
+            "api",
+            "reviews"
+          ]
+        },
+        "description": "Chạy request này trong Runner với file reviews_create_runner_data_CREATE_TC.json. Nên bật REVIEWS_DEV_ALLOW=1 cho các case success. Case payment_required chỉ đúng khi dev allow tắt."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "review_base_url",
+      "value": "http://localhost:5011"
+    },
+    {
+      "key": "review_id",
+      "value": "1"
+    },
+    {
+      "key": "query_string",
+      "value": ""
+    },
+    {
+      "key": "request_body",
+      "value": "{}"
+    },
+    {
+      "key": "reply_body",
+      "value": "seller_id=2&message=OK"
+    },
+    {
+      "key": "case_review_id",
+      "value": "1"
+    },
+    {
+      "key": "runner_seed",
+      "value": ""
+    },
+    {
+      "key": "current_case_label",
+      "value": ""
+    }
+  ]
+}

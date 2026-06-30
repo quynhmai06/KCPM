@@ -1,0 +1,211 @@
+[
+  {
+    "case_id": "REVIEWS_CREATE_TC01",
+    "tags": "REVIEW-V1,REVIEW-V2,REVIEW-V3,REVIEW-V5,REVIEW-V7,REVIEW-V8,REVIEW-V9",
+    "description": "Tạo review hợp lệ",
+    "body_template": "{\"product_id\": \"__P101__\", \"buyer_id\": \"__B301__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"Pin tốt\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC02",
+    "tags": "REVIEW-V1,B-product-min",
+    "description": "product_id tại min",
+    "body_template": "{\"product_id\": 1, \"buyer_id\": \"__B302__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"OK\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC03",
+    "tags": "REVIEW-X1",
+    "description": "Thiếu product_id",
+    "body_template": "{\"buyer_id\": \"__B303__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"OK\"}",
+    "expected_status": 400,
+    "expected_contains": "product_id"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC04",
+    "tags": "REVIEW-X2",
+    "description": "product_id < 1",
+    "body_template": "{\"product_id\": -1, \"buyer_id\": \"__B304__\", \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "product_id",
+    "gap_note": "Code có thể chưa validate product_id dương."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC05",
+    "tags": "REVIEW-X3",
+    "description": "product_id không phải số",
+    "body_template": "{\"product_id\": \"abc\", \"buyer_id\": \"__B305__\", \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "product_id"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC06",
+    "tags": "REVIEW-X4",
+    "description": "Không token, không buyer_id",
+    "body_template": "{\"product_id\": \"__P106__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"OK\"}",
+    "expected_status": 401,
+    "expected_contains": "buyer_id"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC07",
+    "tags": "REVIEW-X5",
+    "description": "buyer_id < 1",
+    "body_template": "{\"product_id\": \"__P107__\", \"buyer_id\": 0, \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "buyer_id",
+    "gap_note": "Code hiện tại có thể trả 401 do buyer_id=0 bị xem như thiếu."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC08",
+    "tags": "REVIEW-X6",
+    "description": "buyer_id không phải số",
+    "body_template": "{\"product_id\": \"__P108__\", \"buyer_id\": \"abc\", \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "buyer_id",
+    "gap_note": "Code hiện tại có thể trả 401 do không xác định được buyer hợp lệ."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC09",
+    "tags": "REVIEW-V3,B-rating-min",
+    "description": "rating tại min",
+    "body_template": "{\"product_id\": \"__P109__\", \"buyer_id\": \"__B309__\", \"seller_id\": 2, \"rating\": 1, \"comment\": \"Không hài lòng\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC10",
+    "tags": "REVIEW-V3,B-rating-max",
+    "description": "rating tại max",
+    "body_template": "{\"product_id\": \"__P110__\", \"buyer_id\": \"__B310__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"Rất tốt\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC11",
+    "tags": "REVIEW-X7",
+    "description": "Thiếu rating",
+    "body_template": "{\"product_id\": \"__P111__\", \"buyer_id\": \"__B311__\", \"seller_id\": 2, \"comment\": \"OK\"}",
+    "expected_status": 400,
+    "expected_contains": "rating"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC12",
+    "tags": "REVIEW-X8",
+    "description": "rating < 1",
+    "body_template": "{\"product_id\": \"__P112__\", \"buyer_id\": \"__B312__\", \"seller_id\": 2, \"rating\": 0}",
+    "expected_status": 400,
+    "expected_contains": "rating"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC13",
+    "tags": "REVIEW-X9",
+    "description": "rating > 5",
+    "body_template": "{\"product_id\": \"__P113__\", \"buyer_id\": \"__B313__\", \"seller_id\": 2, \"rating\": 6}",
+    "expected_status": 400,
+    "expected_contains": "rating"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC14",
+    "tags": "REVIEW-X10",
+    "description": "rating không phải số",
+    "body_template": "{\"product_id\": \"__P114__\", \"buyer_id\": \"__B314__\", \"seller_id\": 2, \"rating\": \"abc\"}",
+    "expected_status": 400,
+    "expected_contains": "rating"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC15",
+    "tags": "REVIEW-V4",
+    "description": "Không truyền comment",
+    "body_template": "{\"product_id\": \"__P115__\", \"buyer_id\": \"__B315__\", \"seller_id\": 2, \"rating\": 4}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC16",
+    "tags": "REVIEW-V4",
+    "description": "comment rỗng",
+    "body_template": "{\"product_id\": \"__P116__\", \"buyer_id\": \"__B316__\", \"seller_id\": 2, \"rating\": 4, \"comment\": \"\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC17",
+    "tags": "REVIEW-V5,B-comment-max",
+    "description": "comment 1000 ký tự",
+    "body_template": "{\"product_id\":\"__P117__\",\"buyer_id\":\"__B317__\",\"seller_id\":2,\"rating\":4,\"comment\":\"__LONGC1000__\"}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC18",
+    "tags": "REVIEW-X11",
+    "description": "comment hơn 1000 ký tự",
+    "body_template": "{\"product_id\":\"__P118__\",\"buyer_id\":\"__B318__\",\"seller_id\":2,\"rating\":4,\"comment\":\"__LONGC1001__\"}",
+    "expected_status": 400,
+    "expected_contains": "comment",
+    "gap_note": "Code hiện tại có thể chưa validate độ dài comment."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC19",
+    "tags": "REVIEW-V6",
+    "description": "Không truyền seller_id",
+    "body_template": "{\"product_id\": \"__P119__\", \"buyer_id\": \"__B319__\", \"rating\": 5}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC20",
+    "tags": "REVIEW-V7",
+    "description": "seller_id hợp lệ",
+    "body_template": "{\"product_id\": \"__P120__\", \"buyer_id\": \"__B320__\", \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 201,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC21",
+    "tags": "REVIEW-X12",
+    "description": "seller_id < 1",
+    "body_template": "{\"product_id\": \"__P121__\", \"buyer_id\": \"__B321__\", \"seller_id\": -1, \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "seller_id",
+    "gap_note": "Code hiện tại có thể chưa validate seller_id dương."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC22",
+    "tags": "REVIEW-X13",
+    "description": "seller_id không phải số",
+    "body_template": "{\"product_id\": \"__P122__\", \"buyer_id\": \"__B322__\", \"seller_id\": \"abc\", \"rating\": 5}",
+    "expected_status": 400,
+    "expected_contains": "seller_id"
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC23",
+    "tags": "REVIEW-X14",
+    "description": "Review trùng",
+    "body_template": "{\"product_id\": \"__DUP_PRODUCT__\", \"buyer_id\": \"__DUP_BUYER__\", \"seller_id\": 2, \"rating\": 5, \"comment\": \"Review lần 2\"}",
+    "expected_status": 400,
+    "expected_contains": "already_reviewed",
+    "setup_duplicate": true,
+    "gap_note": "Pre-request sẽ tạo review lần 1 trước, main request là lần 2."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC24",
+    "tags": "REVIEW-X15",
+    "description": "Chưa thanh toán khi tắt dev allow",
+    "body_template": "{\"product_id\": \"__P124__\", \"buyer_id\": \"__B324__\", \"seller_id\": 2, \"rating\": 5}",
+    "expected_status": 403,
+    "expected_contains": "payment_required",
+    "gap_note": "Chỉ đúng khi REVIEWS_DEV_ALLOW != 1 và chưa có payment paid."
+  },
+  {
+    "case_id": "REVIEWS_CREATE_TC25",
+    "tags": "Request-negative",
+    "description": "Body JSON lỗi",
+    "body_template": "{\"product_id\": ",
+    "expected_status": 400,
+    "expected_contains": "product_id",
+    "gap_note": "Nếu Flask trả lỗi HTML/400 khác thì kiểm tra status là chính."
+  }
+]
