@@ -1,0 +1,218 @@
+[
+  {
+    "tc": "REG_TC01",
+    "description": "Tất cả giá trị nominal",
+    "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234567"
+  },
+  {
+    "tc": "REG_TC02",
+    "description": "Username tại min",
+    "username": "a",
+    "email": "minu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234501"
+  },
+  {
+    "tc": "REG_TC03",
+    "description": "Username tại min+",
+    "username": "ab",
+    "email": "minplusu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234502"
+  },
+  {
+    "tc": "REG_TC04",
+    "description": "Username tại max-",
+    "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+    "email": "maxminusu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234503"
+  },
+  {
+    "tc": "REG_TC05",
+    "description": "Username tại max",
+    "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+    "email": "maxu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234504"
+  },
+  {
+    "tc": "REG_TC06",
+    "description": "Username rỗng",
+    "username": "",
+    "email": "emptyu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234505"
+  },
+  {
+    "tc": "REG_TC07",
+    "description": "Username vượt max",
+    "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+    "email": "longu@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234506"
+  },
+  {
+    "tc": "REG_TC08",
+    "description": "Username đã tồn tại",
+    "username": "alice",
+    "email": "alice2@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234507"
+  },
+  {
+    "tc": "REG_TC09",
+    "description": "Email tại min",
+    "username": "emailmin",
+    "email": "a@b.c",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234508"
+  },
+  {
+    "tc": "REG_TC10",
+    "description": "Email tại max",
+    "username": "emailmax",
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234509"
+  },
+  {
+    "tc": "REG_TC11",
+    "description": "Email rỗng",
+    "username": "noemail",
+    "email": "",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234510"
+  },
+  {
+    "tc": "REG_TC12",
+    "description": "Email sai định dạng",
+    "username": "bademail",
+    "email": "abc",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234511"
+  },
+  {
+    "tc": "REG_TC13",
+    "description": "Email đã tồn tại",
+    "username": "newuser",
+    "email": "used@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234512"
+  },
+  {
+    "tc": "REG_TC14",
+    "description": "Password tại min",
+    "username": "passmin",
+    "email": "passmin@example.com",
+    "password": "pppppppp",
+    "phone": "0901234513"
+  },
+  {
+    "tc": "REG_TC15",
+    "description": "Password nhỏ hơn min",
+    "username": "shortpass",
+    "email": "shortpass@example.com",
+    "password": "ppppppp",
+    "phone": "0901234514"
+  },
+  {
+    "tc": "REG_TC16",
+    "description": "Password tại max",
+    "username": "passmax",
+    "email": "passmax@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234515"
+  },
+  {
+    "tc": "REG_TC17",
+    "description": "Password vượt max",
+    "username": "longpass",
+    "email": "longpass@example.com",
+    "password": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234516"
+  },
+  {
+    "tc": "REG_TC18",
+    "description": "Không nhập số điện thoại",
+    "username": "nophone",
+    "email": "nophone@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": ""
+  },
+  {
+    "tc": "REG_TC19",
+    "description": "Phone đúng 10 chữ số",
+    "username": "phone10",
+    "email": "phone10@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234567"
+  },
+  {
+    "tc": "REG_TC20",
+    "description": "Phone có tiền tố 84",
+    "username": "phone84",
+    "email": "phone84@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "84901234567"
+  },
+  {
+    "tc": "REG_TC21",
+    "description": "Phone 9 chữ số",
+    "username": "phone9",
+    "email": "phone9@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "901234567"
+  },
+  {
+    "tc": "REG_TC22",
+    "description": "Phone 11 chữ số",
+    "username": "phone11",
+    "email": "phone11@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "09012345678"
+  },
+  {
+    "tc": "REG_TC23",
+    "description": "Phone đã tồn tại",
+    "username": "dupPhone",
+    "email": "dupphone@example.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0909999999"
+  },
+  {
+    "tc": "REG_TC24",
+    "description": "Email tại min+",
+    "username": "emailminplus",
+    "email": "ab@c.d",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234517"
+  },
+  {
+    "tc": "REG_TC25",
+    "description": "Email tại max-",
+    "username": "emailmaxminus",
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.com",
+    "password": "pppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234518"
+  },
+  {
+    "tc": "REG_TC26",
+    "description": "Password tại min+",
+    "username": "passminplus",
+    "email": "passminplus@example.com",
+    "password": "ppppppppp",
+    "phone": "0901234519"
+  },
+  {
+    "tc": "REG_TC27",
+    "description": "Password tại max-",
+    "username": "passmaxminus",
+    "email": "passmaxminus@example.com",
+    "password": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+    "phone": "0901234520"
+  }
+]

@@ -1,0 +1,112 @@
+{
+  "info": {
+    "_postman_id": "89451812-38a1-48d3-bc92-d867e4e49b56",
+    "name": "Auth Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50117124",
+    "_collection_link": "https://go.postman.co/collection/50117124-89451812-38a1-48d3-bc92-d867e4e49b56?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const idx = pm.info.iteration + 1;\r",
+              "const tc = pm.iterationData.get(\"tc\") || `REG_TC${String(idx).padStart(2, \"0\")}`;\r",
+              "const desc = pm.iterationData.get(\"description\") || \"\";\r",
+              "\r",
+              "let rules = {};\r",
+              "[\r",
+              "  \"01\",\"02\",\"03\",\"04\",\"05\",\"09\",\"10\",\"14\",\"16\",\"18\",\"19\",\"20\",\"24\",\"25\",\"26\",\"27\"\r",
+              "].forEach(n => rules[`REG_TC${n}`] = { status: 201 });\r",
+              "\r",
+              "rules.REG_TC06 = { status: 400, error: \"missing_fields\" };\r",
+              "rules.REG_TC07 = { status: 400 };\r",
+              "rules.REG_TC08 = { status: 409, error: \"username_exists\" };\r",
+              "rules.REG_TC11 = { status: 400, error: \"missing_fields\" };\r",
+              "rules.REG_TC12 = { status: 400 };\r",
+              "rules.REG_TC13 = { status: 409, error: \"email_exists\" };\r",
+              "rules.REG_TC15 = { status: 400 };\r",
+              "rules.REG_TC17 = { status: 400 };\r",
+              "rules.REG_TC21 = { status: 400 };\r",
+              "rules.REG_TC22 = { status: 400 };\r",
+              "rules.REG_TC23 = { status: 409, error: \"phone_exists\" };\r",
+              "\r",
+              "const expected = rules[tc];\r",
+              "\r",
+              "pm.test(`${tc} - ${desc} - đúng HTTP status`, function () {\r",
+              "  pm.expect(expected, `Chưa khai báo expected cho ${tc}`).to.exist;\r",
+              "  pm.response.to.have.status(expected.status);\r",
+              "});\r",
+              "\r",
+              "let json = {};\r",
+              "try {\r",
+              "  json = pm.response.json();\r",
+              "} catch (e) {}\r",
+              "\r",
+              "if (expected && expected.error) {\r",
+              "  pm.test(`${tc} - đúng mã lỗi ${expected.error}`, function () {\r",
+              "    pm.expect(json.error).to.eql(expected.error);\r",
+              "  });\r",
+              "}\r",
+              "\r",
+              "if (expected && expected.status === 201) {\r",
+              "  pm.test(`${tc} - đăng ký thành công`, function () {\r",
+              "    pm.expect(json).to.have.property(\"id\");\r",
+              "    pm.expect(json.username).to.eql(pm.iterationData.get(\"username\"));\r",
+              "  });\r",
+              "}\r",
+              "\r",
+              "console.log(\r",
+              "  tc,\r",
+              "  desc,\r",
+              "  \"expected:\",\r",
+              "  expected && expected.status,\r",
+              "  \"actual:\",\r",
+              "  pm.response.code,\r",
+              "  \"body:\",\r",
+              "  pm.response.text()\r",
+              ");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"{{username}}\",\r\n  \"email\": \"{{email}}\",\r\n  \"password\": \"{{password}}\",\r\n  \"phone\": \"{{phone}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/register",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
