@@ -17,7 +17,7 @@ jobs:
     name: Build backend and run Postman tests
     runs-on: ubuntu-latest
     env:
-      LISTING_URL: http://localhost:5002
+      SEARCH_URL: http://localhost:5010
       JWT_SECRET: supersecret
 
     steps:
@@ -52,55 +52,40 @@ jobs:
           EOF
 
       - name: Build and start backend services
-        run: docker compose up --build -d listing_service
+        run: docker compose up --build -d search_service
 
       - name: Wait for backend health checks
         run: |
           wait-on \
-            "$LISTING_URL/" \
+            "$SEARCH_URL/search/" \
             --timeout 180000 \
             --interval 3000
-
-      - name: Seed listing-service test data
-        run: |
-          docker exec ev-platform-postgres-1 psql -U ev -d evdb -v ON_ERROR_STOP=1 -c "INSERT INTO blocked_users (username, reason, created_at) VALUES ('blocked_member_test', 'seed for CREATE_TC53', NOW()) ON CONFLICT (username) DO NOTHING;"
             
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run listing-service Postman collection with Newman
+      - name: Run search-service Postman collection with Newman
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
-          collections=(postman/listingservice/listingservice_postman_collection.json)
 
-          if [ "${#collections[@]}" -eq 0 ]; then
-            echo "::error::No Postman service collections were found."
+          service_name="searchservice"
+          collection="postman/searchservice/searchservice_postman_collection.json"
+
+          echo "::group::Newman - ${service_name}"
+          if ! newman run "$collection" \
+            -e postman/postman_environment.json \
+            -d postman/searchservice/data_search.json \
+            --env-var search_url="$SEARCH_URL" \
+            --env-var jwtSecret="$JWT_SECRET" \
+            --reporters cli,junit,json,htmlextra \
+            --reporter-junit-export "reports/${service_name}-newman-result.xml" \
+            --reporter-json-export "reports/${service_name}-newman-result.json" \
+            --reporter-htmlextra-export "reports/${service_name}-newman-report.html"; then
             exit 1
           fi
-
-          test_status=0
-          for collection in "${collections[@]}"; do
-            collection_file="$(basename "$collection")"
-            service_name="${collection_file%_postman_collection.json}"
-
-            echo "::group::Newman - ${service_name}"
-            if ! newman run "$collection" \
-              -e postman/postman_environment.json \
-              -d postman/listingservice/data_create.json \
-              --env-var listing_url="$LISTING_URL" \
-              --env-var jwtSecret="$JWT_SECRET" \
-              --reporters cli,junit,json,htmlextra \
-              --reporter-junit-export "reports/${service_name}-newman-result.xml" \
-              --reporter-json-export "reports/${service_name}-newman-result.json" \
-              --reporter-htmlextra-export "reports/${service_name}-newman-report.html"; then
-              test_status=1
-            fi
-            echo "::endgroup::"
-          done
-
-          exit "$test_status"
+          echo "::endgroup::"
 
       - name: Collect Docker logs when failed
         if: failure()
@@ -125,7 +110,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: listingservice
+          NEWMAN_SERVICE: searchservice
 
       - name: Stop backend services
         if: always()
