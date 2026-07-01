@@ -109,6 +109,7 @@ jobs:
               test_status=1
             fi
             echo "::endgroup::"
+
             echo "::group::Newman - paymentservice"
             if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
               -e "postman/postman_environment.json" \
@@ -123,6 +124,10 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+          if [ -f "reports/paymentservice-newman-result.json" ]; then
+            cp reports/paymentservice-newman-result.json reports/newman-result.json
+          fi
 
           exit "$test_status"
 
