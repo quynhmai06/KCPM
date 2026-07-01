@@ -11,6 +11,31 @@
       "name": "PAYMENT_CREATE",
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const rawBody = pm.iterationData.get('raw_body');\r",
+              "\r",
+              "if (rawBody) {\r",
+              "    pm.request.body.update(rawBody);\r",
+              "} else {\r",
+              "    const payload = {};\r",
+              "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
+              "        const value = pm.iterationData.get(key);\r",
+              "        if (value !== undefined) {\r",
+              "            payload[key] = value;\r",
+              "        }\r",
+              "    });\r",
+              "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
+              "}\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
@@ -71,7 +96,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"order_id\": \"{{order_id}}\",\r\n    \"buyer_id\": {{buyer_id}},\r\n    \"seller_id\": {{seller_id}},\r\n    \"amount\": {{amount}},\r\n    \"method\": \"{{method}}\",\r\n    \"items\": {{items}}\r\n}",
+          "raw": "{}",
           "options": {
             "raw": {
               "language": "json"

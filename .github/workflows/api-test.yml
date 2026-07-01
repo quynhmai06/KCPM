@@ -17,13 +17,12 @@ jobs:
     name: Build backend and run Postman tests
     runs-on: ubuntu-latest
     env:
-      SEARCH_URL: http://localhost:5010
+      PAYMENT_URL: http://localhost:5008
       JWT_SECRET: supersecret
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,32 +51,33 @@ jobs:
           EOF
 
       - name: Build and start backend services
-        run: docker compose up --build -d search_service
+        run: docker compose up --build -d payment_service
 
       - name: Wait for backend health checks
         run: |
           wait-on \
-            "$SEARCH_URL/search/" \
+            "$PAYMENT_URL/payment/health" \
             --timeout 180000 \
             --interval 3000
-            
+
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run search-service Postman collection with Newman
+      - name: Run payment-service Postman collection with Newman
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
 
-          service_name="searchservice"
-          collection="postman/searchservice/searchservice_postman_collection.json"
+          service_name="paymentservice"
+          collection="postman/paymentservice/paymentservice_postman_collection.json"
 
           echo "::group::Newman - ${service_name}"
           if ! newman run "$collection" \
             -e postman/postman_environment.json \
-            -d postman/searchservice/data_search.json \
-            --env-var search_url="$SEARCH_URL" \
+            -d postman/paymentservice/data_payment.service.json \
+            --env-var payment_url="$PAYMENT_URL" \
+            --env-var baseUrl="$PAYMENT_URL" \
             --env-var jwtSecret="$JWT_SECRET" \
             --reporters cli,junit,json,htmlextra \
             --reporter-junit-export "reports/${service_name}-newman-result.xml" \
@@ -110,7 +110,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: searchservice
+          NEWMAN_SERVICE: paymentservice
 
       - name: Stop backend services
         if: always()

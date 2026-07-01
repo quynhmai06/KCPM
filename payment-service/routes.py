@@ -341,6 +341,13 @@ def _coerce_amount(v):
         return None
 
 
+def _validation_error(message, field=None):
+    payload = {"error": message}
+    if field:
+        payload["field"] = field
+    return jsonify(payload), 400
+
+
 def _extract_buyer_id(data):
     cand = (
         data.get("buyer_id")
@@ -382,6 +389,9 @@ def health():
 @bp.post("/create")
 def create_payment():
     data = request.get_json(force=True) or {}
+    if not isinstance(data, dict):
+        return _validation_error("request body must be a JSON object")
+
     buyer_id = _extract_buyer_id(data)
     seller_id = _extract_seller_id(data)
     amount = _coerce_amount(data.get("amount"))
@@ -437,7 +447,24 @@ def create_payment():
     required = ["order_id", "buyer_id", "seller_id", "amount"]
     missing = [k for k in required if data.get(k) in (None, "", [])]
     if missing:
-        return jsonify({"error": f"missing fields: {', '.join(missing)}"}), 400
+        return _validation_error(f"missing fields: {', '.join(missing)}")
+
+    order_id = str(data["order_id"]).strip()
+    if not order_id:
+        return _validation_error("Thiếu mã đơn hàng", "order_id")
+    if len(order_id) > 100:
+        return _validation_error("Mã đơn hàng không được vượt quá 100 ký tự", "order_id")
+
+    if buyer_id is None or buyer_id <= 0:
+        return _validation_error("Người mua không hợp lệ", "buyer_id")
+    if seller_id is None or seller_id <= 0:
+        return _validation_error("Người bán không hợp lệ", "seller_id")
+    if buyer_id == seller_id:
+        return _validation_error("Bạn là người đăng tin nên không thể mua được hàng", "seller_id")
+    if amount is None or amount <= 0:
+        return _validation_error("Số tiền thanh toán phải lớn hơn 0", "amount")
+    if amount > 1_000_000_000:
+        return _validation_error("Số tiền thanh toán không được vượt quá 1.000.000.000đ", "amount")
 
     raw_method = (data.get("method") or PaymentMethod.E_WALLET.value).lower().strip()
     try:
@@ -454,10 +481,10 @@ def create_payment():
 
     try:
         payment = Payment(
-            order_id=str(data["order_id"]),
-            buyer_id=int(data["buyer_id"]),
-            seller_id=int(data["seller_id"]),
-            amount=float(data["amount"]),
+            order_id=order_id,
+            buyer_id=buyer_id,
+            seller_id=seller_id,
+            amount=amount,
             items=data.get("items"),
             method=method,
             provider=data.get("provider", "Manual"),
