@@ -21,7 +21,7 @@ class Product(db.Model):
     id               = db.Column(db.Integer, primary_key=True)
     name             = db.Column(db.String(180), nullable=False, index=True)
     description      = db.Column(db.Text)
-    price            = db.Column(db.Integer, nullable=False, default=0, index=True)
+    price = db.Column(db.BigInteger, nullable=False, default=0, index=True)    
     brand            = db.Column(db.String(80), index=True)
     province         = db.Column(db.String(80), index=True)
     year             = db.Column(db.Integer, index=True)

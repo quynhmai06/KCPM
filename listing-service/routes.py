@@ -10,6 +10,17 @@ bp = Blueprint("listing", __name__, url_prefix="/listings")
 JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
 STATIC_UPLOAD_PREFIX = "/static/uploads/"
 AUTH_URL = os.getenv("AUTH_URL", "http://auth_service:5001")
+NAME_MAX_LENGTH = 180
+PRICE_MIN = 1
+PRICE_MAX = 10_000_000_000
+IMAGE_URL_MAX_LENGTH = 255
+YEAR_MIN = 1990
+YEAR_MAX = 2026
+MILEAGE_MIN = 0
+MILEAGE_MAX = 1_000_000
+MAX_SUB_IMAGES = 5
+ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_PROVINCES = {"Hà Nội", "TP. Hồ Chí Minh"}
 
 # ---------- Auth helpers ----------
 def current_user():
@@ -122,6 +133,27 @@ def parse_int(v, default=None, minv=None, maxv=None):
         return n
     except:
         return default
+    
+def parse_required_int(v):
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, str):
+        s = v.strip()
+        if s.startswith("-"):
+            return int(s) if s[1:].isdigit() else None
+        return int(s) if s.isdigit() else None
+    return None
+
+def valid_image_url(v):
+    clean = _strip_prefix(v)
+    if not clean or len(clean) > IMAGE_URL_MAX_LENGTH:
+        return None
+    path = clean.split("?", 1)[0].lower()
+    if not any(path.endswith(ext) for ext in ALLOWED_IMAGE_EXTS):
+        return None
+    return clean
 
 # ---------- Endpoints ----------
 @bp.get("/")
@@ -220,34 +252,61 @@ def create_product():
 
 
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
-    price = parse_int(data.get("price"), 0, 1)
-    if not name or price <= 0:
-        return jsonify(error="Thiếu tên hoặc giá không hợp lệ."), 400
 
-    year = parse_int(data.get("year"))
-    mileage = parse_int(data.get("mileage"))
+    name = (data.get("name") or "").strip()
+    if not name or len(name) > NAME_MAX_LENGTH:
+        return jsonify(error="invalid_name"), 400
+
+    price = parse_required_int(data.get("price"))
+    if price is None or price < PRICE_MIN or price > PRICE_MAX:
+        return jsonify(error="invalid_price"), 400
+
+    raw_item_type = (data.get("item_type") or "").strip().lower()
+    if raw_item_type not in {"vehicle", "battery"}:
+        return jsonify(error="invalid_item_type"), 400
+
+    main_image_url = valid_image_url(data.get("main_image_url"))
+    if not main_image_url:
+        return jsonify(error="invalid_main_image_url"), 400
+
+    province = (data.get("province") or "").strip()
+    if not province or province not in ALLOWED_PROVINCES:
+        return jsonify(error="invalid_province"), 400
+
+    year = parse_required_int(data.get("year"))
+    if year is None or year < YEAR_MIN or year > YEAR_MAX:
+        return jsonify(error="invalid_year"), 400
+
+    mileage = parse_required_int(data.get("mileage"))
+    if mileage is None or mileage < MILEAGE_MIN or mileage > MILEAGE_MAX:
+        return jsonify(error="invalid_mileage"), 400
+
     sub_urls = data.get("sub_image_urls") or []
     if not isinstance(sub_urls, list):
-        return jsonify(error="sub_image_urls phải là danh sách URL."), 400
+        return jsonify(error="sub_image_urls_must_be_list"), 400
+    if len(sub_urls) > MAX_SUB_IMAGES:
+        return jsonify(error="too_many_sub_images"), 400
 
-    raw_item_type = (data.get("item_type") or "vehicle").strip().lower()
-    if raw_item_type not in {"vehicle", "battery"}:
-        raw_item_type = "vehicle"
+    clean_sub_urls = []
+    for u in sub_urls:
+        clean = valid_image_url(u)
+        if not clean:
+            return jsonify(error="invalid_sub_image_url"), 400
+        clean_sub_urls.append(clean)
 
     p = Product(
         name=name,
         description=data.get("description"),
         price=price,
         brand=data.get("brand"),
-        province=data.get("province"),
+        province=province,
         year=year,
         mileage=mileage,
         battery_capacity=data.get("battery_capacity"),
         owner=user["username"],
         item_type=ItemType(raw_item_type), 
-        main_image_url=_strip_prefix(data.get("main_image_url")),
-        sub_image_urls=json.dumps([_strip_prefix(u) for u in sub_urls if u]),
+        main_image_url=main_image_url,
+        sub_image_urls=json.dumps(clean_sub_urls),
     )
 
     db.session.add(p)
