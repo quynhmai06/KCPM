@@ -65,7 +65,7 @@ jobs:
         run: |
           wait-on \
             "$AUTH_URL/health" \
-            "http://localhost:5008/health" \
+            "http://localhost:5008/payment/health" \
             --timeout 180000 \
             --interval 3000
 
