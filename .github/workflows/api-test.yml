@@ -17,12 +17,8 @@ jobs:
     name: Build backend and run Postman tests
     runs-on: ubuntu-latest
     env:
-      AUTH_URL: http://localhost:5001
+      LISTING_URL: http://localhost:5002
       JWT_SECRET: supersecret
-      ADMIN_USERNAME: admin
-      ADMIN_EMAIL: admin@example.com
-      ADMIN_PASSWORD: admin123
-      TEST_PASSWORD: "123456"
 
     steps:
       - name: Checkout source code
@@ -41,9 +37,6 @@ jobs:
           cat > .env <<EOF
           JWT_SECRET=${JWT_SECRET}
           GATEWAY_SECRET=ci_gateway_secret
-          ADMIN_USERNAME=admin
-          ADMIN_EMAIL=admin@example.com
-          ADMIN_PASSWORD=admin123
           PROVIDER=none
           GOOGLE_API_KEY=
           GEMINI_MODEL=models/gemini-2.5-flash
@@ -59,28 +52,24 @@ jobs:
           EOF
 
       - name: Build and start backend services
-        run: docker compose up --build -d auth_service payment_service
+        run: docker compose up --build -d listing_service
 
       - name: Wait for backend health checks
         run: |
           wait-on \
-            "$AUTH_URL/health" \
-            "http://localhost:5008/payment/health" \
+            "$LISTING_URL/" \
             --timeout 180000 \
             --interval 3000
-
-      - name: Seed auth admin user
-        run: docker compose exec -T auth_service python init_db.py
 
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run auth-service Postman collection with Newman
+      - name: Run listing-service Postman collection with Newman
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
-          collections=(postman/authservice/authservice_postman_collection.json)
+          collections=(postman/listingservice/listingservice_postman_collection.json)
 
           if [ "${#collections[@]}" -eq 0 ]; then
             echo "::error::No Postman service collections were found."
@@ -95,12 +84,8 @@ jobs:
             echo "::group::Newman - ${service_name}"
             if ! newman run "$collection" \
               -e postman/postman_environment.json \
-              -d postman/authservice/data_register.json \
-              --env-var auth_url="$AUTH_URL" \
-              --env-var adminUsername="$ADMIN_USERNAME" \
-              --env-var adminEmail="$ADMIN_EMAIL" \
-              --env-var adminPassword="$ADMIN_PASSWORD" \
-              --env-var testPassword="$TEST_PASSWORD" \
+              -d postman/listingservice/data_create.json \
+              --env-var listing_url="$LISTING_URL" \
               --env-var jwtSecret="$JWT_SECRET" \
               --reporters cli,junit,json,htmlextra \
               --reporter-junit-export "reports/${service_name}-newman-result.xml" \
@@ -109,25 +94,7 @@ jobs:
               test_status=1
             fi
             echo "::endgroup::"
-
-            echo "::group::Newman - paymentservice"
-            if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
-              -e "postman/postman_environment.json" \
-              -d "postman/paymentservice/data_payment.service.json" \
-              --env-var payment_url="http://localhost:5008" \
-              --env-var baseUrl="http://localhost:5008" \
-              --reporters cli,junit,json,htmlextra \
-              --reporter-junit-export "reports/paymentservice-newman-result.xml" \
-              --reporter-json-export "reports/paymentservice-newman-result.json" \
-              --reporter-htmlextra-export "reports/paymentservice-newman-report.html"; then
-              test_status=1
-            fi
-            echo "::endgroup::"
           done
-
-          if [ -f "reports/paymentservice-newman-result.json" ]; then
-            cp reports/paymentservice-newman-result.json reports/newman-result.json
-          fi
 
           exit "$test_status"
 
@@ -154,7 +121,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: paymentservice
+          NEWMAN_SERVICE: listingservice
 
       - name: Stop backend services
         if: always()

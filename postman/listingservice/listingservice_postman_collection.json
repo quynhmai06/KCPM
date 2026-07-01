@@ -1,0 +1,123 @@
+{
+  "info": {
+    "_postman_id": "a9357e28-3ca9-4f8c-805e-83a3ebaa3753",
+    "name": "Listing Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55362457",
+    "_collection_link": "https://go.postman.co/collection/55362457-a9357e28-3ca9-4f8c-805e-83a3ebaa3753?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const tc = pm.iterationData.get(\"tc\");\r",
+              "const desc = pm.iterationData.get(\"description\");\r",
+              "const expectedStatus = Number(pm.iterationData.get(\"expected_status\"));\r",
+              "\r",
+              "pm.test(`${tc} - ${desc} - đúng HTTP status`, function () {\r",
+              "  pm.response.to.have.status(expectedStatus);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const row = pm.iterationData.toObject();\r",
+              "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
+              "const pick = (key, fallback) => has(key) ? row[key] : fallback;\r",
+              "\r",
+              "function makeText(ch, len) {\r",
+              "  return ch.repeat(Number(len));\r",
+              "}\r",
+              "\r",
+              "function makeImagePath(len) {\r",
+              "  const n = Number(len);\r",
+              "  const ext = \".jpg\";\r",
+              "  return \"a\".repeat(Math.max(1, n - ext.length)) + ext;\r",
+              "}\r",
+              "\r",
+              "const authType = pick(\"authorization_type\", \"member\");\r",
+              "\r",
+              "if (authType === \"member\") {\r",
+              "  pm.variables.set(\"authorization\", \"Bearer \" + pm.environment.get(\"memberToken\"));\r",
+              "} else if (authType === \"blocked\") {\r",
+              "  pm.variables.set(\"authorization\", \"Bearer \" + pm.environment.get(\"blockedMemberToken\"));\r",
+              "} else if (authType === \"invalid\") {\r",
+              "  pm.variables.set(\"authorization\", \"Bearer invalid-token\");\r",
+              "} else {\r",
+              "  pm.variables.set(\"authorization\", \"\");\r",
+              "}\r",
+              "\r",
+              "const name = has(\"name_length\") ? makeText(\"n\", row.name_length) : pick(\"name\", makeText(\"n\", 90));\r",
+              "const mainImage = has(\"main_image_length\") ? makeImagePath(row.main_image_length) : pick(\"main_image_url\", makeImagePath(120));\r",
+              "\r",
+              "pm.variables.set(\"name\", name);\r",
+              "pm.variables.set(\"description\", pick(\"description_body\", \"Xe điện đã qua sử dụng\"));\r",
+              "pm.variables.set(\"item_type\", pick(\"item_type\", \"vehicle\"));\r",
+              "pm.variables.set(\"main_image_url\", mainImage);\r",
+              "pm.variables.set(\"province\", pick(\"province\", \"Hà Nội\"));\r",
+              "pm.variables.set(\"brand\", pick(\"brand\", \"VinFast\"));\r",
+              "pm.variables.set(\"battery_capacity\", pick(\"battery_capacity\", \"82\"));\r",
+              "\r",
+              "pm.variables.set(\"price_json\", JSON.stringify(pick(\"price\", 500000000)));\r",
+              "pm.variables.set(\"year_json\", JSON.stringify(pick(\"year\", 2010)));\r",
+              "pm.variables.set(\"mileage_json\", JSON.stringify(pick(\"mileage\", 500000)));\r",
+              "pm.variables.set(\"sub_image_urls_json\", JSON.stringify(pick(\"sub_image_urls\", [\r",
+              "  \"sub1.jpg\",\r",
+              "  \"sub2.jpg\",\r",
+              "  \"sub3.jpg\"\r",
+              "])));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "{{authorization}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"{{name}}\",\r\n  \"description\": \"{{description}}\",\r\n  \"price\": {{price_json}},\r\n  \"item_type\": \"{{item_type}}\",\r\n  \"main_image_url\": \"{{main_image_url}}\",\r\n  \"province\": \"{{province}}\",\r\n  \"year\": {{year_json}},\r\n  \"mileage\": {{mileage_json}},\r\n  \"sub_image_urls\": {{sub_image_urls_json}},\r\n  \"brand\": \"{{brand}}\",\r\n  \"battery_capacity\": \"{{battery_capacity}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{listing_url}}/listings/",
+          "host": [
+            "{{listing_url}}"
+          ],
+          "path": [
+            "listings",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
