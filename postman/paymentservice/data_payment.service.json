@@ -1,0 +1,271 @@
+[
+  {
+    "tc": "PAYMENT_CREATE_TC01",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1001",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC02",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "A",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC03",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC04",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC05",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC06",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC07",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1007",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC08",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1008",
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC09",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1009",
+    "buyer_id": 0,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC10",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1010",
+    "buyer_id": "abc",
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC11",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1011",
+    "buyer_id": 2,
+    "seller_id": 1,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC12",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1012",
+    "buyer_id": 1,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC13",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1013",
+    "buyer_id": 1,
+    "seller_id": 0,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC14",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1014",
+    "buyer_id": 5,
+    "seller_id": 5,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC15",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1015",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 1
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC16",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1016",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 1000000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC17",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1017",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 0
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC18",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1018",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": -1
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC19",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1019",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": "abc"
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC20",
+    "method": "banking",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1020",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 1000000001
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC21",
+    "method": "transfer",
+    "items": [],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1021",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC22",
+    "method": "bitcoin",
+    "items": [],
+    "raw_body": "",
+    "expected": 400,
+    "order_id": "ORD-1022",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC23",
+    "method": "banking",
+    "items": [
+      {
+        "item_id": 10,
+        "title": "Pin LFP",
+        "price": 50000000,
+        "quantity": 1,
+        "seller_id": 2
+      }
+    ],
+    "raw_body": "",
+    "expected": 201,
+    "order_id": "ORD-1023",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  },
+  {
+    "tc": "PAYMENT_CREATE_TC24",
+    "method": "banking",
+    "items": [],
+    "raw_body": "{ invalid json",
+    "expected": 400,
+    "order_id": "ORD-1024",
+    "buyer_id": 1,
+    "seller_id": 2,
+    "amount": 50000000
+  }
+]

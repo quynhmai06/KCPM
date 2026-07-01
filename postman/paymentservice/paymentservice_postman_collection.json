@@ -1,0 +1,107 @@
+{
+  "info": {
+    "_postman_id": "41b689fb-065c-4b47-af29-b3737eacfa5a",
+    "name": "Payment Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55357541",
+    "_collection_link": "https://go.postman.co/collection/55357541-41b689fb-065c-4b47-af29-b3737eacfa5a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "PAYMENT_CREATE",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const label = pm.iterationData.get('tc') || 'CREATE_PAYMENT';\r",
+              "const expected = Number(pm.iterationData.get('expected') || 201);\r",
+              "\r",
+              "pm.test(label + ' - status code is ' + expected, function () {\r",
+              "    pm.response.to.have.status(expected);\r",
+              "});\r",
+              "\r",
+              "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+              "\r",
+              "if (pm.response.code === 201 && contentType.includes(\"application/json\")) {\r",
+              "    const json = pm.response.json();\r",
+              "\r",
+              "    pm.test(label + ' - response has payment fields', function () {\r",
+              "        pm.expect(json).to.have.property('payment_id');\r",
+              "        pm.expect(json).to.have.property('id');\r",
+              "        pm.expect(json).to.have.property('order_id');\r",
+              "        pm.expect(json).to.have.property('status');\r",
+              "        pm.expect(json).to.have.property('amount');\r",
+              "        pm.expect(json).to.have.property('checkout_url');\r",
+              "    });\r",
+              "\r",
+              "    pm.collectionVariables.set('payment_id', json.payment_id);\r",
+              "}\r",
+              "\r",
+              "const gap = pm.iterationData.get('gap_note');\r",
+              "if (gap) {\r",
+              "    console.log(label + ' GAP NOTE: ' + gap);\r",
+              "}\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"order_id\": \"{{order_id}}\",\r\n    \"buyer_id\": {{buyer_id}},\r\n    \"seller_id\": {{seller_id}},\r\n    \"amount\": {{amount}},\r\n    \"method\": \"{{method}}\",\r\n    \"items\": {{items}}\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5008/payment/create",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5008",
+          "path": [
+            "payment",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "payment_id",
+      "value": ""
+    },
+    {
+      "key": "contract_id",
+      "value": ""
+    }
+  ]
+}
