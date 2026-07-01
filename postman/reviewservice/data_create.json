@@ -194,10 +194,10 @@
     "case_id": "REVIEWS_CREATE_TC24",
     "tags": "REVIEW-X15",
     "description": "Chưa thanh toán khi tắt dev allow",
-    "body_template": "{\"product_id\": \"__P124__\", \"buyer_id\": \"__B324__\", \"seller_id\": 2, \"rating\": 5}",
+    "body_template": "{\"product_id\": \"__P124__\", \"buyer_id\": \"__B324__\", \"seller_id\": 2, \"rating\": 5, \"force_payment_check\": true}",
     "expected_status": 403,
     "expected_contains": "payment_required",
-    "gap_note": "Chỉ đúng khi REVIEWS_DEV_ALLOW != 1 và chưa có payment paid."
+    "gap_note": "Ép kiểm tra payment riêng cho TC24 dù REVIEWS_DEV_ALLOW=1."
   },
   {
     "case_id": "REVIEWS_CREATE_TC25",

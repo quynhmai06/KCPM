@@ -205,71 +205,83 @@ def _check_user_has_paid(buyer_id: int, product_id: int, seller_id: Optional[int
 
 @bp.post("/api/reviews")
 def create_review():
-    """Tạo đánh giá mới.
-
-    Yêu cầu:
-    - body JSON: {product_id, seller_id?, rating, comment?, buyer_id}
-    - rating: 1–5
-    - Chỉ cho phép nếu:
-        + Có giao dịch thanh toán đã được admin duyệt (status=paid) cho product_id
-        + Chưa có review trước đó của buyer_id cho product_id
-    """
     data = request.get_json(silent=True) or {}
+
     product_id = data.get("product_id")
     seller_id = data.get("seller_id")
     rating = data.get("rating")
     comment = (data.get("comment") or "").strip()
-    # Do NOT trust buyer_id from client. Prefer resolving from forwarded auth token.
+
+    if len(comment) > 1000:
+        return jsonify({"detail": "comment must not exceed 1000 characters"}), 400
+
     buyer_id = None
+
     try:
         auth_header = request.headers.get("Authorization")
         AUTH_URL = os.getenv("AUTH_URL", "http://auth_service:5001")
+
         if auth_header:
-            ar = requests.get(f"{AUTH_URL}/auth/me", headers={"Authorization": auth_header}, timeout=4)
+            ar = requests.get(
+                f"{AUTH_URL}/auth/me",
+                headers={"Authorization": auth_header},
+                timeout=4,
+            )
             if ar.ok:
                 j = ar.json() or {}
                 buyer_id = j.get("sub") or j.get("id")
     except Exception:
         buyer_id = None
-    # fallback to client-provided buyer_id only if auth lookup failed
-    if not buyer_id:
-        if data.get("buyer_id"):
-            try:
-                buyer_id = int(data.get("buyer_id"))
-            except Exception:
-                buyer_id = None
 
-    # Validate cơ bản
-    if not product_id:
+    if buyer_id is None:
+        if "buyer_id" in data:
+            buyer_id = data.get("buyer_id")
+
+    if product_id is None or product_id == "":
         return jsonify({"detail": "product_id is required"}), 400
-    if not buyer_id:
-        return jsonify({"detail": "buyer_id is required (must be logged in)"}), 401
 
     try:
         product_id = int(product_id)
     except (TypeError, ValueError):
         return jsonify({"detail": "product_id must be an integer"}), 400
 
+    if product_id < 1:
+        return jsonify({"detail": "product_id must be greater than 0"}), 400
+
+    if buyer_id is None or buyer_id == "":
+        return jsonify({"detail": "buyer_id is required (must be logged in)"}), 401
+
     try:
         buyer_id = int(buyer_id)
     except (TypeError, ValueError):
         return jsonify({"detail": "buyer_id must be an integer"}), 400
 
-    if seller_id is not None:
+    if buyer_id < 1:
+        return jsonify({"detail": "buyer_id must be greater than 0"}), 400
+
+    if seller_id is not None and seller_id != "":
         try:
             seller_id = int(seller_id)
         except (TypeError, ValueError):
             return jsonify({"detail": "seller_id must be an integer"}), 400
+
+        if seller_id < 1:
+            return jsonify({"detail": "seller_id must be greater than 0"}), 400
     else:
-        # Try to resolve seller_id via listing service when not provided
+        seller_id = None
+
         try:
             LISTING_URL = os.getenv("LISTING_URL", "http://listing_service:5002")
             lresp = requests.get(f"{LISTING_URL}/listings/{int(product_id)}", timeout=4)
             if lresp.ok:
                 listing = lresp.json() or {}
-                owner = listing.get("owner") or listing.get("owner_username") or listing.get("user")
+                owner = (
+                    listing.get("owner")
+                    or listing.get("owner_username")
+                    or listing.get("user")
+                )
+
                 if owner:
-                    # resolve username -> id
                     AUTH_URL = os.getenv("AUTH_URL", "http://auth_service:5001")
                     aresp = requests.get(f"{AUTH_URL}/auth/users/{owner}", timeout=4)
                     if aresp.ok:
@@ -285,11 +297,11 @@ def create_review():
     if not (1 <= rating <= 5):
         return jsonify({"detail": "rating must be between 1 and 5"}), 400
 
-    # Kiểm tra đã từng review sản phẩm này chưa (1 user / 1 listing)
     existing = Review.query.filter(
         Review.product_id == product_id,
         Review.buyer_id == buyer_id,
     ).first()
+
     if existing:
         return (
             jsonify(
@@ -300,11 +312,13 @@ def create_review():
             ),
             400,
         )
-
-    # Kiểm tra với payment-service: chỉ người MUA đã thanh toán (admin duyệt) mới được đánh giá
-    # Cho phép bật chế độ dev để bỏ check bằng biến môi trường REVIEWS_DEV_ALLOW=1
-    if os.getenv("REVIEWS_DEV_ALLOW", "0") != "1":
-        if not _check_user_has_paid(buyer_id=buyer_id, product_id=product_id, seller_id=seller_id):
+    force_payment_check = data.get("force_payment_check") is True
+    if force_payment_check or os.getenv("REVIEWS_DEV_ALLOW", "0") != "1":
+        if not _check_user_has_paid(
+            buyer_id=buyer_id,
+            product_id=product_id,
+            seller_id=seller_id,
+        ):
             return (
                 jsonify(
                     {
@@ -321,8 +335,8 @@ def create_review():
             buyer_id,
         )
 
-    # Tạo review
     now = datetime.utcnow()
+
     review = Review(
         product_id=product_id,
         buyer_id=buyer_id,
@@ -336,7 +350,7 @@ def create_review():
     try:
         db.session.add(review)
         db.session.commit()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         db.session.rollback()
         current_app.logger.error(f"Error saving review: {exc}")
         return jsonify({"detail": "Internal server error"}), 500

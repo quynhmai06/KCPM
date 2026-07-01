@@ -104,12 +104,10 @@
           }
         },
         "url": {
-          "raw": "http://localhost:5008/payment/create",
-          "protocol": "http",
+          "raw": "{{payment_url}}/payment/create",
           "host": [
-            "localhost"
+            "{{payment_url}}"
           ],
-          "port": "5008",
           "path": [
             "payment",
             "create"
