@@ -59,12 +59,13 @@ jobs:
           EOF
 
       - name: Build and start backend services
-        run: docker compose up --build -d auth_service
+        run: docker compose up --build -d auth_service payment_service
 
       - name: Wait for backend health checks
         run: |
           wait-on \
             "$AUTH_URL/health" \
+            "http://localhost:5008/health" \
             --timeout 180000 \
             --interval 3000
 
@@ -108,6 +109,19 @@ jobs:
               test_status=1
             fi
             echo "::endgroup::"
+            echo "::group::Newman - paymentservice"
+            if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
+              -e "postman/postman_environment.json" \
+              -d "postman/paymentservice/data_payment.service.json" \
+              --env-var payment_url="http://localhost:5008" \
+              --env-var baseUrl="http://localhost:5008" \
+              --reporters cli,junit,json,htmlextra \
+              --reporter-junit-export "reports/paymentservice-newman-result.xml" \
+              --reporter-json-export "reports/paymentservice-newman-result.json" \
+              --reporter-htmlextra-export "reports/paymentservice-newman-report.html"; then
+              test_status=1
+            fi
+            echo "::endgroup::"
           done
 
           exit "$test_status"
@@ -135,7 +149,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: authservice
+          NEWMAN_SERVICE: paymentservice
 
       - name: Stop backend services
         if: always()
