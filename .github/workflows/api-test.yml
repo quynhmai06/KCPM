@@ -61,6 +61,10 @@ jobs:
             --timeout 180000 \
             --interval 3000
 
+      - name: Seed listing-service test data
+        run: |
+          docker exec ev-platform-postgres-1 psql -U ev -d evdb -v ON_ERROR_STOP=1 -c "INSERT INTO blocked_users (username, reason, created_at) VALUES ('blocked_member_test', 'seed for CREATE_TC53', NOW()) ON CONFLICT (username) DO NOTHING;"
+            
       - name: Show running containers
         run: docker compose ps
 
