@@ -14,13 +14,13 @@ on:
 
 jobs:
   api-test:
-    name: Auth Service Profile Newman Test
+    name: Listing Service Update Newman Test
     runs-on: ubuntu-latest
     env:
-      AUTH_URL: http://localhost:5001
+      LISTING_URL: http://localhost:5002
       JWT_SECRET: supersecret
-      PROFILE_TEST_USERNAME: newman_profile_member
-      PROFILE_TEST_EMAIL: newman-profile@local.test
+      UPDATE_OWNER: profile_member_1782966907
+      OTHER_MEMBER: blocked_member_001
 
     steps:
       - name: Checkout source code
@@ -38,8 +38,7 @@ jobs:
         run: |
           cat > .env <<EOF
           JWT_SECRET=${JWT_SECRET}
-          FLASK_SECRET=ci_auth_session_secret
-          AUTH_URL=http://auth_service:5001
+          AUTH_URL=http://127.0.0.1:1
           GATEWAY_SECRET=ci_gateway_secret
           ADMIN_USERNAME=admin
           ADMIN_EMAIL=admin@example.com
@@ -58,82 +57,141 @@ jobs:
           BANK_OWNER=CI Test
           EOF
 
-      - name: Start postgres
+      - name: Start postgres only
         run: docker compose up -d postgres
 
-      - name: Build and start auth service
-        run: docker compose up --build -d --no-deps auth_service
+      - name: Build and start listing service only
+        run: docker compose up --build -d --no-deps listing_service
 
-      - name: Wait for auth health check
-        run: wait-on "$AUTH_URL/health" --timeout 180000 --interval 3000
+      - name: Wait for listing health check
+        run: wait-on "$LISTING_URL/" --timeout 180000 --interval 3000
 
-      - name: Prepare profile test user and JWT token
+      - name: Prepare listing update test data
         run: |
-          MEMBER_TOKEN=$(docker compose exec -T \
-            -e PROFILE_TEST_USERNAME="$PROFILE_TEST_USERNAME" \
-            -e PROFILE_TEST_EMAIL="$PROFILE_TEST_EMAIL" \
-            auth_service python - <<'PY'
-          import os
+          docker compose exec -T listing_service python - <<'PY'
+          from datetime import datetime
+          from app import create_app
+          from models import db, Product, ProductStatus, ItemType
 
-          from app import app
-          from models import db, User
-          from routes import _make_token
-          from werkzeug.security import generate_password_hash
+          owner = "profile_member_1782966907"
 
-          username = os.environ["PROFILE_TEST_USERNAME"]
-          email = os.environ["PROFILE_TEST_EMAIL"]
-
+          app = create_app()
           with app.app_context():
               db.create_all()
-              user = User.query.filter_by(username=username).first()
-              if user is None:
-                  user = User(
-                      username=username,
-                      email=email,
-                      password=generate_password_hash("ci-profile-test-password"),
-                      role="member",
-                  )
-                  db.session.add(user)
 
-              user.email = email
-              user.phone = None
-              user.approved = True
-              user.locked = False
+              Product.query.filter(Product.id.in_([1, 2])).delete(synchronize_session=False)
+
+              editable = Product(
+                  id=1,
+                  name="Editable listing",
+                  description="Seed listing for update API tests",
+                  price=500000000,
+                  brand="VinFast",
+                  province="Hà Nội",
+                  year=2010,
+                  mileage=500000,
+                  battery_capacity="82",
+                  owner=owner,
+                  item_type=ItemType.vehicle,
+                  main_image_url="seed.jpg",
+                  sub_image_urls="[]",
+                  approved=False,
+                  status=ProductStatus.pending,
+              )
+
+              approved = Product(
+                  id=2,
+                  name="Approved listing",
+                  description="Seed approved listing for update API tests",
+                  price=500000000,
+                  brand="VinFast",
+                  province="Hà Nội",
+                  year=2010,
+                  mileage=500000,
+                  battery_capacity="82",
+                  owner=owner,
+                  item_type=ItemType.vehicle,
+                  main_image_url="approved.jpg",
+                  sub_image_urls="[]",
+                  approved=True,
+                  approved_at=datetime.utcnow(),
+                  approved_by="admin",
+                  status=ProductStatus.approved,
+              )
+
+              db.session.add_all([editable, approved])
               db.session.commit()
-
-              print(_make_token(user))
           PY
+
+      - name: Create listing update JWT tokens
+        run: |
+          MEMBER_TOKEN=$(node - <<'NODE'
+          const crypto = require('crypto');
+          const secret = process.env.JWT_SECRET;
+          const payload = {
+            sub: '2',
+            username: process.env.UPDATE_OWNER,
+            role: 'member',
+            approved: true,
+            locked: false,
+            exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60
+          };
+          const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+          const data = enc({ alg: 'HS256', typ: 'JWT' }) + '.' + enc(payload);
+          const sig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
+          process.stdout.write(data + '.' + sig);
+          NODE
           )
 
-          if [ -z "$MEMBER_TOKEN" ]; then
-            echo "Could not create profile test token"
-            exit 1
-          fi
+          OTHER_MEMBER_TOKEN=$(node - <<'NODE'
+          const crypto = require('crypto');
+          const secret = process.env.JWT_SECRET;
+          const payload = {
+            sub: '99',
+            username: process.env.OTHER_MEMBER,
+            role: 'member',
+            approved: true,
+            locked: false,
+            exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60
+          };
+          const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+          const data = enc({ alg: 'HS256', typ: 'JWT' }) + '.' + enc(payload);
+          const sig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
+          process.stdout.write(data + '.' + sig);
+          NODE
+          )
 
           echo "::add-mask::$MEMBER_TOKEN"
+          echo "::add-mask::$OTHER_MEMBER_TOKEN"
           echo "MEMBER_TOKEN=$MEMBER_TOKEN" >> "$GITHUB_ENV"
+          echo "OTHER_MEMBER_TOKEN=$OTHER_MEMBER_TOKEN" >> "$GITHUB_ENV"
 
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run auth profile Newman collection
+      - name: Run listing update Newman collection
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
 
-          newman run "postman/authservice/authservice_postman_collection.json" \
+          newman run "postman/listingservice/listingservice_postman_collection.json" \
             -e "postman/postman_environment.json" \
-            -d "postman/authservice/data_profile.json" \
-            --folder "Profile" \
-            --env-var auth_url="$AUTH_URL" \
+            -d "postman/listingservice/data_update.json" \
+            --folder "Update" \
+            --env-var listing_url="$LISTING_URL" \
+            --env-var update_listing_id="1" \
+            --env-var approved_listing_id="2" \
+            --env-var missing_listing_id="99999999" \
             --env-var memberToken="$MEMBER_TOKEN" \
+            --env-var blockedMemberToken="$OTHER_MEMBER_TOKEN" \
+            --env-var otherMemberToken="$OTHER_MEMBER_TOKEN" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/authservice-profile-newman-result.xml" \
-            --reporter-json-export "reports/authservice-profile-newman-result.json" \
-            --reporter-htmlextra-export "reports/authservice-profile-report.html"
+            --reporter-junit-export "reports/listingservice-update-newman-result.xml" \
+            --reporter-json-export "reports/listingservice-update-newman-result.json" \
+            --reporter-htmlextra-export "reports/listing-service-update-report.html"
 
-          cp reports/authservice-profile-newman-result.json reports/newman-result.json
+          cp reports/listingservice-update-newman-result.json reports/newman-result.json
 
       - name: Collect Docker logs when failed
         if: failure()
@@ -146,7 +204,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: authservice-profile-test-report
+          name: api-test-report
           path: reports/
 
       - name: Create Jira bug when test failed
@@ -158,7 +216,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: authservice-profile
+          NEWMAN_SERVICE: listingservice-update
 
       - name: Stop backend services
         if: always()
