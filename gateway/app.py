@@ -51,6 +51,31 @@ def save_image(file_storage, prefix="img"):
     file_storage.save(path)
     return f"/static/uploads/{fname}"  # public URL served by gateway
 
+def listing_form_payload(form):
+    product_type = (form.get("product_type") or "car").strip().lower()
+    item_type = "battery" if product_type == "battery" else "vehicle"
+    return {
+        "product_type": product_type,
+        "item_type": item_type,
+        "name": (form.get("name") or "").strip(),
+        "description": (form.get("description") or "").strip(),
+        "price": int(_num(form.get("price")) or 0),
+        "brand": (form.get("brand") or "").strip(),
+        "province": (form.get("province") or "").strip(),
+        "year": int(_num(form.get("year")) or 0),
+        "mileage": int(_num(form.get("mileage")) or 0),
+        "battery_capacity": (form.get("battery_capacity") or "").strip(),
+    }
+
+def listing_error_message(resp, fallback):
+    msg = None
+    try:
+        if resp.headers.get("content-type", "").startswith("application/json"):
+            msg = (resp.json() or {}).get("error")
+    except Exception:
+        pass
+    return msg or fallback
+
 def decode_token(token: str):
     # bỏ verify_sub để tránh lỗi nếu sub không phải string
     return jwt.decode(token, JWT_SECRET, algorithms=JWT_ALGOS, options={"verify_sub": False})
@@ -373,20 +398,10 @@ def proxy_avatar(name):
 def add_listing():
     u = session.get("user") or {}
     if request.method == "POST":
-        payload = {
-            "product_type": (request.form.get("product_type") or "car").strip(),
-            "name": (request.form.get("name") or "").strip(),
-            "description": (request.form.get("description") or "").strip(),
-            "price": int(_num(request.form.get("price")) or 0),
-            "brand": (request.form.get("brand") or "").strip(),
-            "province": (request.form.get("province") or "").strip(),
-            "year": int(_num(request.form.get("year")) or 0),
-            "mileage": int(_num(request.form.get("mileage")) or 0),
-            "battery_capacity": (request.form.get("battery_capacity") or "").strip(),
-        }
+        payload = listing_form_payload(request.form)
         if not payload["name"] or payload["price"] <= 0:
             flash("Nhập các thông tin bắt buộc!", "error")
-            return render_template("post_product.html")
+            return render_template("post_product.html", form_action=url_for("add_listing"), is_edit=False)
 
         # upload ảnh
         main_url = save_image(request.files.get("main_image"), prefix=f"{u.get('username','user')}_main")
@@ -395,11 +410,8 @@ def add_listing():
             url = save_image(f, prefix=f"{u.get('username','user')}_sub")
             if url:
                 sub_urls.append(url)
-        pt = payload.get("product_type", "car").lower()
-        item_type = "vehicle" if pt == "car" else "battery"
-
         body = {
-            "item_type": item_type,                     
+            "item_type": payload["item_type"],                     
             "name": payload["name"],
             "description": payload["description"],
             "price": payload["price"],
@@ -421,7 +433,7 @@ def add_listing():
             )
         except requests.RequestException:
             flash("Không kết nối được Listing service.", "error")
-            return render_template("post_product.html")
+            return render_template("post_product.html", form_action=url_for("add_listing"), is_edit=False)
         if r.status_code == 201:
             flash("Đăng tin thành công! Bài đang chờ admin duyệt.", "success")
             return redirect(url_for("home"))
@@ -434,7 +446,7 @@ def add_listing():
             except Exception:
                 pass
             flash(msg or "Tài khoản của bạn đang bị hạn chế đăng tin (spam).", "error")
-            return render_template("post_product.html"), 403
+            return render_template("post_product.html", form_action=url_for("add_listing"), is_edit=False), 403
 
         ct = r.headers.get("content-type", "")
         msg = None
@@ -444,10 +456,119 @@ def add_listing():
             except Exception:
                 pass
         flash(f"Đăng tin thất bại (HTTP {r.status_code}). {msg or (r.text or '')[:200]}", "error")
-        return render_template("post_product.html"), r.status_code
+        return render_template("post_product.html", form_action=url_for("add_listing"), is_edit=False), r.status_code
 
 
-    return render_template("post_product.html")
+    return render_template("post_product.html", form_action=url_for("add_listing"), is_edit=False)
+
+
+@app.route("/listings/<int:pid>/edit", methods=["GET", "POST"], endpoint="edit_listing")
+@login_required()
+def edit_listing(pid):
+    token = session.get("access_token", "")
+    headers = {"Authorization": f"Bearer {token}"}
+    user = session.get("user") or {}
+
+    try:
+        get_resp = requests.get(f"{LISTING_URL}/listings/{pid}", timeout=8)
+    except requests.RequestException:
+        flash("Không kết nối được Listing service.", "error")
+        return redirect(url_for("profile"))
+
+    if not get_resp.ok or not get_resp.headers.get("content-type", "").startswith("application/json"):
+        flash("Không tải được thông tin tin đăng.", "error")
+        return redirect(url_for("profile"))
+
+    item = get_resp.json()
+    is_owner = item.get("owner") == user.get("username")
+    is_admin = str(user.get("role", "")).lower() == "admin"
+    if not (is_owner or is_admin):
+        flash("Bạn không có quyền sửa tin đăng này.", "error")
+        return redirect(url_for("product_detail", pid=pid))
+    if item.get("approved") and not is_admin:
+        flash("Tin đã được duyệt, không thể sửa.", "error")
+        return redirect(url_for("product_detail", pid=pid))
+
+    if request.method == "POST":
+        payload = listing_form_payload(request.form)
+        if not payload["name"] or payload["price"] <= 0:
+            flash("Nhập các thông tin bắt buộc!", "error")
+            return render_template(
+                "post_product.html",
+                form_action=url_for("edit_listing", pid=pid),
+                is_edit=True,
+                listing=item,
+            )
+
+        body = {
+            "item_type": payload["item_type"],
+            "name": payload["name"],
+            "description": payload["description"],
+            "price": payload["price"],
+            "brand": payload["brand"],
+            "province": payload["province"],
+            "year": payload["year"],
+            "mileage": payload["mileage"],
+            "battery_capacity": payload["battery_capacity"],
+        }
+
+        main_url = save_image(request.files.get("main_image"), prefix=f"{user.get('username','user')}_main")
+        existing_main_url = (request.form.get("existing_main_image_url") or item.get("main_image_url") or "").strip()
+        if main_url:
+            body["main_image_url"] = main_url
+        elif existing_main_url:
+            body["main_image_url"] = existing_main_url
+
+        sub_urls = [
+            u.strip()
+            for u in request.form.getlist("existing_sub_image_urls")
+            if (u or "").strip()
+        ]
+        for f in request.files.getlist("sub_images"):
+            url = save_image(f, prefix=f"{user.get('username','user')}_sub")
+            if url:
+                sub_urls.append(url)
+        if sub_urls:
+            body["sub_image_urls"] = sub_urls
+
+        try:
+            patch_resp = requests.patch(
+                f"{LISTING_URL}/listings/{pid}",
+                json=body,
+                headers=headers,
+                timeout=10,
+            )
+        except requests.RequestException:
+            flash("Không kết nối được Listing service.", "error")
+            return render_template(
+                "post_product.html",
+                form_action=url_for("edit_listing", pid=pid),
+                is_edit=True,
+                listing=item,
+            )
+
+        if patch_resp.ok:
+            flash("Cập nhật tin đăng thành công.", "success")
+            return redirect(url_for("product_detail", pid=pid))
+
+        flash(
+            f"Cập nhật tin đăng thất bại (HTTP {patch_resp.status_code}). "
+            f"{listing_error_message(patch_resp, (patch_resp.text or '')[:200])}",
+            "error",
+        )
+        return render_template(
+            "post_product.html",
+            form_action=url_for("edit_listing", pid=pid),
+            is_edit=True,
+            listing=item,
+        ), patch_resp.status_code
+
+    return render_template(
+        "post_product.html",
+        form_action=url_for("edit_listing", pid=pid),
+        is_edit=True,
+        listing=item,
+    )
 
 
 # ----------------- Member helpers: mine endpoints (module-level) -----------------

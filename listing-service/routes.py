@@ -108,6 +108,7 @@ def to_json(p: Product):
         "battery_capacity": p.battery_capacity,
         "owner": p.owner,
         "owner_id": owner_id,
+        "item_type": p.item_type.value if p.item_type else "vehicle",
         "main_image_url": _norm_img(p.main_image_url),
         "sub_image_urls": [_norm_img(u) for u in sub_urls],
         "approved": bool(p.approved),
@@ -333,38 +334,57 @@ def update_product(pid):
 
     data = request.get_json(force=True)
     if "name" in data:
-        if not (data["name"] or "").strip():
+        if not (data["name"] or "").strip() or len((data["name"] or "").strip()) > NAME_MAX_LENGTH:
             return jsonify(error="Tên không hợp lệ."), 400
         p.name = data["name"].strip()
     if "description" in data:
         p.description = data["description"]
     if "price" in data:
-        val = parse_int(data["price"], None, 1)
+        val = parse_int(data["price"], None, PRICE_MIN, PRICE_MAX)
         if val is None:
             return jsonify(error="Giá không hợp lệ."), 400
         p.price = val
     if "brand" in data:
         p.brand = data["brand"]
     if "province" in data:
-        p.province = data["province"]
+        province = (data["province"] or "").strip()
+        if not province or province not in ALLOWED_PROVINCES:
+            return jsonify(error="invalid_province"), 400
+        p.province = province
+    if "item_type" in data:
+        raw_item_type = (data["item_type"] or "").strip().lower()
+        if raw_item_type not in {"vehicle", "battery"}:
+            return jsonify(error="invalid_item_type"), 400
+        p.item_type = ItemType(raw_item_type)
     if "year" in data:
-        y = parse_int(data["year"])
+        y = parse_int(data["year"], None, YEAR_MIN, YEAR_MAX)
         if y is None:
             return jsonify(error="Năm không hợp lệ."), 400
         p.year = y
     if "mileage" in data:
-        m = parse_int(data["mileage"], None, 0)
+        m = parse_int(data["mileage"], None, MILEAGE_MIN, MILEAGE_MAX)
         if m is None:
             return jsonify(error="Số km không hợp lệ."), 400
         p.mileage = m
     if "battery_capacity" in data:
         p.battery_capacity = data["battery_capacity"]
     if "main_image_url" in data:
-        p.main_image_url = _strip_prefix(data["main_image_url"])
+        main_image_url = valid_image_url(data["main_image_url"])
+        if not main_image_url:
+            return jsonify(error="invalid_main_image_url"), 400
+        p.main_image_url = main_image_url
     if "sub_image_urls" in data:
         if not isinstance(data["sub_image_urls"], list):
             return jsonify(error="sub_image_urls phải là danh sách."), 400
-        p.sub_image_urls = json.dumps([_strip_prefix(u) for u in data["sub_image_urls"] if u])
+        if len(data["sub_image_urls"]) > MAX_SUB_IMAGES:
+            return jsonify(error="too_many_sub_images"), 400
+        clean_sub_urls = []
+        for u in data["sub_image_urls"]:
+            clean = valid_image_url(u)
+            if not clean:
+                return jsonify(error="invalid_sub_image_url"), 400
+            clean_sub_urls.append(clean)
+        p.sub_image_urls = json.dumps(clean_sub_urls)
 
     db.session.commit()
     return jsonify(message="Đã cập nhật.", item=to_json(p))

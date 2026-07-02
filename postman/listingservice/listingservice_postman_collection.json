@@ -118,6 +118,142 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Update",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"update_listing_id\", pm.environment.get(\"update_listing_id\") || \"1\");\r",
+              "pm.environment.set(\"approved_listing_id\", pm.environment.get(\"approved_listing_id\") || \"6\");\r",
+              "pm.environment.set(\"missing_listing_id\", \"99999999\");\r",
+              "\r",
+              "const blockedToken = pm.environment.get(\"blockedMemberToken\");\r",
+              "if (blockedToken) {\r",
+              "  pm.environment.set(\"otherMemberToken\", blockedToken);\r",
+              "}\r",
+              "\r",
+              "const row = pm.iterationData.toObject();\r",
+              "\r",
+              "const rawTargetId = String(row.target_id || \"{{update_listing_id}}\");\r",
+              "const targetId = pm.variables.replaceIn(rawTargetId);\r",
+              "\r",
+              "pm.environment.set(\"resolved_target_id\", targetId);\r",
+              "pm.variables.set(\"resolved_target_id\", targetId);\r",
+              "\r",
+              "console.log(`${row.tc_id} - ${row.description || \"\"}`);\r",
+              "console.log(\"rawTargetId =\", rawTargetId);\r",
+              "console.log(\"resolved_target_id =\", targetId);\r",
+              "\r",
+              "const auth = row.auth;\r",
+              "\r",
+              "pm.request.headers.remove(\"Authorization\");\r",
+              "\r",
+              "if (auth && auth !== \"none\") {\r",
+              "  const token =\r",
+              "    pm.environment.get(auth) ||\r",
+              "    pm.collectionVariables.get(auth) ||\r",
+              "    pm.globals.get(auth);\r",
+              "\r",
+              "  console.log(\"auth =\", auth);\r",
+              "  console.log(\"token exists =\", !!token);\r",
+              "  console.log(\"token preview =\", token ? token.substring(0, 30) : \"NULL\");\r",
+              "\r",
+              "  pm.request.headers.upsert({\r",
+              "    key: \"Authorization\",\r",
+              "    value: `Bearer ${token}`\r",
+              "  });\r",
+              "} else {\r",
+              "  console.log(\"auth = none\");\r",
+              "}\r",
+              "\r",
+              "pm.request.headers.upsert({\r",
+              "  key: \"Content-Type\",\r",
+              "  value: \"application/json\"\r",
+              "});\r",
+              "\r",
+              "const payload = row.payload || {};\r",
+              "console.log(\"payload =\", JSON.stringify(payload));\r",
+              "\r",
+              "pm.request.body.update(JSON.stringify(payload));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var tcId = pm.iterationData.get(\"tc_id\");\r",
+              "var desc = pm.iterationData.get(\"description\") || \"\";\r",
+              "var expected = Number(pm.iterationData.get(\"expected_status\"));\r",
+              "\r",
+              "var responseData = null;\r",
+              "var contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+              "var bodyText = pm.response.text();\r",
+              "\r",
+              "if (contentType.includes(\"application/json\") && bodyText) {\r",
+              "  responseData = pm.response.json();\r",
+              "}\r",
+              "\r",
+              "console.log(`${tcId} - ${desc}`);\r",
+              "console.log(`expected status = ${expected}, actual status = ${pm.response.code}`);\r",
+              "console.log(\"response body =\", bodyText);\r",
+              "\r",
+              "pm.test(`${tcId} - ${desc} - HTTP status ${expected}`, function () {\r",
+              "  pm.response.to.have.status(expected);\r",
+              "});\r",
+              "\r",
+              "if (expected === 200) {\r",
+              "  pm.test(`${tcId} - ${desc} - cập nhật thành công có item`, function () {\r",
+              "    pm.expect(responseData, bodyText).to.have.property(\"item\");\r",
+              "  });\r",
+              "} else {\r",
+              "  pm.test(`${tcId} - ${desc} - request bị từ chối hợp lệ`, function () {\r",
+              "    pm.expect(pm.response.code).to.be.at.least(400);\r",
+              "  });\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{listing_url}}/listings/{{resolved_target_id}}",
+          "host": [
+            "{{listing_url}}"
+          ],
+          "path": [
+            "listings",
+            "{{resolved_target_id}}"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }

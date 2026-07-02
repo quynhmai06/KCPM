@@ -66,14 +66,30 @@
     .flash{padding:12px; border-radius:10px; margin-bottom:12px}
     .flash.success{background:#ecfdf5; border:1px solid #bbf7d0; color:#166534}
     .flash.error{background:#fef2f2; border:1px solid #fecaca; color:#991b1b}
+    .image-preview{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px}
+    .image-preview img{width:92px; height:68px; object-fit:cover; border:1px solid var(--line); border-radius:8px; background:#f8fafc}
   </style>
 </head>
 <body>
+  {% set item = listing or {} %}
+  {% set is_edit = is_edit|default(false) %}
+  {% set form_action = form_action|default(url_for('add_listing')) %}
+  {% set current_product_type = request.form.get('product_type') or ('battery' if item.get('item_type') == 'battery' else 'car') %}
+  {% set current_name = request.form.get('name', item.get('name', '')) %}
+  {% set current_description = request.form.get('description', item.get('description', '')) %}
+  {% set current_brand = request.form.get('brand', item.get('brand', '')) %}
+  {% set current_province = request.form.get('province', item.get('province', '')) %}
+  {% set current_year = request.form.get('year', item.get('year', '')) %}
+  {% set current_mileage = request.form.get('mileage', item.get('mileage', '')) %}
+  {% set current_battery_capacity = request.form.get('battery_capacity', item.get('battery_capacity', '')) %}
+  {% set current_price = request.form.get('price', item.get('price', '')) %}
+  {% set current_main_image = item.get('main_image_url', '') %}
+  {% set current_sub_images = item.get('sub_image_urls') or [] %}
   <div class="wrap">
     <div class="hero">
-      <div class="pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="#c97f00" stroke-width="2" stroke-linecap="round"/></svg>Đăng tin nhanh</div>
-      <b>Đăng bán xe/pin đã qua sử dụng</b>
-      <span class="hint">Nhập thông tin thật chính xác để AI gợi ý giá hợp lý.</span>
+      <div class="pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="#c97f00" stroke-width="2" stroke-linecap="round"/></svg>{{ 'Cập nhật tin' if is_edit else 'Đăng tin nhanh' }}</div>
+      <b>{{ 'Cập nhật tin đăng' if is_edit else 'Đăng bán xe/pin đã qua sử dụng' }}</b>
+      <span class="hint">{{ 'Điều chỉnh thông tin tin đăng của bạn.' if is_edit else 'Nhập thông tin thật chính xác để AI gợi ý giá hợp lý.' }}</span>
     </div>
 
     <!-- flash -->
@@ -86,53 +102,51 @@
     {% endwith %}
 
     <div class="card">
-      <h1>Thông tin sản phẩm</h1>
+      <h1>{{ 'Thông tin cần cập nhật' if is_edit else 'Thông tin sản phẩm' }}</h1>
       <p class="hint">Các mục có dấu <span style="color:#dc2626">*</span> là bắt buộc.</p>
 
-      <form action="{{ url_for('add_listing') }}" method="POST" enctype="multipart/form-data" id="postForm" novalidate>
+      <form action="{{ form_action }}" method="POST" enctype="multipart/form-data" id="postForm" novalidate>
         <!-- Loại + Tên -->
         <div class="grid">
           <div>
             <label class="req" for="product_type">Loại sản phẩm</label>
             <select id="product_type" name="product_type">
-              <option value="car" {% if request.form.get('product_type','car')=='car' %}selected{% endif %}>Xe điện</option>
-              <option value="battery" {% if request.form.get('product_type')=='battery' %}selected{% endif %}>Pin xe điện</option>
+              <option value="car" {% if current_product_type=='car' %}selected{% endif %}>Xe điện</option>
+              <option value="battery" {% if current_product_type=='battery' %}selected{% endif %}>Pin xe điện</option>
             </select>
           </div>
           <div>
             <label class="req" for="name">Tên sản phẩm</label>
-            <input id="name" type="text" name="name" required value="{{ request.form.get('name','') }}" placeholder="VD: VinFast VF e34 2023, pin 42 kWh">
+            <input id="name" type="text" name="name" required value="{{ current_name }}" placeholder="VD: VinFast VF e34 2023, pin 42 kWh">
           </div>
         </div>
 
         <!-- Mô tả -->
         <label for="description">Mô tả chi tiết (tình trạng, sửa chữa, phụ kiện…)</label>
-        <textarea id="description" name="description" placeholder="Ghi rõ tình trạng xe/pin, lịch sử bảo dưỡng…">{{ request.form.get('description','') }}</textarea>
+        <textarea id="description" name="description" placeholder="Ghi rõ tình trạng xe/pin, lịch sử bảo dưỡng…">{{ current_description }}</textarea>
 
         <!-- Hãng / Tỉnh -->
         <div class="grid">
           <div>
             <label for="brand">Hãng</label>
-            <input id="brand" type="text" name="brand" value="{{ request.form.get('brand','') }}" placeholder="VinFast, Tesla, MG…">
+            <input id="brand" type="text" name="brand" value="{{ current_brand }}" placeholder="VinFast, Tesla, MG…">
           </div>
           <div>
             <label class="req" for="province">Tỉnh/Thành phố</label>
-            <select id="province" name="province" required>
-              {% set pv = request.form.get('province','') %}
-              <option value="">--Chọn tỉnh/thành phố--</option>
-              {% for p in [
-                'Hà Nội','Hồ Chí Minh','An Giang','Bà Rịa - Vũng Tàu','Bắc Giang','Bắc Kạn','Bạc Liêu','Bắc Ninh',
-                'Bến Tre','Bình Định','Bình Dương','Bình Phước','Bình Thuận','Cà Mau','Cao Bằng','Đà Nẵng',
-                'Đắk Lắk','Đắk Nông','Điện Biên','Đồng Nai','Đồng Tháp','Gia Lai','Hà Giang','Hà Nam','Hà Tĩnh',
-                'Hải Dương','Hải Phòng','Hậu Giang','Hòa Bình','Hưng Yên','Khánh Hòa','Kiên Giang','Kon Tum',
-                'Lai Châu','Lâm Đồng','Lạng Sơn','Lào Cai','Long An','Nam Định','Nghệ An','Ninh Bình','Ninh Thuận',
-                'Phú Thọ','Quảng Bình','Quảng Nam','Quảng Ngãi','Quảng Ninh','Quảng Trị','Sóc Trăng','Sơn La',
-                'Tây Ninh','Thái Bình','Thái Nguyên','Thanh Hóa','Thừa Thiên Huế','Tiền Giang','Trà Vinh',
-                'Tuyên Quang','Vĩnh Long','Vĩnh Phúc','Yên Bái'
-              ] %}
-                <option value="{{ p }}" {% if pv==p %}selected{% endif %}>{{ p }}</option>
-              {% endfor %}
-            </select>
+            <input
+              id="province"
+              type="text"
+              name="province"
+              list="province_options"
+              required
+              autocomplete="off"
+              value="{{ current_province }}"
+              placeholder="Nhập Hà Nội hoặc TP. Hồ Chí Minh"
+            >
+            <datalist id="province_options">
+              <option value="Hà Nội"></option>
+              <option value="TP. Hồ Chí Minh"></option>
+            </datalist>
           </div>
         </div>
 
@@ -140,18 +154,18 @@
         <div class="grid">
           <div>
             <label for="year">Năm sản xuất</label>
-            <input id="year" type="number" name="year" min="2008" max="2100" value="{{ request.form.get('year','') }}" placeholder="VD: 2023">
+            <input id="year" type="number" name="year" min="1990" max="2026" value="{{ current_year }}" placeholder="VD: 2023">
           </div>
           <div>
             <label for="mileage">Số km đã đi</label>
-            <input id="mileage" type="number" name="mileage" min="0" step="1" value="{{ request.form.get('mileage','') }}" placeholder="VD: 20000">
+            <input id="mileage" type="number" name="mileage" min="0" max="1000000" step="1" value="{{ current_mileage }}" placeholder="VD: 20000">
           </div>
         </div>
 
         <!-- Dung lượng pin -->
         <div>
           <label for="battery_capacity">Dung lượng pin</label>
-          <input id="battery_capacity" type="text" name="battery_capacity" value="{{ request.form.get('battery_capacity','') }}" placeholder="VD: 42 kWh">
+          <input id="battery_capacity" type="text" name="battery_capacity" value="{{ current_battery_capacity }}" placeholder="VD: 42 kWh">
           <p class="hint" id="typeHint"><span class="chip">Gợi ý</span> Với “Pin xe điện”, hãy ghi đúng dung lượng (kWh) để AI định giá chuẩn hơn.</p>
         </div>
 
@@ -159,11 +173,27 @@
         <div class="file-row">
           <div>
             <label class="req" for="main_image">Ảnh chính sản phẩm</label>
-            <input id="main_image" type="file" name="main_image" accept=".jpg,.jpeg,.png,.webp,image/*" {% if not request.form %}required{% endif %}>
+            <input id="main_image" type="file" name="main_image" accept=".jpg,.jpeg,.png,.webp,image/*" {% if not is_edit and not request.form %}required{% endif %}>
+            {% if is_edit and item.get('main_image_url') %}
+              <input type="hidden" name="existing_main_image_url" value="{{ current_main_image }}">
+              <div class="image-preview">
+                <img src="{{ current_main_image }}" alt="Ảnh chính hiện tại">
+              </div>
+              <p class="hint">Ảnh hiện tại sẽ được giữ nếu bạn không chọn ảnh mới.</p>
+            {% endif %}
           </div>
           <div>
             <label for="sub_images">Ảnh đi kèm</label>
             <input id="sub_images" type="file" name="sub_images" accept=".jpg,.jpeg,.png,.webp,image/*" multiple>
+            {% if is_edit and current_sub_images %}
+              <div class="image-preview">
+                {% for img in current_sub_images %}
+                  <input type="hidden" name="existing_sub_image_urls" value="{{ img }}">
+                  <img src="{{ img }}" alt="Ảnh phụ hiện tại {{ loop.index }}">
+                {% endfor %}
+              </div>
+              <p class="hint">Các ảnh phụ hiện tại sẽ được giữ và ảnh mới sẽ được thêm vào.</p>
+            {% endif %}
           </div>
         </div>
 
@@ -175,7 +205,7 @@
           <div class="ai-bar">
             <div class="price-row" style="flex:1">
               <input id="price" type="number" name="price" min="1000" step="1000" required
-                     value="{{ request.form.get('price','') }}" placeholder="Nhập tay hoặc bấm Gợi ý AI">
+                     value="{{ current_price }}" placeholder="Nhập tay hoặc bấm Gợi ý AI">
             </div>
             <button type="button" class="btn btn-brand" id="aiSuggestBtn">Gợi ý giá AI</button>
           </div>
@@ -183,8 +213,8 @@
         </div>
 
         <div class="actions">
-          <a class="btn btn-outline" href="{{ url_for('home') }}">Huỷ</a>
-          <button type="submit" class="btn">Đăng bán</button>
+          <a class="btn btn-outline" href="{{ url_for('product_detail', pid=item.get('id')) if is_edit and item.get('id') else url_for('home') }}">Huỷ</a>
+          <button type="submit" class="btn">{{ 'Cập nhật' if is_edit else 'Đăng bán' }}</button>
         </div>
       </form>
     </div>
@@ -200,6 +230,30 @@
         : '<span class="chip">Gợi ý</span> Bạn đang đăng <b>Xe điện</b> — nhập ODO, năm SX, dung lượng pin để AI định giá chính xác.';
     }
     if(typeSel){ typeSel.addEventListener('change', refreshHint); refreshHint(); }
+
+    const provinceInput = document.getElementById('province');
+    const allowedProvinces = ['Hà Nội', 'TP. Hồ Chí Minh'];
+    function validateProvince(){
+      if(!provinceInput) return true;
+      const value = provinceInput.value.trim();
+      const ok = allowedProvinces.includes(value);
+      provinceInput.setCustomValidity(ok ? '' : 'Chỉ cho phép Hà Nội hoặc TP. Hồ Chí Minh.');
+      return ok;
+    }
+    if(provinceInput){
+      provinceInput.addEventListener('input', validateProvince);
+      provinceInput.addEventListener('blur', validateProvince);
+    }
+
+    const postForm = document.getElementById('postForm');
+    if(postForm){
+      postForm.addEventListener('submit', (e) => {
+        if(!validateProvince()){
+          e.preventDefault();
+          provinceInput.reportValidity();
+        }
+      });
+    }
 
     function bindSizeCheck(inputEl){
       if(!inputEl) return;
