@@ -982,8 +982,62 @@ _CHECKOUT_HTML = r"""
 </html>
 """
 
-
 # ============ CONFIRM -> CREATE INVOICE ============
+def _validate_confirm_payload(payload: dict, require_buyer_info: bool = True):
+    if not isinstance(payload, dict):
+        return _validation_error("request body must be a JSON object")
+
+    full_name = str(payload.get("full_name") or "").strip()
+    phone = str(payload.get("phone") or "").strip()
+    method = str(payload.get("method") or "").strip().lower()
+
+    if require_buyer_info:
+        if not full_name:
+            return _validation_error("full_name is required", "full_name")
+
+        if len(full_name) > 100:
+            return _validation_error("full_name must not exceed 100 characters", "full_name")
+
+        if not phone:
+            return _validation_error("phone is required", "phone")
+
+        if not phone.isdigit():
+            return _validation_error("phone must contain only digits", "phone")
+
+        valid_phone = (
+            (phone.startswith("0") and len(phone) == 10)
+            or (phone.startswith("84") and len(phone) == 11)
+        )
+
+        if not valid_phone:
+            return _validation_error("phone format is invalid", "phone")
+    else:
+        if full_name and len(full_name) > 100:
+            return _validation_error("full_name must not exceed 100 characters", "full_name")
+
+        if phone:
+            if not phone.isdigit():
+                return _validation_error("phone must contain only digits", "phone")
+
+            valid_phone = (
+                (phone.startswith("0") and len(phone) == 10)
+                or (phone.startswith("84") and len(phone) == 11)
+            )
+
+            if not valid_phone:
+                return _validation_error("phone format is invalid", "phone")
+
+    allowed_methods = {
+        PaymentMethod.BANKING.value,
+        PaymentMethod.CASH.value,
+        PaymentMethod.E_WALLET.value,
+    }
+
+    if method and method not in allowed_methods:
+        return _validation_error("invalid method", "method")
+
+    return None
+
 @bp.post("/confirm/<int:payment_id>")
 def confirm_payment(payment_id: int):
     payment = Payment.query.get(payment_id)
@@ -991,22 +1045,29 @@ def confirm_payment(payment_id: int):
         return jsonify({"error": "not_found"}), 404
 
     payload = request.get_json(silent=True) or {}
+
     invoice = _invoice_contract(payment)
 
-    # Chỉ bắt buộc full_name, phone nếu chưa có invoice
+    # Nếu chưa có invoice thì bắt buộc full_name + phone.
+    # Nếu đã có invoice mà body rỗng thì cho confirm lại.
+    # Nếu đã có invoice nhưng body có dữ liệu sai thì vẫn validate và trả 400.
+    require_buyer_info = invoice is None or bool(payload)
+
+    validation_error = _validate_confirm_payload(
+        payload,
+        require_buyer_info=require_buyer_info
+    )
+    if validation_error:
+        return validation_error
+
+    method_override = str(payload.get("method") or "").strip().lower()
+    if method_override:
+        try:
+            payment.method = PaymentMethod(method_override)
+        except ValueError:
+            return _validation_error("invalid method", "method")
+
     if not invoice:
-        required = ["full_name", "phone"]
-        missing = [k for k in required if not payload.get(k)]
-        if missing:
-            return jsonify({"error": f"missing fields: {', '.join(missing)}"}), 400
-
-        method_override = payload.get("method")
-        if method_override:
-            try:
-                payment.method = PaymentMethod(method_override)
-            except ValueError:
-                return jsonify({"error": "invalid method"}), 400
-
         info = _invoice_data(payload, payment)
 
         invoice = Contract(
@@ -1020,17 +1081,16 @@ def confirm_payment(payment_id: int):
         db.session.add(invoice)
         _commit()
 
-    # luôn đảm bảo có HĐ mua bán & trả id
     buyer_stub = {
         "full_name": payload.get("full_name", ""),
         "phone": payload.get("phone", ""),
         "email": payload.get("email", ""),
         "address": payload.get("address", ""),
     }
+
     sale_contract = _ensure_sale_contract(payment, buyer_stub)
 
     return jsonify(_payment_response(payment, invoice, sale_contract))
-
 
 # ============ CONTRACT APIs ============
 @bp.post("/contract/create")

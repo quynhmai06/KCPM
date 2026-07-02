@@ -14,13 +14,11 @@ on:
 
 jobs:
   api-test:
-    name: Listing Service Update Newman Test
+    name: Payment Service Confirm Newman Test
     runs-on: ubuntu-latest
     env:
-      LISTING_URL: http://localhost:5002
+      PAYMENT_URL: http://localhost:5008
       JWT_SECRET: supersecret
-      UPDATE_OWNER: profile_member_1782966907
-      OTHER_MEMBER: blocked_member_001
 
     steps:
       - name: Checkout source code
@@ -38,11 +36,13 @@ jobs:
         run: |
           cat > .env <<EOF
           JWT_SECRET=${JWT_SECRET}
-          AUTH_URL=http://127.0.0.1:1
+          DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ev_platform
+          DB_HOST=postgres
+          DB_PORT=5432
+          DB_NAME=ev_platform
+          DB_USER=postgres
+          DB_PASSWORD=postgres
           GATEWAY_SECRET=ci_gateway_secret
-          ADMIN_USERNAME=admin
-          ADMIN_EMAIL=admin@example.com
-          ADMIN_PASSWORD=admin123
           PROVIDER=none
           GOOGLE_API_KEY=
           GEMINI_MODEL=models/gemini-2.5-flash
@@ -55,146 +55,85 @@ jobs:
           BANK_NAME=Test Bank
           BANK_ACCOUNT=0000000000
           BANK_OWNER=CI Test
+          PAYMENT_PUBLIC_BASE=${PAYMENT_URL}
           EOF
 
       - name: Start postgres only
         run: docker compose up -d postgres
 
-      - name: Build and start listing service only
-        run: docker compose up --build -d --no-deps listing_service
+      - name: Build and start payment service only
+        run: docker compose up --build -d --no-deps payment_service
 
-      - name: Wait for listing health check
-        run: wait-on "$LISTING_URL/" --timeout 180000 --interval 3000
+      - name: Wait for payment health check
+        run: wait-on "$PAYMENT_URL/payment/health" --timeout 180000 --interval 3000
 
-      - name: Prepare listing update test data
+      - name: Prepare payment confirm test data
         run: |
-          docker compose exec -T listing_service python - <<'PY'
-          from datetime import datetime
+          docker compose exec -T payment_service python - <<'PY'
           from app import create_app
-          from models import db, Product, ProductStatus, ItemType
-
-          owner = "profile_member_1782966907"
+          from models import db, Payment, Contract, PaymentMethod, PaymentStatus
 
           app = create_app()
+
           with app.app_context():
               db.create_all()
 
-              Product.query.filter(Product.id.in_([1, 2])).delete(synchronize_session=False)
+              Contract.query.delete()
+              Payment.query.delete()
 
-              editable = Product(
+              payment = Payment(
                   id=1,
-                  name="Editable listing",
-                  description="Seed listing for update API tests",
-                  price=500000000,
-                  brand="VinFast",
-                  province="Hà Nội",
-                  year=2010,
-                  mileage=500000,
-                  battery_capacity="82",
-                  owner=owner,
-                  item_type=ItemType.vehicle,
-                  main_image_url="seed.jpg",
-                  sub_image_urls="[]",
-                  approved=False,
-                  status=ProductStatus.pending,
+                  order_id="ORD-CONFIRM-001",
+                  buyer_id=101,
+                  seller_id=202,
+                  amount=1000000,
+                  items=[],
+                  method=PaymentMethod.BANKING,
+                  provider="CI Test",
+                  status=PaymentStatus.PENDING,
               )
 
-              approved = Product(
-                  id=2,
-                  name="Approved listing",
-                  description="Seed approved listing for update API tests",
-                  price=500000000,
-                  brand="VinFast",
-                  province="Hà Nội",
-                  year=2010,
-                  mileage=500000,
-                  battery_capacity="82",
-                  owner=owner,
-                  item_type=ItemType.vehicle,
-                  main_image_url="approved.jpg",
-                  sub_image_urls="[]",
-                  approved=True,
-                  approved_at=datetime.utcnow(),
-                  approved_by="admin",
-                  status=ProductStatus.approved,
-              )
-
-              db.session.add_all([editable, approved])
+              db.session.add(payment)
               db.session.commit()
+
+              print("Prepared payment_id=1 for PAYMENT_CONFIRM tests")
           PY
-
-      - name: Create listing update JWT tokens
-        run: |
-          MEMBER_TOKEN=$(node - <<'NODE'
-          const crypto = require('crypto');
-          const secret = process.env.JWT_SECRET;
-          const payload = {
-            sub: '2',
-            username: process.env.UPDATE_OWNER,
-            role: 'member',
-            approved: true,
-            locked: false,
-            exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60
-          };
-          const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-          const data = enc({ alg: 'HS256', typ: 'JWT' }) + '.' + enc(payload);
-          const sig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
-          process.stdout.write(data + '.' + sig);
-          NODE
-          )
-
-          OTHER_MEMBER_TOKEN=$(node - <<'NODE'
-          const crypto = require('crypto');
-          const secret = process.env.JWT_SECRET;
-          const payload = {
-            sub: '99',
-            username: process.env.OTHER_MEMBER,
-            role: 'member',
-            approved: true,
-            locked: false,
-            exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60
-          };
-          const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-          const data = enc({ alg: 'HS256', typ: 'JWT' }) + '.' + enc(payload);
-          const sig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
-          process.stdout.write(data + '.' + sig);
-          NODE
-          )
-
-          echo "::add-mask::$MEMBER_TOKEN"
-          echo "::add-mask::$OTHER_MEMBER_TOKEN"
-          echo "MEMBER_TOKEN=$MEMBER_TOKEN" >> "$GITHUB_ENV"
-          echo "OTHER_MEMBER_TOKEN=$OTHER_MEMBER_TOKEN" >> "$GITHUB_ENV"
 
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run listing update Newman collection
+      - name: Run payment confirm Newman collection
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
 
-          newman run "postman/listingservice/listingservice_postman_collection.json" \
+          set +e
+          newman run "postman/paymentservice/paymentservice_postman_collection.json" \
+            --folder "PAYMENT_CONFIRM" \
             -e "postman/postman_environment.json" \
-            -d "postman/listingservice/data_update.json" \
-            --folder "Update" \
-            --env-var listing_url="$LISTING_URL" \
-            --env-var update_listing_id="1" \
-            --env-var approved_listing_id="2" \
-            --env-var missing_listing_id="99999999" \
-            --env-var memberToken="$MEMBER_TOKEN" \
-            --env-var blockedMemberToken="$OTHER_MEMBER_TOKEN" \
-            --env-var otherMemberToken="$OTHER_MEMBER_TOKEN" \
+            -d "postman/paymentservice/data_confirm_payment.json" \
+            --env-var payment_url="$PAYMENT_URL" \
+            --env-var baseUrl="$PAYMENT_URL" \
+            --env-var payment_id="1" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/listingservice-update-newman-result.xml" \
-            --reporter-json-export "reports/listingservice-update-newman-result.json" \
-            --reporter-htmlextra-export "reports/listing-service-update-report.html"
+            --reporter-junit-export "reports/payment-confirm-newman-result.xml" \
+            --reporter-json-export "reports/payment-confirm-newman-result.json" \
+            --reporter-htmlextra-export "reports/payment-confirm-newman-report.html"
 
-          cp reports/listingservice-update-newman-result.json reports/newman-result.json
+          newman_exit=$?
+          set -e
 
-      - name: Collect Docker logs when failed
-        if: failure()
+          echo "newman_exit=$newman_exit" >> "$GITHUB_OUTPUT"
+
+          if [ -f reports/payment-confirm-newman-result.json ]; then
+            cp reports/payment-confirm-newman-result.json reports/newman-result.json
+          fi
+
+          exit 0
+
+      - name: Collect Docker logs when Newman failed
+        if: steps.newman.outputs.newman_exit != '0'
         run: |
           mkdir -p reports
           docker compose ps > reports/docker-compose-ps.txt
@@ -207,8 +146,8 @@ jobs:
           name: api-test-report
           path: reports/
 
-      - name: Create Jira bug when test failed
-        if: failure()
+      - name: Create Jira bug when Newman test failed
+        if: steps.newman.outputs.newman_exit != '0'
         run: bash scripts/create-jira-issue.sh
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -216,7 +155,13 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: listingservice-update
+          NEWMAN_SERVICE: payment-confirm
+
+      - name: Mark workflow failed when Newman failed
+        if: steps.newman.outputs.newman_exit != '0'
+        run: |
+          echo "Newman tests failed. Jira bug was created. Marking workflow as failed."
+          exit 1
 
       - name: Stop backend services
         if: always()
