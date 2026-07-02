@@ -11,31 +11,6 @@
       "name": "PAYMENT_CREATE",
       "event": [
         {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "const rawBody = pm.iterationData.get('raw_body');\r",
-              "\r",
-              "if (rawBody) {\r",
-              "    pm.request.body.update(rawBody);\r",
-              "} else {\r",
-              "    const payload = {};\r",
-              "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-              "        const value = pm.iterationData.get(key);\r",
-              "        if (value !== undefined) {\r",
-              "            payload[key] = value;\r",
-              "        }\r",
-              "    });\r",
-              "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-              "}\r",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        },
-        {
           "listen": "test",
           "script": {
             "exec": [
@@ -67,7 +42,14 @@
               "if (gap) {\r",
               "    console.log(label + ' GAP NOTE: ' + gap);\r",
               "}\r",
-              ""
+              "if (pm.response.code === 201) {\r",
+              "    const json = pm.response.json();\r",
+              "\r",
+              "    pm.collectionVariables.set(\r",
+              "        \"created_payment_id\",\r",
+              "        json.payment_id || json.id\r",
+              "    );\r",
+              "}"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -96,7 +78,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{}",
+          "raw": "{\r\n    \"order_id\": \"{{order_id}}\",\r\n    \"buyer_id\": {{buyer_id}},\r\n    \"seller_id\": {{seller_id}},\r\n    \"amount\": {{amount}},\r\n    \"method\": \"{{method}}\",\r\n    \"items\": {{items}}\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -115,6 +97,110 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "PAYMENT_CONFIRM",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const paymentId = pm.iterationData.get(\"payment_id\");\r",
+              "\r",
+              "if (paymentId) {\r",
+              "    pm.collectionVariables.set(\"payment_id\", paymentId);\r",
+              "} else {\r",
+              "    pm.collectionVariables.set(\r",
+              "        \"payment_id\",\r",
+              "        pm.collectionVariables.get(\"created_payment_id\")\r",
+              "    );\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const label = pm.iterationData.get('tc') || 'PAYMENT_CONFIRM';\r",
+              "\r",
+              "const expected = Number(pm.iterationData.get('expected') || 200);\r",
+              "\r",
+              "pm.test(label + ' - status code is ' + expected, function () {\r",
+              "    pm.response.to.have.status(expected);\r",
+              "});\r",
+              "\r",
+              "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+              "\r",
+              "if (contentType.includes(\"application/json\")) {\r",
+              "\r",
+              "    const json = pm.response.json();\r",
+              "\r",
+              "    if (pm.response.code === 200) {\r",
+              "\r",
+              "        pm.test(label + \" - response has invoice fields\", function () {\r",
+              "\r",
+              "            pm.expect(json).to.have.property(\"invoice_id\");\r",
+              "            pm.expect(json).to.have.property(\"sale_contract_id\");\r",
+              "            pm.expect(json).to.have.property(\"sign_url\");\r",
+              "            pm.expect(json).to.have.property(\"payment_info\");\r",
+              "\r",
+              "        });\r",
+              "\r",
+              "        pm.collectionVariables.set(\"invoice_id\", json.invoice_id);\r",
+              "        pm.collectionVariables.set(\"sale_contract_id\", json.sale_contract_id);\r",
+              "        pm.collectionVariables.set(\"sign_url\", json.sign_url);\r",
+              "    }\r",
+              "\r",
+              "    if (pm.response.code >= 400) {\r",
+              "\r",
+              "        pm.test(label + \" - response has error message\", function () {\r",
+              "            pm.expect(json).to.be.an(\"object\");\r",
+              "        });\r",
+              "\r",
+              "    }\r",
+              "}\r",
+              "\r",
+              "const trace = pm.iterationData.get(\"trace\");\r",
+              "\r",
+              "if (trace) {\r",
+              "    console.log(label + \" TRACE: \" + trace);\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"full_name\": \"{{full_name}}\",\r\n    \"phone\": \"{{phone}}\",\r\n    \"method\": \"{{method}}\",\r\n    \"email\": \"{{email}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{payment_url}}/payment/confirm/{{payment_id}}",
+          "host": [
+            "{{payment_url}}"
+          ],
+          "path": [
+            "payment",
+            "confirm",
+            "{{payment_id}}"
+          ]
+        }
+      },
+      "response": []
     }
   ],
   "variable": [
@@ -124,6 +210,18 @@
     },
     {
       "key": "contract_id",
+      "value": ""
+    },
+    {
+      "key": "invoice_id",
+      "value": ""
+    },
+    {
+      "key": "sale_contract_id",
+      "value": ""
+    },
+    {
+      "key": "sign_url",
       "value": ""
     }
   ]

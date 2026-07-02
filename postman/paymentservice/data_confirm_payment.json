@@ -1,0 +1,182 @@
+[
+  {
+    "tc": "PAYMENT_CONFIRM_TC01",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "a@example.com",
+    "expected": 200,
+    "trace": "CONF-V1, CONF-V2, CONF-V3, CONF-V4"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC02",
+    "payment_id": "1",
+    "full_name": "An",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V1"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC03",
+    "payment_id": "999999",
+    "full_name": "An",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 404,
+    "trace": "CONF-X1"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC04",
+    "payment_id": "0",
+    "full_name": "An",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 404,
+    "trace": "CONF-X2"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC05",
+    "payment_id": "1",
+    "full_name": "A",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V2"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC06",
+    "payment_id": "1",
+    "full_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V2"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC07",
+    "payment_id": "1",
+    "full_name": "",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X3"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC08",
+    "payment_id": "1",
+    "full_name": "",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X3"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC09",
+    "payment_id": "1",
+    "full_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X4"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC10",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V3"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC11",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "84912345678",
+    "method": "banking",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V3"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC12",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X5"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC13",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "09abc45678",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X6"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC14",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "091234567",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X7"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC15",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "091234567890",
+    "method": "banking",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X7"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC16",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "method": "cash",
+    "email": "",
+    "expected": 200,
+    "trace": "CONF-V4"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC17",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "method": "transfer",
+    "email": "",
+    "expected": 400,
+    "trace": "CONF-X8"
+  },
+  {
+    "tc": "PAYMENT_CONFIRM_TC18",
+    "payment_id": "1",
+    "full_name": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "method": "banking",
+    "email": "a@example.com",
+    "expected": 200,
+    "trace": "CONF-V1"
+  }
+]

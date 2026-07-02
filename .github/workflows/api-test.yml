@@ -101,16 +101,32 @@ jobs:
           fi
           echo "::endgroup::"
 
-          echo "::group::Newman - paymentservice"
+          echo "::group::Newman - paymentservice create"
           if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
             -e "postman/postman_environment.json" \
             -d "postman/paymentservice/data_payment.service.json" \
+            --folder PAYMENT_CREATE \
             --env-var payment_url="http://localhost:5008" \
             --env-var baseUrl="http://localhost:5008" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/paymentservice-newman-result.xml" \
-            --reporter-json-export "reports/paymentservice-newman-result.json" \
-            --reporter-htmlextra-export "reports/paymentservice-newman-report.html"; then
+            --reporter-junit-export "reports/paymentservice-create-newman-result.xml" \
+            --reporter-json-export "reports/paymentservice-create-newman-result.json" \
+            --reporter-htmlextra-export "reports/paymentservice-create-newman-report.html"; then
+            test_status=1
+          fi
+          echo "::endgroup::"
+
+          echo "::group::Newman - paymentservice confirm"
+          if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
+            -e "postman/postman_environment.json" \
+            -d "postman/paymentservice/data_confirm_payment.json" \
+            --folder PAYMENT_CONFIRM \
+            --env-var payment_url="http://localhost:5008" \
+            --env-var baseUrl="http://localhost:5008" \
+            --reporters cli,junit,json,htmlextra \
+            --reporter-junit-export "reports/payment-confirm-newman-result.xml" \
+            --reporter-json-export "reports/payment-confirm-newman-result.json" \
+            --reporter-htmlextra-export "reports/payment-confirm-newman-report.html"; then
             test_status=1
           fi
           echo "::endgroup::"
@@ -129,10 +145,12 @@ jobs:
           fi
           echo "::endgroup::"
 
-          if [ -f "reports/reviewservice-newman-result.json" ]; then
+          if [ -f "reports/payment-confirm-newman-result.json" ]; then
+            cp reports/payment-confirm-newman-result.json reports/newman-result.json
+          elif [ -f "reports/paymentservice-create-newman-result.json" ]; then
+            cp reports/paymentservice-create-newman-result.json reports/newman-result.json
+          elif [ -f "reports/reviewservice-newman-result.json" ]; then
             cp reports/reviewservice-newman-result.json reports/newman-result.json
-          elif [ -f "reports/paymentservice-newman-result.json" ]; then
-            cp reports/paymentservice-newman-result.json reports/newman-result.json
           elif [ -f "reports/authservice-newman-result.json" ]; then
             cp reports/authservice-newman-result.json reports/newman-result.json
           fi
@@ -162,7 +180,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: reviewservice
+          NEWMAN_SERVICE: paymentservice
 
       - name: Stop backend services
         if: always()
