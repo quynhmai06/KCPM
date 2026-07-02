@@ -7,18 +7,16 @@
     },
     "item": [
       {
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "name": "PAYMENT_CREATE",
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "5008",
             "path": [
               "payment",
               "create"
             ],
             "host": [
-              "localhost"
+              "{{payment_url}}"
             ],
             "query": [],
             "variable": []
@@ -40,7 +38,7 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{}",
+            "raw": "{{request_body}}",
             "options": {
               "raw": {
                 "language": "json"
@@ -53,33 +51,36 @@
           {
             "listen": "prerequest",
             "script": {
-              "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+              "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
               "type": "text/javascript",
               "packages": {},
               "exec": [
+                "const row = pm.iterationData.toObject();\r",
+                "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                 "const rawBody = pm.iterationData.get('raw_body');\r",
                 "\r",
                 "if (rawBody) {\r",
-                "    pm.request.body.update(rawBody);\r",
+                "    pm.variables.set('request_body', rawBody);\r",
                 "} else {\r",
                 "    const payload = {};\r",
-                "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                "        const value = pm.iterationData.get(key);\r",
-                "        if (value !== undefined) {\r",
-                "            payload[key] = value;\r",
-                "        }\r",
-                "    });\r",
-                "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                "}\r",
-                ""
+                "\r",
+                "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                "    if (has('amount')) payload.amount = row.amount;\r",
+                "    if (has('method')) payload.method = row.method;\r",
+                "    if (has('items')) payload.items = row.items;\r",
+                "\r",
+                "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                "}"
               ],
-              "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+              "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
             }
           },
           {
             "listen": "test",
             "script": {
-              "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+              "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
               "type": "text/javascript",
               "packages": {},
               "exec": [
@@ -111,9 +112,121 @@
                 "if (gap) {\r",
                 "    console.log(label + ' GAP NOTE: ' + gap);\r",
                 "}\r",
-                ""
+                "if (pm.response.code === 201) {\r",
+                "    const json = pm.response.json();\r",
+                "\r",
+                "    pm.collectionVariables.set(\r",
+                "        \"created_payment_id\",\r",
+                "        json.payment_id || json.id\r",
+                "    );\r",
+                "}"
               ],
-              "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+              "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
+            }
+          }
+        ]
+      },
+      {
+        "id": "b7a5bfdc-0eab-435d-adb9-7f8ce6c5c271",
+        "name": "PAYMENT_CONFIRM",
+        "request": {
+          "url": {
+            "path": [
+              "payment",
+              "confirm",
+              "{{payment_id}}"
+            ],
+            "host": [
+              "{{payment_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\r\n    \"full_name\": \"{{full_name}}\",\r\n    \"phone\": \"{{phone}}\",\r\n    \"method\": \"{{method}}\",\r\n    \"email\": \"{{email}}\"\r\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "09a96f67-a886-4a87-8cb8-1296fefb2cf3",
+              "type": "text/javascript",
+              "packages": {},
+              "exec": [
+                "const paymentId = pm.iterationData.get(\"payment_id\");\r",
+                "\r",
+                "if (paymentId) {\r",
+                "    pm.collectionVariables.set(\"payment_id\", paymentId);\r",
+                "} else {\r",
+                "    pm.collectionVariables.set(\r",
+                "        \"payment_id\",\r",
+                "        pm.collectionVariables.get(\"created_payment_id\")\r",
+                "    );\r",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "65621929-40d2-4e2a-87ee-bc4864a54603",
+              "type": "text/javascript",
+              "packages": {},
+              "exec": [
+                "const label = pm.iterationData.get('tc') || 'PAYMENT_CONFIRM';\r",
+                "\r",
+                "const expected = Number(pm.iterationData.get('expected') || 200);\r",
+                "\r",
+                "pm.test(label + ' - status code is ' + expected, function () {\r",
+                "    pm.response.to.have.status(expected);\r",
+                "});\r",
+                "\r",
+                "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+                "\r",
+                "if (contentType.includes(\"application/json\")) {\r",
+                "\r",
+                "    const json = pm.response.json();\r",
+                "\r",
+                "    if (pm.response.code === 200) {\r",
+                "\r",
+                "        pm.test(label + \" - response has invoice fields\", function () {\r",
+                "\r",
+                "            pm.expect(json).to.have.property(\"invoice_id\");\r",
+                "            pm.expect(json).to.have.property(\"sale_contract_id\");\r",
+                "            pm.expect(json).to.have.property(\"sign_url\");\r",
+                "            pm.expect(json).to.have.property(\"payment_info\");\r",
+                "\r",
+                "        });\r",
+                "\r",
+                "        pm.collectionVariables.set(\"invoice_id\", json.invoice_id);\r",
+                "        pm.collectionVariables.set(\"sale_contract_id\", json.sale_contract_id);\r",
+                "        pm.collectionVariables.set(\"sign_url\", json.sign_url);\r",
+                "    }\r",
+                "\r",
+                "    if (pm.response.code >= 400) {\r",
+                "\r",
+                "        pm.test(label + \" - response has error message\", function () {\r",
+                "            pm.expect(json).to.be.an(\"object\");\r",
+                "        });\r",
+                "\r",
+                "    }\r",
+                "}\r",
+                "\r",
+                "const trace = pm.iterationData.get(\"trace\");\r",
+                "\r",
+                "if (trace) {\r",
+                "    console.log(label + \" TRACE: \" + trace);\r",
+                "}"
+              ]
             }
           }
         ]
@@ -130,6 +243,21 @@
         "type": "any",
         "value": "",
         "key": "contract_id"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "invoice_id"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "sale_contract_id"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "sign_url"
       }
     ],
     "info": {
@@ -244,7 +372,7 @@
       },
       {
         "type": "any",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidXNlcm5hbWUiOiJtZW1iZXJfbGlzdGluZ18xNzgyODg4MTQ4MDU0Iiwicm9sZSI6Im1lbWJlciIsImFwcHJvdmVkIjp0cnVlLCJsb2NrZWQiOmZhbHNlLCJleHAiOjE3ODI5MDk3NDh9.QgthIkQGYRtdPE0VUMA_8pibBV2P0ngBq-NFzGV863s",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidXNlcm5hbWUiOiJwcm9maWxlX21lbWJlcl8xNzgyOTY2OTA3Iiwicm9sZSI6Im1lbWJlciIsImFwcHJvdmVkIjp0cnVlLCJsb2NrZWQiOmZhbHNlLCJleHAiOjE3ODI5ODg1MDd9.W-QOGJfLSmJMF9jGYpUV9ua2AhlKWyPtQeTos--ErVg",
         "key": "memberToken"
       },
       {
@@ -349,7 +477,7 @@
       },
       {
         "type": "any",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNCIsInVzZXJuYW1lIjoiYmxvY2tlZF9tZW1iZXJfdGVzdCIsInJvbGUiOiJtZW1iZXIiLCJhcHByb3ZlZCI6dHJ1ZSwibG9ja2VkIjpmYWxzZSwiZXhwIjoxODkzNDU2MDAwfQ.s9V2ruLAwwkzHVCtRIXWyXPvMjHUnmx_DKyLbQb2YXo",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE5MjQ5OTIwMDAsImxvY2tlZCI6ZmFsc2UsInN1YiI6IjE0IiwidXNlcm5hbWUiOiJibG9ja2VkX21lbWJlcl90ZXN0Iiwicm9sZSI6Im1lbWJlciIsImFwcHJvdmVkIjp0cnVlLCJpYXQiOjE3ODI5NjkzNTF9.qpcuOVbSZ0zUxnHLkDDETV4HjRok1vxKDa9ap-2gGVU",
         "key": "blockedMemberToken"
       },
       {
@@ -366,16 +494,11 @@
         "type": "any",
         "value": "",
         "key": "listingMemberId"
-      },
-      {
-        "type": "any",
-        "value": "http://localhost:5008",
-        "key": "baseUrl"
       }
     ]
   },
   "globals": {
-    "id": "4e6b5791-317b-4db8-a416-e4b67ef24051",
+    "id": "9e45f421-1d56-4d26-b09a-b341d05883b8",
     "values": []
   },
   "run": {
@@ -427,10 +550,10 @@
       }
     },
     "timings": {
-      "responseAverage": 30.25,
-      "responseMin": 8,
-      "responseMax": 410,
-      "responseSd": 79.46028882404092,
+      "responseAverage": 12.75,
+      "responseMin": 5,
+      "responseMax": 42,
+      "responseSd": 7.423218080230885,
       "dnsAverage": 0,
       "dnsMin": 0,
       "dnsMax": 0,
@@ -439,8 +562,8 @@
       "firstByteMin": 0,
       "firstByteMax": 0,
       "firstByteSd": 0,
-      "started": 1782913033644,
-      "completed": 1782913036374
+      "started": 1782972255949,
+      "completed": 1782972258017
     },
     "executions": [
       {
@@ -453,22 +576,20 @@
           "eof": false,
           "bof": true,
           "cr": false,
-          "ref": "bd2005ee-c1c6-4806-840b-3fed61dcfc04",
-          "httpRequestId": "05dcc408-de9e-4c5b-a923-2e46a0d62826"
+          "ref": "f6293713-b0b9-4c34-ab8b-c1182e09e1be",
+          "httpRequestId": "72f888a3-cc42-4939-a3ad-f951f5cda2ab"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -490,7 +611,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -503,33 +624,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -561,9 +685,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -607,7 +738,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "6ed2c4e4-d19b-4ec9-b028-464ca8d96622",
+              "value": "ec1f5433-a6be-4398-9cc7-6caca498f26d",
               "system": true
             },
             {
@@ -634,11 +765,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1001\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1001\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "6e595ad3-db0e-48be-8d3d-08beb20bcb32",
+          "id": "2b67fdba-e401-4887-b1d2-983c8c1bbb67",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -648,7 +784,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -656,7 +792,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "125"
+              "value": "122"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -733,8 +869,7 @@
               117,
               116,
               47,
-              53,
-              53,
+              49,
               34,
               44,
               34,
@@ -742,8 +877,7 @@
               100,
               34,
               58,
-              53,
-              53,
+              49,
               44,
               34,
               111,
@@ -780,8 +914,7 @@
               100,
               34,
               58,
-              53,
-              53,
+              49,
               44,
               34,
               115,
@@ -806,10 +939,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 410,
-          "responseSize": 125
+          "responseTime": 42,
+          "responseSize": 122
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC01 - status code is 201",
@@ -823,27 +956,25 @@
       },
       {
         "cursor": {
-          "ref": "4620d796-10c9-4837-9d7c-a7ed078a8a4c",
+          "ref": "ba1fe442-b1d1-4a26-9825-84497f2f2fac",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 1,
           "cr": true,
-          "httpRequestId": "2241fe17-469a-4e8f-a67b-64c01d00747e"
+          "httpRequestId": "7cdc3079-8a49-4114-8613-8c87b384f261"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -865,7 +996,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -878,33 +1009,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -936,9 +1070,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -982,7 +1123,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "ed4c3c46-486a-4c0a-a209-46b49593bda5",
+              "value": "e245dd9f-db32-4b27-a555-751f4a4a7b91",
               "system": true
             },
             {
@@ -1009,11 +1150,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"A\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"A\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "27bcfadd-de59-4660-b540-878f5f528459",
+          "id": "8b1db2a4-01af-4d6b-83d4-2acd9226f263",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -1023,7 +1169,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -1031,7 +1177,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "118"
+              "value": "115"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -1108,8 +1254,7 @@
               117,
               116,
               47,
-              53,
-              54,
+              50,
               34,
               44,
               34,
@@ -1117,8 +1262,7 @@
               100,
               34,
               58,
-              53,
-              54,
+              50,
               44,
               34,
               111,
@@ -1148,8 +1292,7 @@
               100,
               34,
               58,
-              53,
-              54,
+              50,
               44,
               34,
               115,
@@ -1174,10 +1317,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 36,
-          "responseSize": 118
+          "responseTime": 21,
+          "responseSize": 115
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC02 - status code is 201",
@@ -1191,27 +1334,25 @@
       },
       {
         "cursor": {
-          "ref": "d6d84a53-da0f-4881-b860-b79c112932be",
+          "ref": "fa992b7c-bcfa-47a3-b207-05b0f119a6ee",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 2,
           "cr": true,
-          "httpRequestId": "b334e694-c811-4286-aa84-73728c54e69a"
+          "httpRequestId": "8d01d92c-d26e-4da8-aeeb-823ac0ddc24a"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -1233,7 +1374,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1246,33 +1387,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -1304,9 +1448,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -1350,7 +1501,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "50042428-56e2-447c-b3fe-e146cf83943e",
+              "value": "e464a4b8-250c-4124-987a-5f1baf2df924",
               "system": true
             },
             {
@@ -1377,11 +1528,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "518610f4-5e53-4317-8fa2-104bbd0503f4",
+          "id": "40e3669f-e43c-441a-8dac-c11960e08d79",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -1391,7 +1547,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -1399,7 +1555,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "217"
+              "value": "214"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -1476,8 +1632,7 @@
               117,
               116,
               47,
-              53,
-              55,
+              51,
               34,
               44,
               34,
@@ -1485,8 +1640,7 @@
               100,
               34,
               58,
-              53,
-              55,
+              51,
               44,
               34,
               111,
@@ -1615,8 +1769,7 @@
               100,
               34,
               58,
-              53,
-              55,
+              51,
               44,
               34,
               115,
@@ -1642,9 +1795,9 @@
           },
           "cookie": [],
           "responseTime": 16,
-          "responseSize": 217
+          "responseSize": 214
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC03 - status code is 201",
@@ -1658,27 +1811,25 @@
       },
       {
         "cursor": {
-          "ref": "c2c452a5-3093-4267-b618-81cdceddd249",
+          "ref": "9ba18bb5-7391-4719-9d83-0344c353f206",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 3,
           "cr": true,
-          "httpRequestId": "713aad49-28e8-4f59-b0e0-7677b176eadf"
+          "httpRequestId": "9d952272-2440-4ee9-bf4b-6401ea31c730"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -1700,7 +1851,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1713,33 +1864,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -1771,9 +1925,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -1817,7 +1978,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "9e941106-6525-4b38-ae39-5b2134b8b60f",
+              "value": "8e49e164-0fc3-4e7d-b541-2c4247bbb971",
               "system": true
             },
             {
@@ -1844,11 +2005,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "a84bafa2-4eef-4b7e-ad67-f8bf054d17a7",
+          "id": "bd16b3d1-a6e7-43b0-b1a3-7661119d629d",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -1858,7 +2024,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -1928,10 +2094,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 14,
+          "responseTime": 12,
           "responseSize": 37
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC04 - status code is 400",
@@ -1941,27 +2107,25 @@
       },
       {
         "cursor": {
-          "ref": "c233a013-0eb6-48a1-b414-4e32bd8ba260",
+          "ref": "609438b4-24e8-4328-ac9a-e95b0fb4353f",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 4,
           "cr": true,
-          "httpRequestId": "b622dafa-3a9a-431d-8436-11caee30d054"
+          "httpRequestId": "ab24f1e2-07ff-403b-88c7-38793ca86144"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -1983,7 +2147,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1996,33 +2160,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2054,9 +2221,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -2100,7 +2274,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "1af09316-f846-49b3-829b-c97b2c46fe17",
+              "value": "b34fb93b-b9a1-4bfc-ba7f-440cb86bddb2",
               "system": true
             },
             {
@@ -2127,11 +2301,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "9f75380f-d068-4577-96ea-8e78816345bc",
+          "id": "90c147ee-90ef-498d-bf36-04deba881a0b",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -2141,7 +2320,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -2211,10 +2390,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 9,
+          "responseTime": 10,
           "responseSize": 37
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC05 - status code is 400",
@@ -2224,27 +2403,25 @@
       },
       {
         "cursor": {
-          "ref": "6a498b46-2719-4bdd-8065-abfae67616df",
+          "ref": "355baa64-e2b7-4310-8feb-cb85e3240084",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 5,
           "cr": true,
-          "httpRequestId": "5fedd8e3-052f-46c2-afa0-17b6518d02fd"
+          "httpRequestId": "c3b5b9d0-a341-4c77-878d-c0b9969f2d66"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -2266,7 +2443,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2279,33 +2456,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2337,9 +2517,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -2383,7 +2570,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "e9b94496-ae22-4a77-a02f-e2e5e07a3464",
+              "value": "709908b8-357d-423f-bbb9-0c285f55d9a2",
               "system": true
             },
             {
@@ -2410,11 +2597,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "805f310d-8872-461a-ad97-5990f058ab2c",
+          "id": "a4fbb36e-d40a-4479-af0d-0967f9b75614",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -2424,7 +2616,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -2432,7 +2624,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "71"
+              "value": "138"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -2464,45 +2656,112 @@
               34,
               58,
               34,
-              111,
-              114,
-              100,
-              101,
-              114,
-              95,
-              105,
-              100,
-              32,
-              109,
+              77,
+              92,
               117,
-              115,
-              116,
-              32,
-              98,
+              48,
+              48,
               101,
+              51,
               32,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
+              92,
+              117,
+              48,
+              49,
               97,
+              49,
+              110,
+              32,
+              104,
+              92,
+              117,
+              48,
+              48,
+              101,
+              48,
+              110,
+              103,
+              32,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
+              110,
+              103,
+              32,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
+              92,
+              117,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              101,
+              51,
+              99,
+              32,
+              118,
+              92,
+              117,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              101,
+              51,
               116,
               32,
-              109,
-              111,
-              115,
-              116,
+              113,
+              117,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
               32,
               49,
               48,
               48,
               32,
-              99,
-              104,
-              97,
-              114,
-              97,
-              99,
+              107,
+              92,
+              117,
+              48,
+              48,
+              102,
+              100,
+              32,
               116,
+              92,
+              117,
+              49,
               101,
-              114,
-              115,
+              102,
+              49,
               34,
               44,
               34,
@@ -2528,10 +2787,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 9,
-          "responseSize": 71
+          "responseTime": 7,
+          "responseSize": 138
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC06 - status code is 400",
@@ -2541,27 +2800,25 @@
       },
       {
         "cursor": {
-          "ref": "cf3e9cfb-790e-440a-821e-9e6baf41b4b1",
+          "ref": "08c9c4e6-988e-4ed7-9b3d-9127d7e68ec7",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 6,
           "cr": true,
-          "httpRequestId": "ce875e25-dcf8-4c9e-963b-cb5b663be9d3"
+          "httpRequestId": "c3c997b0-187e-4c66-8fdd-bf44ce5049f5"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -2583,7 +2840,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2596,33 +2853,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2654,9 +2914,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -2700,7 +2967,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "30151660-887f-49d9-89ab-9a153ba28091",
+              "value": "28a3ad74-071c-479d-885c-71bf138be158",
               "system": true
             },
             {
@@ -2727,11 +2994,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1007\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1007\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "7682ce07-9a28-4b80-8d5a-d79705b178f6",
+          "id": "4e9145e9-3c3a-478e-ac6d-7fb908094dbf",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -2741,7 +3013,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -2749,7 +3021,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "125"
+              "value": "122"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -2826,8 +3098,7 @@
               117,
               116,
               47,
-              53,
-              56,
+              52,
               34,
               44,
               34,
@@ -2835,8 +3106,7 @@
               100,
               34,
               58,
-              53,
-              56,
+              52,
               44,
               34,
               111,
@@ -2873,8 +3143,7 @@
               100,
               34,
               58,
-              53,
-              56,
+              52,
               44,
               34,
               115,
@@ -2899,10 +3168,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 16,
-          "responseSize": 125
+          "responseTime": 13,
+          "responseSize": 122
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC07 - status code is 201",
@@ -2916,27 +3185,25 @@
       },
       {
         "cursor": {
-          "ref": "f3edf74e-b50b-4729-98da-7ddd3a08f9cc",
+          "ref": "6198fd69-65ce-4cf0-b646-070592566ed2",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 7,
           "cr": true,
-          "httpRequestId": "ea443da3-7069-4e68-b40f-a78d6c3ab952"
+          "httpRequestId": "6a78f88c-f8fe-4f0e-b2ab-49587e7ec82e"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -2958,7 +3225,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2971,33 +3238,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3029,9 +3299,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -3075,7 +3352,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "788d9b62-6881-4da9-80ec-cce570c1e492",
+              "value": "e1ee3667-ad93-480a-a197-63bde2e17724",
               "system": true
             },
             {
@@ -3102,11 +3379,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1008\",\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1008\",\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "56275201-8e2a-46b8-8fec-0ca8ce0a163e",
+          "id": "397a88b2-ba6e-43bf-a4fc-21917dca8141",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -3116,7 +3398,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -3186,10 +3468,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 10,
+          "responseTime": 7,
           "responseSize": 37
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC08 - status code is 400",
@@ -3199,27 +3481,25 @@
       },
       {
         "cursor": {
-          "ref": "5d0c1237-2150-46dd-b5b2-3200ddbc904d",
+          "ref": "542b5333-3fc9-4263-8a71-21faf25c73ff",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 8,
           "cr": true,
-          "httpRequestId": "4c24ac0d-2a4c-42ff-9eb6-5f91ba8af182"
+          "httpRequestId": "67b3fb71-aa08-4385-b8c6-822bf062f7b2"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -3241,7 +3521,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3254,33 +3534,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3312,9 +3595,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -3358,7 +3648,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "6ca817be-6af6-49c1-a949-fa703899c42f",
+              "value": "1fd1df4f-5bbf-40ca-903f-005b86f8f538",
               "system": true
             },
             {
@@ -3385,11 +3675,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1009\",\n  \"buyer_id\": 0,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1009\",\n  \"buyer_id\": 0,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "e5bc59c6-b274-43ef-8f18-3f2cc9d8942f",
+          "id": "b06abd37-d396-4d41-ad02-a9043f3f286b",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -3399,7 +3694,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -3407,7 +3702,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "67"
+              "value": "79"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -3439,41 +3734,53 @@
               34,
               58,
               34,
-              98,
+              78,
+              103,
+              92,
               117,
-              121,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
               101,
-              114,
-              95,
-              105,
               100,
+              100,
+              105,
               32,
               109,
               117,
-              115,
-              116,
-              32,
-              98,
-              101,
-              32,
               97,
               32,
-              112,
-              111,
-              115,
-              105,
-              116,
-              105,
-              118,
-              101,
-              32,
-              105,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
               110,
-              116,
-              101,
               103,
+              32,
+              104,
+              92,
+              117,
+              49,
               101,
-              114,
+              101,
+              51,
+              112,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              99,
+              55,
               34,
               44,
               34,
@@ -3499,10 +3806,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
-          "responseSize": 67
+          "responseTime": 7,
+          "responseSize": 79
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC09 - status code is 400",
@@ -3512,27 +3819,25 @@
       },
       {
         "cursor": {
-          "ref": "c35a38b2-a876-4445-bd36-3589f4a12ee7",
+          "ref": "6154140e-9725-4f28-8c6c-aede94891507",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 9,
           "cr": true,
-          "httpRequestId": "31750950-c49b-472e-b6e4-25634d3ebf61"
+          "httpRequestId": "7febbff4-92db-4894-b88e-5f91961d85ab"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -3554,7 +3859,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3567,33 +3872,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3625,9 +3933,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -3671,7 +3986,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "fbcea0fe-5e2a-489a-8396-e1732ee38dc3",
+              "value": "36128160-a831-4627-9dfa-815e071c4bbe",
               "system": true
             },
             {
@@ -3698,11 +4013,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1010\",\n  \"buyer_id\": \"abc\",\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1010\",\n  \"buyer_id\": \"abc\",\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "4e0bd642-1cc0-42c7-a918-c184a8968c90",
+          "id": "e121fc30-9a62-49f6-a3ae-6bcb64959a86",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -3712,7 +4032,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -3720,7 +4040,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "67"
+              "value": "79"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -3752,41 +4072,53 @@
               34,
               58,
               34,
-              98,
+              78,
+              103,
+              92,
               117,
-              121,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
               101,
-              114,
-              95,
-              105,
               100,
+              100,
+              105,
               32,
               109,
               117,
-              115,
-              116,
-              32,
-              98,
-              101,
-              32,
               97,
               32,
-              112,
-              111,
-              115,
-              105,
-              116,
-              105,
-              118,
-              101,
-              32,
-              105,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
               110,
-              116,
-              101,
               103,
+              32,
+              104,
+              92,
+              117,
+              49,
               101,
-              114,
+              101,
+              51,
+              112,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              99,
+              55,
               34,
               44,
               34,
@@ -3812,10 +4144,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
-          "responseSize": 67
+          "responseTime": 6,
+          "responseSize": 79
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC10 - status code is 400",
@@ -3825,27 +4157,25 @@
       },
       {
         "cursor": {
-          "ref": "f2d8d97d-75d3-4f7e-9be4-4352530e2f0e",
+          "ref": "c32e352e-2d31-416a-8b05-f4d2cb7e02b1",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 10,
           "cr": true,
-          "httpRequestId": "97e3529f-3885-4f79-8a6c-4316dd5d45dc"
+          "httpRequestId": "3145340c-94a0-4a63-b47f-c2deca68e2ff"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -3867,7 +4197,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3880,33 +4210,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3938,9 +4271,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -3984,7 +4324,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "89a95d6a-d7e1-44bc-84ac-48240c0f0e22",
+              "value": "d4afe0aa-c530-4494-b77a-9a96d86b3396",
               "system": true
             },
             {
@@ -4011,11 +4351,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1011\",\n  \"buyer_id\": 2,\n  \"seller_id\": 1,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1011\",\n  \"buyer_id\": 2,\n  \"seller_id\": 1,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "551c019f-9db0-4290-a045-1d85dd99206f",
+          "id": "e1e763fa-e6fb-477c-9d5a-c7a6800819a3",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -4025,7 +4370,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -4033,7 +4378,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "125"
+              "value": "122"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -4111,7 +4456,6 @@
               116,
               47,
               53,
-              57,
               34,
               44,
               34,
@@ -4120,7 +4464,6 @@
               34,
               58,
               53,
-              57,
               44,
               34,
               111,
@@ -4158,7 +4501,6 @@
               34,
               58,
               53,
-              57,
               44,
               34,
               115,
@@ -4183,10 +4525,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 16,
-          "responseSize": 125
+          "responseTime": 17,
+          "responseSize": 122
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC11 - status code is 201",
@@ -4200,27 +4542,25 @@
       },
       {
         "cursor": {
-          "ref": "4dc2151e-5491-40a5-841b-cdce16a6e7b8",
+          "ref": "4c7fdc7c-3be5-4b5b-b041-ad1574d36502",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 11,
           "cr": true,
-          "httpRequestId": "90553c91-b6ff-4da8-a85f-2b9e6cc5a201"
+          "httpRequestId": "bcb04d89-3ece-4c27-b518-e429cc77bf31"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -4242,7 +4582,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4255,33 +4595,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4313,9 +4656,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -4359,7 +4709,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "daabdd60-34e9-4b58-9ee4-c0c367627e56",
+              "value": "29d480d9-dd9d-4f5c-8d56-96cb499b1dd7",
               "system": true
             },
             {
@@ -4386,11 +4736,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1012\",\n  \"buyer_id\": 1,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1012\",\n  \"buyer_id\": 1,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "26ad4321-2ea2-40ca-b46a-682aeac92a28",
+          "id": "3424b8ec-04d4-479c-b6ea-3e3e4dc470e1",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -4400,7 +4755,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:16 GMT"
             },
             {
               "key": "Content-Type",
@@ -4474,7 +4829,7 @@
           "responseTime": 9,
           "responseSize": 38
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC12 - status code is 400",
@@ -4484,27 +4839,25 @@
       },
       {
         "cursor": {
-          "ref": "5acf8db2-0366-4d1e-89f8-02123a4d037e",
+          "ref": "ffdd4a6d-ac46-466d-903d-24c8c1cb6670",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 12,
           "cr": true,
-          "httpRequestId": "18fbb48c-5131-4ebb-8111-ce6a67dc2a95"
+          "httpRequestId": "10cdbaa6-af8f-43f6-bee5-a24d57f26e00"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -4526,7 +4879,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4539,33 +4892,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4597,9 +4953,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -4643,7 +5006,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "865eb71b-d8e1-4230-bad1-1fb65a7475d6",
+              "value": "282254f8-0896-48d8-9b6a-2b0abab3a005",
               "system": true
             },
             {
@@ -4670,11 +5033,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1013\",\n  \"buyer_id\": 1,\n  \"seller_id\": 0,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1013\",\n  \"buyer_id\": 1,\n  \"seller_id\": 0,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "61a5956d-75ee-40cd-a9a9-1bf7ecf1a0a7",
+          "id": "f0cb4c1c-f542-4ca7-b8f9-99cfa7507c5f",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -4684,7 +5052,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -4692,7 +5060,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "69"
+              "value": "85"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -4724,42 +5092,58 @@
               34,
               58,
               34,
-              115,
-              101,
-              108,
-              108,
-              101,
-              114,
-              95,
-              105,
-              100,
-              32,
-              109,
+              78,
+              103,
+              92,
               117,
-              115,
-              116,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              100,
+              100,
+              105,
               32,
               98,
+              92,
+              117,
+              48,
+              48,
               101,
-              32,
-              97,
-              32,
-              112,
-              111,
-              115,
-              105,
-              116,
-              105,
-              118,
-              101,
-              32,
-              105,
+              49,
               110,
-              116,
-              101,
+              32,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
+              110,
               103,
+              32,
+              104,
+              92,
+              117,
+              49,
               101,
-              114,
+              101,
+              51,
+              112,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              99,
+              55,
               34,
               44,
               34,
@@ -4786,10 +5170,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 14,
-          "responseSize": 69
+          "responseTime": 12,
+          "responseSize": 85
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC13 - status code is 400",
@@ -4799,27 +5183,25 @@
       },
       {
         "cursor": {
-          "ref": "15ac14a7-890b-4c82-b8db-f160f4e6f2ae",
+          "ref": "bc44ed68-b255-4210-858d-f2741e2e5f8d",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 13,
           "cr": true,
-          "httpRequestId": "ff15bb8b-26c4-4bdc-9b61-d09bbf8c31e8"
+          "httpRequestId": "eb5a512b-fa28-4ede-8de7-d8bcf001ec31"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -4841,7 +5223,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4854,33 +5236,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4912,9 +5297,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -4958,7 +5350,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "c9f32ad1-7c05-4f19-ac3d-5a478df35b62",
+              "value": "6418f265-33f1-4c66-993d-ba0f5ff5a517",
               "system": true
             },
             {
@@ -4985,11 +5377,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1014\",\n  \"buyer_id\": 5,\n  \"seller_id\": 5,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1014\",\n  \"buyer_id\": 5,\n  \"seller_id\": 5,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "17a9e83c-66df-4824-8e27-c75923b137f5",
+          "id": "cc4dcece-ba6c-4abf-a65a-e88d2202d1bf",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -4999,7 +5396,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -5007,7 +5404,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "73"
+              "value": "147"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -5039,46 +5436,120 @@
               34,
               58,
               34,
-              98,
+              66,
+              92,
               117,
-              121,
+              49,
               101,
-              114,
-              95,
-              105,
-              100,
+              97,
+              49,
+              110,
               32,
+              108,
+              92,
+              117,
+              48,
+              48,
+              101,
+              48,
+              32,
+              110,
+              103,
+              92,
+              117,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              100,
+              100,
+              105,
+              32,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
+              92,
+              117,
+              48,
+              49,
+              48,
+              51,
+              110,
+              103,
+              32,
+              116,
+              105,
+              110,
+              32,
+              110,
+              92,
+              117,
+              48,
+              48,
+              101,
               97,
               110,
-              100,
               32,
-              115,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
+              110,
+              103,
+              32,
+              116,
+              104,
+              92,
+              117,
+              49,
               101,
-              108,
-              108,
-              101,
-              114,
-              95,
-              105,
-              100,
+              99,
+              51,
               32,
               109,
               117,
-              115,
-              116,
+              97,
               32,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
+              92,
+              117,
+              48,
+              49,
               98,
+              48,
+              92,
+              117,
+              49,
               101,
+              101,
+              51,
+              99,
               32,
-              100,
-              105,
-              102,
-              102,
+              104,
+              92,
+              117,
+              48,
+              48,
               101,
-              114,
-              101,
+              48,
               110,
-              116,
+              103,
               34,
               44,
               34,
@@ -5106,9 +5577,9 @@
           },
           "cookie": [],
           "responseTime": 9,
-          "responseSize": 73
+          "responseSize": 147
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC14 - status code is 400",
@@ -5118,27 +5589,25 @@
       },
       {
         "cursor": {
-          "ref": "4bc427ea-c3b1-4bd4-8427-508a47783922",
+          "ref": "31405119-5a7f-4dc5-83b8-9331227b2cc9",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 14,
           "cr": true,
-          "httpRequestId": "37360ede-4b5b-4d2c-946e-a2fd2fe3b1d1"
+          "httpRequestId": "980df502-63db-430a-bf1f-5cc8a69588fd"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -5160,7 +5629,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5173,33 +5642,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5231,9 +5703,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -5277,7 +5756,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "93857271-67db-4005-a87c-ce3ee3310eb7",
+              "value": "e7a3e229-ed7e-42c6-9f9b-918b78f88b1a",
               "system": true
             },
             {
@@ -5304,11 +5783,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1015\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1015\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "a6c8743f-0d41-4642-b828-947ac605eb67",
+          "id": "b20b9401-d104-44b8-92d5-cbe260315670",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -5318,7 +5802,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -5326,7 +5810,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "118"
+              "value": "115"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -5397,7 +5881,6 @@
               116,
               47,
               54,
-              48,
               34,
               44,
               34,
@@ -5406,7 +5889,6 @@
               34,
               58,
               54,
-              48,
               44,
               34,
               111,
@@ -5444,7 +5926,6 @@
               34,
               58,
               54,
-              48,
               44,
               34,
               115,
@@ -5469,10 +5950,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 13,
-          "responseSize": 118
+          "responseTime": 17,
+          "responseSize": 115
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC15 - status code is 201",
@@ -5486,27 +5967,25 @@
       },
       {
         "cursor": {
-          "ref": "17438724-3ee4-415a-adcb-c0e03d38aae7",
+          "ref": "64cb633c-81a3-47d2-8b64-73e9cbcb87e2",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 15,
           "cr": true,
-          "httpRequestId": "78f04647-7a83-4647-8bb2-9e22c80f9862"
+          "httpRequestId": "a717d25b-92d0-4ac7-9661-8b822aa98838"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -5528,7 +6007,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5541,33 +6020,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5599,9 +6081,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -5645,7 +6134,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "c188d44c-af64-437c-8713-b180c1ec6aeb",
+              "value": "e007eefb-854d-418b-a43c-a3257695338d",
               "system": true
             },
             {
@@ -5672,11 +6161,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1016\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1000000000,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1016\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1000000000,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "db6b2d89-b95f-4f23-b426-84cbea7cb445",
+          "id": "56a800c7-03db-4451-ad72-74ac23a30287",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -5686,7 +6180,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -5694,7 +6188,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "127"
+              "value": "124"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -5773,8 +6267,7 @@
               117,
               116,
               47,
-              54,
-              49,
+              55,
               34,
               44,
               34,
@@ -5782,8 +6275,7 @@
               100,
               34,
               58,
-              54,
-              49,
+              55,
               44,
               34,
               111,
@@ -5820,8 +6312,7 @@
               100,
               34,
               58,
-              54,
-              49,
+              55,
               44,
               34,
               115,
@@ -5846,10 +6337,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 13,
-          "responseSize": 127
+          "responseTime": 19,
+          "responseSize": 124
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC16 - status code is 201",
@@ -5863,27 +6354,25 @@
       },
       {
         "cursor": {
-          "ref": "c2887422-e64f-455e-91a6-fa46ce6e4b57",
+          "ref": "1e7c1783-289c-4c8e-b724-3b7edeed8a5e",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 16,
           "cr": true,
-          "httpRequestId": "32af7d5b-a73d-442c-9a6e-6282e283f7d9"
+          "httpRequestId": "35287e06-584c-4b0c-b6a7-8e327a69ac4a"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -5905,7 +6394,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5918,33 +6407,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5976,9 +6468,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -6022,7 +6521,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "18930626-914a-4b46-b7d5-4e39c1a9f5e0",
+              "value": "77c0d818-014f-453e-b5c8-846ae59fa7a8",
               "system": true
             },
             {
@@ -6049,11 +6548,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1017\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 0,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1017\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 0,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "9e28b8c5-e3f1-4135-978b-93bd6097b513",
+          "id": "a39325f4-8d2d-4a7c-bc8a-dfd7b78b7e7a",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6063,7 +6567,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -6071,7 +6575,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "59"
+              "value": "93"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -6103,32 +6607,66 @@
               34,
               58,
               34,
-              97,
-              109,
-              111,
+              83,
+              92,
               117,
+              49,
+              101,
+              100,
+              49,
+              32,
+              116,
+              105,
+              92,
+              117,
+              49,
+              101,
+              99,
+              49,
               110,
-              116,
-              32,
-              109,
-              117,
-              115,
-              116,
-              32,
-              98,
-              101,
-              32,
-              103,
-              114,
-              101,
-              97,
-              116,
-              101,
-              114,
               32,
               116,
               104,
               97,
+              110,
+              104,
+              32,
+              116,
+              111,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
+              110,
+              32,
+              112,
+              104,
+              92,
+              117,
+              49,
+              101,
+              97,
+              51,
+              105,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              100,
+              98,
+              110,
+              32,
+              104,
+              92,
+              117,
+              48,
+              49,
+              97,
+              49,
               110,
               32,
               48,
@@ -6155,10 +6693,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 12,
-          "responseSize": 59
+          "responseTime": 9,
+          "responseSize": 93
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC17 - status code is 400",
@@ -6168,27 +6706,25 @@
       },
       {
         "cursor": {
-          "ref": "21c79026-3b99-45bc-a1a7-68cc61ecbceb",
+          "ref": "27413fb7-99fc-4b8d-9fad-bc19affcb546",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 17,
           "cr": true,
-          "httpRequestId": "4f68d814-36c4-43ac-9f93-5c39733c22d0"
+          "httpRequestId": "6c9bb75e-41b2-41ed-b905-af75be949e17"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -6210,7 +6746,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6223,33 +6759,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6281,9 +6820,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -6327,7 +6873,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "d993c56f-a66a-4595-a9d3-1e3e7b121436",
+              "value": "68692dc7-4b67-4986-b01e-cae0a43de893",
               "system": true
             },
             {
@@ -6354,11 +6900,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1018\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": -1,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1018\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": -1,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "5a7dd7d3-159a-46a8-9116-701e689267ef",
+          "id": "60e8d178-6b77-4c7d-922b-505ca6f50c3f",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6368,7 +6919,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -6376,7 +6927,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "59"
+              "value": "93"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -6408,32 +6959,66 @@
               34,
               58,
               34,
-              97,
-              109,
-              111,
+              83,
+              92,
               117,
+              49,
+              101,
+              100,
+              49,
+              32,
+              116,
+              105,
+              92,
+              117,
+              49,
+              101,
+              99,
+              49,
               110,
-              116,
-              32,
-              109,
-              117,
-              115,
-              116,
-              32,
-              98,
-              101,
-              32,
-              103,
-              114,
-              101,
-              97,
-              116,
-              101,
-              114,
               32,
               116,
               104,
               97,
+              110,
+              104,
+              32,
+              116,
+              111,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
+              110,
+              32,
+              112,
+              104,
+              92,
+              117,
+              49,
+              101,
+              97,
+              51,
+              105,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              100,
+              98,
+              110,
+              32,
+              104,
+              92,
+              117,
+              48,
+              49,
+              97,
+              49,
               110,
               32,
               48,
@@ -6461,9 +7046,9 @@
           },
           "cookie": [],
           "responseTime": 11,
-          "responseSize": 59
+          "responseSize": 93
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC18 - status code is 400",
@@ -6473,27 +7058,25 @@
       },
       {
         "cursor": {
-          "ref": "f8e4af19-a31b-40b7-bd41-fd119a82ca39",
+          "ref": "4f15257e-3b7c-4281-92e9-53ad82412b9b",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 18,
           "cr": true,
-          "httpRequestId": "87258d4c-96f4-4b00-99bf-d2bdbf89445d"
+          "httpRequestId": "96eb3c52-be36-478d-ade8-250b849ecb80"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -6515,7 +7098,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6528,33 +7111,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6586,9 +7172,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -6632,7 +7225,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "ab928055-10ca-4668-ba18-3de6b7e21621",
+              "value": "424b90ab-e535-49de-8167-a47f9c1443bd",
               "system": true
             },
             {
@@ -6659,11 +7252,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1019\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": \"abc\",\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1019\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": \"abc\",\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "e87f3898-c127-4dd5-894f-da14b8af4bdf",
+          "id": "4d5030bd-9a77-4460-a91c-7fdd1e8fcb41",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6673,7 +7271,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -6681,7 +7279,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "59"
+              "value": "93"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -6713,32 +7311,66 @@
               34,
               58,
               34,
-              97,
-              109,
-              111,
+              83,
+              92,
               117,
+              49,
+              101,
+              100,
+              49,
+              32,
+              116,
+              105,
+              92,
+              117,
+              49,
+              101,
+              99,
+              49,
               110,
-              116,
-              32,
-              109,
-              117,
-              115,
-              116,
-              32,
-              98,
-              101,
-              32,
-              103,
-              114,
-              101,
-              97,
-              116,
-              101,
-              114,
               32,
               116,
               104,
               97,
+              110,
+              104,
+              32,
+              116,
+              111,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
+              110,
+              32,
+              112,
+              104,
+              92,
+              117,
+              49,
+              101,
+              97,
+              51,
+              105,
+              32,
+              108,
+              92,
+              117,
+              49,
+              101,
+              100,
+              98,
+              110,
+              32,
+              104,
+              92,
+              117,
+              48,
+              49,
+              97,
+              49,
               110,
               32,
               48,
@@ -6765,10 +7397,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
-          "responseSize": 59
+          "responseTime": 12,
+          "responseSize": 93
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC19 - status code is 400",
@@ -6778,27 +7410,25 @@
       },
       {
         "cursor": {
-          "ref": "70d299d6-a2fc-446e-808f-20a9212eca90",
+          "ref": "91c29f35-f073-4939-aa20-3d654ce73d61",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 19,
           "cr": true,
-          "httpRequestId": "961a8417-a3ea-46f0-a3f4-9aa40afcfcc1"
+          "httpRequestId": "4b7d4ad5-e9b3-40e4-b0af-564c6e208658"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -6820,7 +7450,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6833,33 +7463,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6891,9 +7524,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -6937,7 +7577,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "beab2b43-9062-4323-967a-d8196bbcd559",
+              "value": "070f3dba-0d12-43a6-8b2b-269d017928c4",
               "system": true
             },
             {
@@ -6964,11 +7604,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1020\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1000000001,\n  \"method\": \"banking\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1020\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 1000000001,\n  \"method\": \"banking\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "0d3b3a48-a1c6-4a0e-8495-e98f37cbc109",
+          "id": "c58e10f7-e44c-4925-ae65-a347a6d976ec",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6978,7 +7623,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -6986,7 +7631,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "63"
+              "value": "138"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -7018,39 +7663,114 @@
               34,
               58,
               34,
-              97,
-              109,
-              111,
+              83,
+              92,
               117,
-              110,
-              116,
-              32,
-              109,
-              117,
-              115,
-              116,
-              32,
-              98,
+              49,
               101,
+              100,
+              49,
               32,
+              116,
+              105,
+              92,
+              117,
+              49,
+              101,
+              99,
+              49,
+              110,
+              32,
+              116,
+              104,
               97,
+              110,
+              104,
+              32,
+              116,
+              111,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
+              110,
+              32,
+              107,
+              104,
+              92,
+              117,
+              48,
+              48,
+              102,
+              52,
+              110,
+              103,
+              32,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
+              92,
+              117,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              101,
+              51,
+              99,
+              32,
+              118,
+              92,
+              117,
+              48,
+              49,
+              98,
+              48,
+              92,
+              117,
+              49,
+              101,
+              101,
+              51,
               116,
               32,
-              109,
-              111,
-              115,
-              116,
+              113,
+              117,
+              92,
+              117,
+              48,
+              48,
+              101,
+              49,
               32,
               49,
+              46,
               48,
               48,
               48,
+              46,
               48,
               48,
               48,
+              46,
               48,
               48,
               48,
+              92,
+              117,
+              48,
+              49,
+              49,
+              49,
               34,
               44,
               34,
@@ -7075,9 +7795,9 @@
           },
           "cookie": [],
           "responseTime": 9,
-          "responseSize": 63
+          "responseSize": 138
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC20 - status code is 400",
@@ -7087,27 +7807,25 @@
       },
       {
         "cursor": {
-          "ref": "0e655b0c-28c6-48fd-bd6f-f5a7f0bd5694",
+          "ref": "7bdaf79d-b0ae-4d1a-a6a5-facce49ff186",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 20,
           "cr": true,
-          "httpRequestId": "45342796-8365-4ecd-95b7-568200de1297"
+          "httpRequestId": "b4f2da63-bfdc-4cf6-ae94-0831cbc4121b"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -7129,7 +7847,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7142,33 +7860,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7200,9 +7921,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -7246,7 +7974,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "4b2604bf-7b05-452a-be27-1d71c342ce78",
+              "value": "548bfd9f-1f78-4f7b-b455-ca04da812603",
               "system": true
             },
             {
@@ -7273,11 +8001,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1021\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"transfer\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1021\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"transfer\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "e461dc9e-20cb-477f-bc66-252094509739",
+          "id": "a6812529-971d-4205-ac40-17371bca22f4",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -7287,7 +8020,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -7295,7 +8028,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "125"
+              "value": "122"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -7372,8 +8105,7 @@
               117,
               116,
               47,
-              54,
-              50,
+              56,
               34,
               44,
               34,
@@ -7381,8 +8113,7 @@
               100,
               34,
               58,
-              54,
-              50,
+              56,
               44,
               34,
               111,
@@ -7419,8 +8150,7 @@
               100,
               34,
               58,
-              54,
-              50,
+              56,
               44,
               34,
               115,
@@ -7445,10 +8175,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 14,
-          "responseSize": 125
+          "responseTime": 10,
+          "responseSize": 122
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC21 - status code is 201",
@@ -7462,27 +8192,25 @@
       },
       {
         "cursor": {
-          "ref": "c2b4a915-60e1-477c-a017-9e7ea1ad0378",
+          "ref": "e632cf4d-9571-47bf-91e4-0cbe0eed1b08",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 21,
           "cr": true,
-          "httpRequestId": "78982e73-6437-4faf-8d64-09f16653bd47"
+          "httpRequestId": "8343e3cb-9e6c-4117-981f-081fe0c1f0b3"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -7504,7 +8232,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7517,33 +8245,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7575,9 +8306,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -7621,7 +8359,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "2eac53eb-a64a-4a28-8b1c-3fec7cc62ee6",
+              "value": "dc7224c0-cf26-417f-8c12-3987204b6d28",
               "system": true
             },
             {
@@ -7648,11 +8386,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1022\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"bitcoin\",\n  \"items\": []\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1022\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"bitcoin\",\n  \"items\": []\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "fc7b27ab-4f43-40d5-9dd1-39d00b6f2718",
+          "id": "d992194d-92c4-4437-a27b-6b4ba8ac897e",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -7662,7 +8405,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -7738,10 +8481,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 12,
+          "responseTime": 9,
           "responseSize": 43
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC22 - status code is 400",
@@ -7751,27 +8494,25 @@
       },
       {
         "cursor": {
-          "ref": "e30cab35-a486-4a2b-b438-a3bc5471bd3d",
+          "ref": "88aa8392-3cb2-4d5d-85b2-dbdc7dae85f5",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 22,
           "cr": true,
-          "httpRequestId": "3fbf7467-a974-4d1a-a687-7da80e813e48"
+          "httpRequestId": "ef39a952-2ae7-4619-a5a3-1531b93e1601"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -7793,7 +8534,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7806,33 +8547,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7864,9 +8608,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -7910,7 +8661,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "2e043051-2ac9-479a-b2bd-d1737fc72325",
+              "value": "29ea47b6-21f5-4a88-a1bc-e6bfe333dccc",
               "system": true
             },
             {
@@ -7937,11 +8688,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{\n  \"order_id\": \"ORD-1023\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": [\n    {\n      \"item_id\": 10,\n      \"title\": \"Pin LFP\",\n      \"price\": 50000000,\n      \"quantity\": 1,\n      \"seller_id\": 2\n    }\n  ]\n}"
+            "raw": "{\n  \"order_id\": \"ORD-1023\",\n  \"buyer_id\": 1,\n  \"seller_id\": 2,\n  \"amount\": 50000000,\n  \"method\": \"banking\",\n  \"items\": [\n    {\n      \"item_id\": 10,\n      \"title\": \"Pin LFP\",\n      \"price\": 50000000,\n      \"quantity\": 1,\n      \"seller_id\": 2\n    }\n  ]\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "7a6649e0-199f-4cfd-8647-43a82d5943cb",
+          "id": "218aa5ba-675c-44d9-b7fa-5b616772de1a",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -7951,7 +8707,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -7959,7 +8715,7 @@
             },
             {
               "key": "Content-Length",
-              "value": "125"
+              "value": "122"
             },
             {
               "key": "Access-Control-Allow-Origin",
@@ -8036,8 +8792,7 @@
               117,
               116,
               47,
-              54,
-              51,
+              57,
               34,
               44,
               34,
@@ -8045,8 +8800,7 @@
               100,
               34,
               58,
-              54,
-              51,
+              57,
               44,
               34,
               111,
@@ -8083,8 +8837,7 @@
               100,
               34,
               58,
-              54,
-              51,
+              57,
               44,
               34,
               115,
@@ -8109,10 +8862,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 30,
-          "responseSize": 125
+          "responseTime": 17,
+          "responseSize": 122
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC23 - status code is 201",
@@ -8126,27 +8879,25 @@
       },
       {
         "cursor": {
-          "ref": "9c3eff5d-b2b8-45b1-a30c-238aba14a8b6",
+          "ref": "ff030754-ab23-4fd1-b406-f989cd054d17",
           "length": 1,
           "cycles": 24,
           "position": 0,
           "iteration": 23,
           "cr": true,
-          "httpRequestId": "fcc73e69-d422-416a-8c81-9b8e75ca5932"
+          "httpRequestId": "571b8664-a5c4-4959-a801-1d65ddebb0f3"
         },
         "item": {
-          "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+          "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
           "name": "PAYMENT_CREATE",
           "request": {
             "url": {
-              "protocol": "http",
-              "port": "5008",
               "path": [
                 "payment",
                 "create"
               ],
               "host": [
-                "localhost"
+                "{{payment_url}}"
               ],
               "query": [],
               "variable": []
@@ -8168,7 +8919,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{{request_body}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8181,33 +8932,36 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8b622838-6376-4ddd-a33d-5d4a13cd9b07",
+                "id": "b28e71d8-57a8-4e3e-8590-55921d9d0298",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
+                  "const row = pm.iterationData.toObject();\r",
+                  "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
                   "const rawBody = pm.iterationData.get('raw_body');\r",
                   "\r",
                   "if (rawBody) {\r",
-                  "    pm.request.body.update(rawBody);\r",
+                  "    pm.variables.set('request_body', rawBody);\r",
                   "} else {\r",
                   "    const payload = {};\r",
-                  "    ['order_id', 'buyer_id', 'seller_id', 'amount', 'method', 'items'].forEach((key) => {\r",
-                  "        const value = pm.iterationData.get(key);\r",
-                  "        if (value !== undefined) {\r",
-                  "            payload[key] = value;\r",
-                  "        }\r",
-                  "    });\r",
-                  "    pm.request.body.update(JSON.stringify(payload, null, 2));\r",
-                  "}\r",
-                  ""
+                  "\r",
+                  "    if (has('order_id')) payload.order_id = row.order_id;\r",
+                  "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+                  "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+                  "    if (has('amount')) payload.amount = row.amount;\r",
+                  "    if (has('method')) payload.method = row.method;\r",
+                  "    if (has('items')) payload.items = row.items;\r",
+                  "\r",
+                  "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+                  "}"
                 ],
-                "_lastExecutionId": "efac13d8-dce0-48da-bead-8572e2f5bb51"
+                "_lastExecutionId": "a504ee77-df56-4ff7-9ae3-6954db5fea60"
               }
             },
             {
               "listen": "test",
               "script": {
-                "id": "323d62b9-725e-4dda-a8de-22b4c0912839",
+                "id": "155fe139-9147-4ba4-a2c0-3d49c1f04cd0",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -8239,9 +8993,16 @@
                   "if (gap) {\r",
                   "    console.log(label + ' GAP NOTE: ' + gap);\r",
                   "}\r",
-                  ""
+                  "if (pm.response.code === 201) {\r",
+                  "    const json = pm.response.json();\r",
+                  "\r",
+                  "    pm.collectionVariables.set(\r",
+                  "        \"created_payment_id\",\r",
+                  "        json.payment_id || json.id\r",
+                  "    );\r",
+                  "}"
                 ],
-                "_lastExecutionId": "4caf055b-8a30-44ff-a072-bf4f73e227ac"
+                "_lastExecutionId": "440a24ab-4f2e-4676-ae19-2fc5f7de9c5d"
               }
             }
           ]
@@ -8285,7 +9046,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "ad8fa6d7-57ad-46ae-a08d-9efd4011c8e2",
+              "value": "d63ea36e-66da-4ce9-b727-6777fdb4c43f",
               "system": true
             },
             {
@@ -8312,11 +9073,16 @@
           "method": "POST",
           "body": {
             "mode": "raw",
-            "raw": "{ invalid json"
+            "raw": "{ invalid json",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           }
         },
         "response": {
-          "id": "27ce3013-1d9a-48aa-a74f-c51c5c88dfc7",
+          "id": "e0631e93-bee5-44b8-9de6-18f22a131929",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -8326,7 +9092,7 @@
             },
             {
               "key": "Date",
-              "value": "Wed, 01 Jul 2026 13:37:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:04:17 GMT"
             },
             {
               "key": "Content-Type",
@@ -8526,10 +9292,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 20,
+          "responseTime": 5,
           "responseSize": 167
         },
-        "id": "5d858d5d-eda6-400d-8cc2-6d7b13740d98",
+        "id": "79898ba5-0b4c-441f-9cb3-e81733ffa32e",
         "assertions": [
           {
             "assertion": "PAYMENT_CREATE_TC24 - status code is 400",
@@ -8539,7 +9305,7 @@
       }
     ],
     "transfers": {
-      "responseTotal": 2151
+      "responseTotal": 2482
     },
     "failures": [],
     "error": null

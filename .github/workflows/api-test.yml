@@ -14,7 +14,7 @@ on:
 
 jobs:
   api-test:
-    name: Build backend and run Postman tests
+    name: Auth Service Profile Newman Test
     runs-on: ubuntu-latest
     env:
       AUTH_URL: http://localhost:5001
@@ -22,7 +22,7 @@ jobs:
       ADMIN_USERNAME: admin
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: admin123
-      TEST_PASSWORD: "123456"
+      PROFILE_PASSWORD: "12345678"
 
     steps:
       - name: Checkout source code
@@ -41,9 +41,9 @@ jobs:
           cat > .env <<EOF
           JWT_SECRET=${JWT_SECRET}
           GATEWAY_SECRET=ci_gateway_secret
-          ADMIN_USERNAME=admin
-          ADMIN_EMAIL=admin@example.com
-          ADMIN_PASSWORD=admin123
+          ADMIN_USERNAME=${ADMIN_USERNAME}
+          ADMIN_EMAIL=${ADMIN_EMAIL}
+          ADMIN_PASSWORD=${ADMIN_PASSWORD}
           PROVIDER=none
           GOOGLE_API_KEY=
           GEMINI_MODEL=models/gemini-2.5-flash
@@ -58,104 +58,68 @@ jobs:
           BANK_OWNER=CI Test
           EOF
 
-      - name: Build and start backend services
-        run: docker compose up --build -d auth_service payment_service reviews_service
+      - name: Build and start auth service
+        run: docker compose up --build -d auth_service
 
-      - name: Wait for backend health checks
-        run: |
-          wait-on \
-            "$AUTH_URL/health" \
-            "http://localhost:5008/payment/health" \
-            "http://localhost:5011/reviews/" \
-            --timeout 180000 \
-            --interval 3000
+      - name: Wait for auth health check
+        run: wait-on "$AUTH_URL/health" --timeout 180000 --interval 3000
 
       - name: Seed auth admin user
         run: docker compose exec -T auth_service python init_db.py
 
+      - name: Prepare approved member token for profile
+        run: |
+          ts="$(date +%s)"
+          suffix="${ts: -8}"
+          username="profile_member_${ts}"
+          email="${username}@example.com"
+          phone="07${suffix}"
+
+          admin_token="$(curl -fsS -X POST "$AUTH_URL/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$ADMIN_USERNAME\",\"password\":\"$ADMIN_PASSWORD\"}" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")"
+
+          user_response="$(curl -fsS -X POST "$AUTH_URL/auth/register" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${username}\",\"email\":\"${email}\",\"password\":\"$PROFILE_PASSWORD\",\"phone\":\"${phone}\"}")"
+
+          user_id="$(printf '%s' "$user_response" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")"
+
+          curl -fsS -X PATCH "$AUTH_URL/auth/users/${user_id}/status" \
+            -H "Authorization: Bearer ${admin_token}" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"approved"}'
+
+          member_token="$(curl -fsS -X POST "$AUTH_URL/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${username}\",\"password\":\"$PROFILE_PASSWORD\"}" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")"
+
+          echo "AUTH_MEMBER_TOKEN=${member_token}" >> "$GITHUB_ENV"
+
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run Postman collections with Newman
+      - name: Run auth profile Newman collection
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
-          test_status=0
 
-          echo "::group::Newman - authservice"
-          if ! newman run "postman/authservice/authservice_postman_collection.json" \
-            -e postman/postman_environment.json \
-            -d postman/authservice/data_register.json \
+          newman run "postman/authservice/authservice_postman_collection.json" \
+            -e "postman/postman_environment.json" \
+            -d "postman/authservice/data_profile.json" \
+            --folder Profile \
             --env-var auth_url="$AUTH_URL" \
-            --env-var adminUsername="$ADMIN_USERNAME" \
-            --env-var adminEmail="$ADMIN_EMAIL" \
-            --env-var adminPassword="$ADMIN_PASSWORD" \
-            --env-var testPassword="$TEST_PASSWORD" \
-            --env-var jwtSecret="$JWT_SECRET" \
+            --env-var memberToken="$AUTH_MEMBER_TOKEN" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/authservice-newman-result.xml" \
-            --reporter-json-export "reports/authservice-newman-result.json" \
-            --reporter-htmlextra-export "reports/authservice-newman-report.html"; then
-            test_status=1
-          fi
-          echo "::endgroup::"
+            --reporter-junit-export "reports/authservice-profile-newman-result.xml" \
+            --reporter-json-export "reports/authservice-profile-newman-result.json" \
+            --reporter-htmlextra-export "reports/authservice-profile-newman-report.html"
 
-          echo "::group::Newman - paymentservice create"
-          if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
-            -e "postman/postman_environment.json" \
-            -d "postman/paymentservice/data_payment.service.json" \
-            --folder PAYMENT_CREATE \
-            --env-var payment_url="http://localhost:5008" \
-            --env-var baseUrl="http://localhost:5008" \
-            --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/paymentservice-create-newman-result.xml" \
-            --reporter-json-export "reports/paymentservice-create-newman-result.json" \
-            --reporter-htmlextra-export "reports/paymentservice-create-newman-report.html"; then
-            test_status=1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::Newman - paymentservice confirm"
-          if ! newman run "postman/paymentservice/paymentservice_postman_collection.json" \
-            -e "postman/postman_environment.json" \
-            -d "postman/paymentservice/data_confirm_payment.json" \
-            --folder PAYMENT_CONFIRM \
-            --env-var payment_url="http://localhost:5008" \
-            --env-var baseUrl="http://localhost:5008" \
-            --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/payment-confirm-newman-result.xml" \
-            --reporter-json-export "reports/payment-confirm-newman-result.json" \
-            --reporter-htmlextra-export "reports/payment-confirm-newman-report.html"; then
-            test_status=1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::Newman - reviewservice"
-          if ! newman run "postman/reviewservice/reviewservice_postman_collection.json" \
-            -e "postman/postman_environment.json" \
-            -d "postman/reviewservice/data_create.json" \
-            --env-var reviews_url="http://localhost:5011" \
-            --env-var baseUrl="http://localhost:5011" \
-            --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/reviewservice-newman-result.xml" \
-            --reporter-json-export "reports/reviewservice-newman-result.json" \
-            --reporter-htmlextra-export "reports/reviewservice-newman-report.html"; then
-            test_status=1
-          fi
-          echo "::endgroup::"
-
-          if [ -f "reports/payment-confirm-newman-result.json" ]; then
-            cp reports/payment-confirm-newman-result.json reports/newman-result.json
-          elif [ -f "reports/paymentservice-create-newman-result.json" ]; then
-            cp reports/paymentservice-create-newman-result.json reports/newman-result.json
-          elif [ -f "reports/reviewservice-newman-result.json" ]; then
-            cp reports/reviewservice-newman-result.json reports/newman-result.json
-          elif [ -f "reports/authservice-newman-result.json" ]; then
-            cp reports/authservice-newman-result.json reports/newman-result.json
-          fi
-
-          exit "$test_status"
+          cp reports/authservice-profile-newman-result.json reports/newman-result.json
 
       - name: Collect Docker logs when failed
         if: failure()
@@ -180,7 +144,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: payment-confirm
+          NEWMAN_SERVICE: authservice-profile
 
       - name: Stop backend services
         if: always()

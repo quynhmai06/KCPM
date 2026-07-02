@@ -2,12 +2,12 @@
   "collection": {
     "_": {
       "postman_id": "89451812-38a1-48d3-bc92-d867e4e49b56",
-      "exporter_id": "55362457",
+      "exporter_id": "50117124",
       "collection_link": "https://go.postman.co/collection/50117124-89451812-38a1-48d3-bc92-d867e4e49b56?source=collection_link"
     },
     "item": [
       {
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "name": "Register",
         "request": {
           "url": {
@@ -43,7 +43,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+              "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
               "type": "text/javascript",
               "packages": {},
               "exec": [
@@ -122,7 +122,104 @@
                 "  \"body:\", pm.response.text()\r",
                 ");"
               ],
-              "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+              "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
+            }
+          }
+        ]
+      },
+      {
+        "id": "f511467d-8f9a-475c-a510-52b1759a9cae",
+        "name": "Profile",
+        "request": {
+          "url": {
+            "path": [
+              "auth",
+              "profile"
+            ],
+            "host": [
+              "{{auth_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "{{authorization}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "PUT",
+          "body": {
+            "mode": "raw",
+            "raw": "{\r\n  \"full_name\": \"{{full_name}}\",\r\n  \"phone\": \"{{phone}}\",\r\n  \"address\": \"{{address}}\",\r\n  \"birthdate\": \"{{birthdate}}\"\r\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "6a45cb23-8dd7-492e-a565-64b7d2b19e2c",
+              "type": "text/javascript",
+              "packages": {},
+              "exec": [
+                "const row = pm.iterationData.toObject();\r",
+                "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
+                "const pick = (key, fallback) => has(key) ? row[key] : fallback;\r",
+                "\r",
+                "function text(ch, len) {\r",
+                "  return ch.repeat(Number(len));\r",
+                "}\r",
+                "\r",
+                "const authType = pick(\"authorization_type\", \"member\");\r",
+                "\r",
+                "if (authType === \"none\") {\r",
+                "  pm.variables.set(\"authorization\", \"\");\r",
+                "} else if (authType === \"invalid\") {\r",
+                "  pm.variables.set(\"authorization\", \"Bearer invalid-token\");\r",
+                "} else {\r",
+                "  pm.variables.set(\"authorization\", \"Bearer \" + pm.environment.get(\"memberToken\"));\r",
+                "}\r",
+                "\r",
+                "const fullName = has(\"full_name_length\")\r",
+                "  ? text(\"n\", row.full_name_length)\r",
+                "  : pick(\"full_name\", text(\"n\", 60));\r",
+                "\r",
+                "const address = has(\"address_length\")\r",
+                "  ? text(\"a\", row.address_length)\r",
+                "  : pick(\"address\", text(\"a\", 128));\r",
+                "\r",
+                "pm.variables.set(\"full_name\", fullName);\r",
+                "pm.variables.set(\"phone\", pick(\"phone\", \"0901234567\"));\r",
+                "pm.variables.set(\"address\", address);\r",
+                "pm.variables.set(\"birthdate\", pick(\"birthdate\", \"2000-01-01\"));"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "2ae39ab9-456c-4342-9df3-955bee1aa35b",
+              "type": "text/javascript",
+              "packages": {},
+              "exec": [
+                "const tc = pm.iterationData.get(\"tc\");\r",
+                "const desc = pm.iterationData.get(\"description\");\r",
+                "const expectedStatus = Number(pm.iterationData.get(\"expected_status\"));\r",
+                "\r",
+                "pm.test(`${tc} - ${desc} - đúng HTTP status`, function () {\r",
+                "  pm.response.to.have.status(expectedStatus);\r",
+                "});"
+              ]
             }
           }
         ]
@@ -139,8 +236,8 @@
   "environment": {
     "_": {
       "postman_variable_scope": "environment",
-      "postman_exported_at": "2026-06-25T14:08:27.819Z",
-      "postman_exported_using": "Postman/11.97.0"
+      "postman_exported_at": "2026-07-01T07:05:27.589Z",
+      "postman_exported_using": "Postman/12.17.1"
     },
     "id": "d994efa7-5a16-4f3d-8441-b6c1a831be43",
     "name": "KCPM Local Enviroment",
@@ -242,38 +339,133 @@
       },
       {
         "type": "any",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInVzZXJuYW1lIjoibmd1eWVudmFubmFtXzE3ODE3MDczNTYxNjAiLCJyb2xlIjoibWVtYmVyIiwiYXBwcm92ZWQiOnRydWUsImxvY2tlZCI6ZmFsc2UsImV4cCI6MTc4MTczMDQ0Mn0.1ths5LOpzd0tuoNcLmIJduA-GTzjLH8cBy7t-0VHwYE",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidXNlcm5hbWUiOiJwcm9maWxlX21lbWJlcl8xNzgyOTY2OTA3Iiwicm9sZSI6Im1lbWJlciIsImFwcHJvdmVkIjp0cnVlLCJsb2NrZWQiOmZhbHNlLCJleHAiOjE3ODI5ODg1MDd9.W-QOGJfLSmJMF9jGYpUV9ua2AhlKWyPtQeTos--ErVg",
         "key": "memberToken"
       },
       {
         "type": "any",
-        "value": "",
-        "key": "buyer_token"
+        "value": "84954545201",
+        "key": "basePhone84"
+      },
+      {
+        "type": "any",
+        "value": "true",
+        "key": "baseUserApproved"
+      },
+      {
+        "type": "any",
+        "value": "pending_1782462520943",
+        "key": "pendingUsername"
+      },
+      {
+        "type": "any",
+        "value": 56,
+        "key": "pendingUserId"
+      },
+      {
+        "type": "any",
+        "value": "locked_1782462521159",
+        "key": "lockedUsername"
+      },
+      {
+        "type": "any",
+        "value": 57,
+        "key": "lockedUserId"
+      },
+      {
+        "type": "any",
+        "value": "true",
+        "key": "lockedUserReady"
+      },
+      {
+        "type": "any",
+        "value": 61,
+        "key": "statusTargetUserId"
+      },
+      {
+        "type": "any",
+        "value": "pending_profile_1782462523993",
+        "key": "pendingProfileUsername"
+      },
+      {
+        "type": "any",
+        "value": 59,
+        "key": "pendingProfileUserId"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OSIsInVzZXJuYW1lIjoicGVuZGluZ19wcm9maWxlXzE3ODI0NjI1MjM5OTMiLCJyb2xlIjoibWVtYmVyIiwiYXBwcm92ZWQiOmZhbHNlLCJsb2NrZWQiOmZhbHNlLCJleHAiOjE3ODI0ODQxMjR9.aMUkShIwWk585VJ-0oT7t5Qp1hE9rP9g0_gWM65K7W4",
+        "key": "pendingProfileToken"
+      },
+      {
+        "type": "any",
+        "value": "locked_profile_1782462524166",
+        "key": "lockedProfileUsername"
+      },
+      {
+        "type": "any",
+        "value": 60,
+        "key": "lockedProfileUserId"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MCIsInVzZXJuYW1lIjoibG9ja2VkX3Byb2ZpbGVfMTc4MjQ2MjUyNDE2NiIsInJvbGUiOiJtZW1iZXIiLCJhcHByb3ZlZCI6ZmFsc2UsImxvY2tlZCI6dHJ1ZSwiZXhwIjoxNzgyNDg0MTI0fQ.8kk3qfCFvyZEjk9JxaYVJraHpIgiQICQNdwOmCORbXw",
+        "key": "lockedProfileToken"
+      },
+      {
+        "type": "any",
+        "value": "state_pending_1782462524699",
+        "key": "statePendingUsername"
+      },
+      {
+        "type": "any",
+        "value": "state_pending_1782462524699@gmail.com",
+        "key": "statePendingEmail"
+      },
+      {
+        "type": "any",
+        "value": "0462524699",
+        "key": "statePendingPhone"
+      },
+      {
+        "type": "any",
+        "value": 62,
+        "key": "statePendingUserId"
       },
       {
         "type": "any",
         "value": "",
-        "key": "seller_token"
+        "key": "invalidToken"
+      },
+      {
+        "type": "any",
+        "value": "84962519457",
+        "key": "phone84Login"
+      },
+      {
+        "type": "any",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE5MjQ5OTIwMDAsImxvY2tlZCI6ZmFsc2UsInN1YiI6IjE0IiwidXNlcm5hbWUiOiJibG9ja2VkX21lbWJlcl90ZXN0Iiwicm9sZSI6Im1lbWJlciIsImFwcHJvdmVkIjp0cnVlLCJpYXQiOjE3ODI5NjkzNTF9.qpcuOVbSZ0zUxnHLkDDETV4HjRok1vxKDa9ap-2gGVU",
+        "key": "blockedMemberToken"
       },
       {
         "type": "any",
         "value": "",
-        "key": "member_token"
+        "key": "battery_pid"
       },
       {
         "type": "any",
         "value": "",
-        "key": "pid"
+        "key": "vehicle_pid"
       },
       {
         "type": "any",
-        "value": "http://localhost:5001",
-        "key": "baseUrl"
+        "value": "",
+        "key": "listingMemberId"
       }
     ]
   },
   "globals": {
-    "id": "f6e9d29c-c4d5-44e1-a52a-058a5ab9865c",
+    "id": "5564d645-59c0-4eb6-bbad-d0a4c2d042a3",
     "values": []
   },
   "run": {
@@ -325,10 +517,10 @@
       }
     },
     "timings": {
-      "responseAverage": 62.55555555555556,
-      "responseMin": 7,
-      "responseMax": 161,
-      "responseSd": 46.4888145314893,
+      "responseAverage": 49.666666666666664,
+      "responseMin": 6,
+      "responseMax": 122,
+      "responseSd": 35.751197856129906,
       "dnsAverage": 0,
       "dnsMin": 0,
       "dnsMax": 0,
@@ -337,8 +529,8 @@
       "firstByteMin": 0,
       "firstByteMax": 0,
       "firstByteSd": 0,
-      "started": 1782839474323,
-      "completed": 1782839477346
+      "started": 1782974072741,
+      "completed": 1782974076019
     },
     "executions": [
       {
@@ -351,11 +543,11 @@
           "eof": false,
           "bof": true,
           "cr": false,
-          "ref": "86c6f71c-475c-47a8-967e-234fa279e982",
-          "httpRequestId": "f71109ea-07d8-446c-8036-973433e93e0b"
+          "ref": "d30947cc-9fa5-419c-83e4-22cae29a4da6",
+          "httpRequestId": "8e041aab-d3a3-4a4c-8004-5af179f31897"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -391,7 +583,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -470,7 +662,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -511,7 +703,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "88992594-b066-4a59-90e2-9b2cd2b0d24a",
+              "value": "392b4f7d-bae1-427b-a796-60a9a95cc2f3",
               "system": true
             },
             {
@@ -547,7 +739,7 @@
           }
         },
         "response": {
-          "id": "a9595c33-d3d8-4004-a676-9bb138c0f92d",
+          "id": "f51be67d-dd13-425f-9e58-e548152919af",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -557,7 +749,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:32 GMT"
             },
             {
               "key": "Content-Type",
@@ -650,10 +842,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 161,
+          "responseTime": 122,
           "responseSize": 72
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC01 - Tất cả giá trị nominal - đúng HTTP status",
@@ -667,16 +859,16 @@
       },
       {
         "cursor": {
-          "ref": "454e5f8f-408e-45e0-b924-47ebaf9561c6",
+          "ref": "f5b6f7e2-4540-4a04-90df-edfe260bf8fb",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 1,
           "cr": true,
-          "httpRequestId": "149c840b-3f32-4aee-bbc7-63039f8e41dc"
+          "httpRequestId": "d76ec076-da4b-4bc8-bee2-ecba8fac81c1"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -712,7 +904,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -791,7 +983,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -832,7 +1024,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "3dbe351f-d1d1-4744-9980-f0b130f0f2d6",
+              "value": "e1b44824-aec9-4812-b993-bfe9d1274dc4",
               "system": true
             },
             {
@@ -868,7 +1060,7 @@
           }
         },
         "response": {
-          "id": "f877431b-33c5-4546-8dbe-7f84e40b7535",
+          "id": "3dca3aac-0ae9-483c-b3c3-75960a381975",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -878,7 +1070,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -932,10 +1124,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 92,
+          "responseTime": 72,
           "responseSize": 33
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC02 - Username tại min - đúng HTTP status",
@@ -949,16 +1141,16 @@
       },
       {
         "cursor": {
-          "ref": "63ac32ae-972c-4570-bce2-664c6a823ad5",
+          "ref": "df6cec94-b5e5-455d-8570-f7ec285bc0f0",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 2,
           "cr": true,
-          "httpRequestId": "ff8b2b72-f3b1-4620-8dfe-d347898a8335"
+          "httpRequestId": "cb43b9a1-ee27-4f0e-b1ee-6bb8350f294c"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -994,7 +1186,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -1073,7 +1265,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -1114,7 +1306,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "555e8b00-1d7a-458e-987b-388345fee951",
+              "value": "88581916-9d1b-4215-b7d4-a13386986228",
               "system": true
             },
             {
@@ -1150,7 +1342,7 @@
           }
         },
         "response": {
-          "id": "f770789b-1073-48ed-a8a3-44ba499e55db",
+          "id": "82ae7b2e-8fd9-4afc-9931-1cd0540200fa",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -1160,7 +1352,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -1215,10 +1407,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 94,
+          "responseTime": 91,
           "responseSize": 34
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC03 - Username tại min+ - đúng HTTP status",
@@ -1232,16 +1424,16 @@
       },
       {
         "cursor": {
-          "ref": "c08bf136-944f-45dd-b7c4-62b87202c12c",
+          "ref": "48a0733f-9bb0-4ea4-9fb6-56a772c2b4f3",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 3,
           "cr": true,
-          "httpRequestId": "ad710943-8c39-4271-ab44-69599c71d94e"
+          "httpRequestId": "ec06aaac-b9de-456e-8119-b98c3ab600f9"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -1277,7 +1469,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -1356,7 +1548,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -1397,7 +1589,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "3dd210e9-649e-4817-9d68-1dd95fbf1f5f",
+              "value": "d8d708d9-3d77-43ae-9102-d7ad3dd57cde",
               "system": true
             },
             {
@@ -1433,7 +1625,7 @@
           }
         },
         "response": {
-          "id": "a54fefdd-2ced-48a3-a05f-51fbcd727f6d",
+          "id": "1c4e7051-8eb4-43fc-8e5e-ccaa62cd3a0a",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -1443,7 +1635,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:14 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -1575,10 +1767,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 93,
+          "responseTime": 79,
           "responseSize": 111
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC04 - Username tại max- - đúng HTTP status",
@@ -1592,16 +1784,16 @@
       },
       {
         "cursor": {
-          "ref": "3da1c69f-0317-49b1-a5ce-d1ab3f862885",
+          "ref": "c1301bdd-4f3a-4c1f-ad37-10129ef46df2",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 4,
           "cr": true,
-          "httpRequestId": "24653d3c-6fec-48c8-9513-54a7fee3f2c2"
+          "httpRequestId": "b9a7f105-2090-4ee9-93c6-21fd3b531dcc"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -1637,7 +1829,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -1716,7 +1908,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -1757,7 +1949,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "30c342cf-ed25-4a62-8958-8229691e7694",
+              "value": "1ecdb28e-a6cc-4acb-ad03-0d71484a36f4",
               "system": true
             },
             {
@@ -1793,7 +1985,7 @@
           }
         },
         "response": {
-          "id": "afa0c396-3cdd-4cef-a992-3472a5441608",
+          "id": "824094a9-e6c1-41cc-88a6-ed6686bfa56c",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -1803,7 +1995,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -1936,10 +2128,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 96,
+          "responseTime": 88,
           "responseSize": 112
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC05 - Username tại max - đúng HTTP status",
@@ -1953,16 +2145,16 @@
       },
       {
         "cursor": {
-          "ref": "653b376c-8bf3-4ceb-8385-22758182eb7d",
+          "ref": "056831b0-49d3-464a-b5c6-086e4cb07b03",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 5,
           "cr": true,
-          "httpRequestId": "6d93f6ff-67ce-4bfb-ba2a-d20a63cc5a84"
+          "httpRequestId": "e40e6989-f060-4ef9-b950-fe64cda2dc5e"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -1998,7 +2190,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2077,7 +2269,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -2118,7 +2310,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "ab93681d-9e46-42fe-91d1-8fb6e4ae5da3",
+              "value": "9079a7ce-201c-4ba3-9a36-2862347d346f",
               "system": true
             },
             {
@@ -2154,7 +2346,7 @@
           }
         },
         "response": {
-          "id": "976e717d-c5b0-42f5-a460-aaa6aced3090",
+          "id": "d3a6642a-ff2a-42a4-aa8c-b13ffeded3c7",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -2164,7 +2356,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -2265,10 +2457,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
+          "responseTime": 10,
           "responseSize": 80
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC06 - Username rỗng - đúng HTTP status",
@@ -2282,16 +2474,16 @@
       },
       {
         "cursor": {
-          "ref": "bbffd924-d997-45b7-b25a-10b033722983",
+          "ref": "fe15ed84-d64e-4c8b-bd73-2d82f9d43954",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 6,
           "cr": true,
-          "httpRequestId": "882543e0-2e9e-4d07-86ab-82ab2ee877c4"
+          "httpRequestId": "cc33f84b-010b-493f-944f-4c27c8801779"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -2327,7 +2519,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2406,7 +2598,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -2447,7 +2639,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "5f00b094-cb27-4aa9-b362-09ba59ffdbca",
+              "value": "918a6970-197d-45c5-9b58-1cb4b0c0310c",
               "system": true
             },
             {
@@ -2483,7 +2675,7 @@
           }
         },
         "response": {
-          "id": "ac0341ad-decd-41ce-b8e1-d635d665b381",
+          "id": "c07f86a2-6e3d-474a-951f-da83cea1be97",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -2493,7 +2685,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -2549,10 +2741,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
+          "responseTime": 12,
           "responseSize": 35
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC07 - Username vượt max - đúng HTTP status",
@@ -2562,16 +2754,16 @@
       },
       {
         "cursor": {
-          "ref": "b42fafad-6c38-4a43-85ab-4617ebdce7db",
+          "ref": "e6b58795-aee4-4724-9cf9-0473cf11206b",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 7,
           "cr": true,
-          "httpRequestId": "0e9ef8f9-18f7-43ec-b833-69bc61293540"
+          "httpRequestId": "e53888cf-ab50-42d2-a4b5-f114b3e0d9ac"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -2607,7 +2799,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2686,7 +2878,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -2727,7 +2919,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "5f18cbcf-cc02-4429-acc6-4803f30721b2",
+              "value": "b7e621d6-a718-405a-98fb-84c885c7c533",
               "system": true
             },
             {
@@ -2763,7 +2955,7 @@
           }
         },
         "response": {
-          "id": "0062fe71-919c-43c1-bb1f-f2fae13fdf02",
+          "id": "6c180f1c-1c04-4346-9bde-9779ee5aaa54",
           "status": "CONFLICT",
           "code": 409,
           "header": [
@@ -2773,7 +2965,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -2827,10 +3019,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 10,
+          "responseTime": 9,
           "responseSize": 33
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC08 - Username đã tồn tại - đúng HTTP status",
@@ -2844,16 +3036,16 @@
       },
       {
         "cursor": {
-          "ref": "2ff334ae-071e-4c1f-86a7-7a858265d446",
+          "ref": "cbc6ff5e-8e90-4751-8d42-3c8a8685c09a",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 8,
           "cr": true,
-          "httpRequestId": "33f90327-ae04-4a29-a784-0861a205e30c"
+          "httpRequestId": "75066c7b-7aa5-4d39-bb0c-edf16c1a1f79"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -2889,7 +3081,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -2968,7 +3160,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -3009,7 +3201,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "e6296d72-8319-4898-a89f-909e770f3e58",
+              "value": "e1673edb-3e9e-4c57-90f9-fe9037d44f38",
               "system": true
             },
             {
@@ -3045,7 +3237,7 @@
           }
         },
         "response": {
-          "id": "3a732336-a5a8-44a7-a654-dbad425978d8",
+          "id": "8cc9630e-697e-47b2-97f1-f092e4b44d30",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -3055,7 +3247,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:33 GMT"
             },
             {
               "key": "Content-Type",
@@ -3116,10 +3308,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 96,
+          "responseTime": 73,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC09 - Email tại min - đúng HTTP status",
@@ -3133,16 +3325,16 @@
       },
       {
         "cursor": {
-          "ref": "75af1d48-08ec-48ee-bb9d-6e2a87ef5a11",
+          "ref": "77a6a1eb-5436-4cdd-987e-ae324554c508",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 9,
           "cr": true,
-          "httpRequestId": "c015a7b4-e1aa-45ac-b40d-a08d45aea7a6"
+          "httpRequestId": "7bfad797-6e23-4a64-bb0f-2cbc55dce83c"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -3178,7 +3370,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3257,7 +3449,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -3298,7 +3490,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "7f057aa2-feb0-4020-9dad-7705bf98a1e1",
+              "value": "544b126f-48be-4858-8417-e8d2522c4b3a",
               "system": true
             },
             {
@@ -3334,7 +3526,7 @@
           }
         },
         "response": {
-          "id": "69725297-5d90-472f-9355-7c33f46484ee",
+          "id": "88b4b89a-d3cc-49bf-bdc0-f29d372c5034",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -3344,7 +3536,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -3405,10 +3597,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 94,
+          "responseTime": 72,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC10 - Email tại max - đúng HTTP status",
@@ -3422,16 +3614,16 @@
       },
       {
         "cursor": {
-          "ref": "f04457d1-2c5d-48f9-844f-393127018cc2",
+          "ref": "30f32a84-7c46-4a7a-ad46-a9c32ea3a9bc",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 10,
           "cr": true,
-          "httpRequestId": "616dc6d9-8284-44bb-af34-47fdd1c7999a"
+          "httpRequestId": "d96e634f-696f-4e60-a7f6-5bafdaa46707"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -3467,7 +3659,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3546,7 +3738,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -3587,7 +3779,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "71d348bf-2d7c-45b5-bb99-ff1d3f0e75a4",
+              "value": "1cdfe82f-cd16-4672-bb39-4e7adae357c0",
               "system": true
             },
             {
@@ -3623,7 +3815,7 @@
           }
         },
         "response": {
-          "id": "45ff40e3-a810-41c6-8728-de2ff1b645c1",
+          "id": "4415db06-650e-46b6-99c4-f17160e9fe25",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -3633,7 +3825,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -3734,10 +3926,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 9,
+          "responseTime": 11,
           "responseSize": 80
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC11 - Email rỗng - đúng HTTP status",
@@ -3751,16 +3943,16 @@
       },
       {
         "cursor": {
-          "ref": "81e3c8b3-fd6e-4518-91da-37094c66d6dd",
+          "ref": "767c9791-9290-4e78-a39a-00f7b1beb160",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 11,
           "cr": true,
-          "httpRequestId": "b9d911f2-c8f9-4961-a2db-539427ed65ae"
+          "httpRequestId": "d079cf95-8214-4881-b211-dd46251589e6"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -3796,7 +3988,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -3875,7 +4067,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -3916,7 +4108,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "5c9cf258-b173-4ad4-9b2e-e62ee189a905",
+              "value": "2f5fbd64-2ec8-403a-a542-0f781ce59f13",
               "system": true
             },
             {
@@ -3952,7 +4144,7 @@
           }
         },
         "response": {
-          "id": "3988c58f-c391-4895-8d2b-75862d091483",
+          "id": "c34f339c-751b-4ffc-a347-e0e4a6308ef4",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -3962,7 +4154,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -4014,10 +4206,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
+          "responseTime": 6,
           "responseSize": 31
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC12 - Email sai định dạng - đúng HTTP status",
@@ -4027,16 +4219,16 @@
       },
       {
         "cursor": {
-          "ref": "2684d10b-f938-4c78-bf03-0c5e9306c2e9",
+          "ref": "b5008e10-7473-49c3-bddb-036409918406",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 12,
           "cr": true,
-          "httpRequestId": "57ff450a-ec7a-402d-b352-3952bf8bacab"
+          "httpRequestId": "218107da-3dcb-49b1-87ec-597cb6dba53d"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -4072,7 +4264,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4151,7 +4343,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -4192,7 +4384,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "51f047dd-7576-4d03-ae80-2881e2ac2eed",
+              "value": "b323e19a-d1ab-49b2-97de-b3a29f6ec1ed",
               "system": true
             },
             {
@@ -4228,7 +4420,7 @@
           }
         },
         "response": {
-          "id": "0aa9af8c-29ac-4672-8a4d-bd42a1348947",
+          "id": "273a2dcf-91fc-40b1-9c3b-3b16bf043265",
           "status": "CONFLICT",
           "code": 409,
           "header": [
@@ -4238,7 +4430,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -4289,10 +4481,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 14,
+          "responseTime": 9,
           "responseSize": 30
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC13 - Email đã tồn tại - đúng HTTP status",
@@ -4306,16 +4498,16 @@
       },
       {
         "cursor": {
-          "ref": "30d92e4b-55ad-477b-8427-5e4bc33580a7",
+          "ref": "6a15939f-8a0f-4ba9-9804-ebf59058d081",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 13,
           "cr": true,
-          "httpRequestId": "d4ecb65e-74ca-42f0-8de2-0ecc47f5683b"
+          "httpRequestId": "c869e835-2054-4889-9a02-dfa0c7d222a4"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -4351,7 +4543,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4430,7 +4622,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -4471,7 +4663,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "75ef091e-d8e7-45b6-a73f-da24c0aeb095",
+              "value": "e8af901d-dc9a-4ca9-91e0-b7b11b30c535",
               "system": true
             },
             {
@@ -4507,7 +4699,7 @@
           }
         },
         "response": {
-          "id": "b43a11fd-6251-4e35-814c-18a4c2c07577",
+          "id": "93a55300-0792-402a-a4e6-332c3e3166e4",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -4517,7 +4709,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -4577,10 +4769,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 97,
+          "responseTime": 71,
           "responseSize": 39
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC14 - Password tại min - đúng HTTP status",
@@ -4594,16 +4786,16 @@
       },
       {
         "cursor": {
-          "ref": "a933d0ae-b918-4593-8adb-65c7674bb714",
+          "ref": "18f0a8b5-f820-4167-9a0f-ee5a5a528984",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 14,
           "cr": true,
-          "httpRequestId": "b2057464-403a-4c95-8675-bdd19a67f38b"
+          "httpRequestId": "47761afa-014c-42eb-b5b9-8fae0e1e9d92"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -4639,7 +4831,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4718,7 +4910,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -4759,7 +4951,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "62bc51bf-be03-4533-9ae2-2a809b4daf9f",
+              "value": "1bd93d84-89d5-466d-81ea-53a30cdf3a04",
               "system": true
             },
             {
@@ -4795,7 +4987,7 @@
           }
         },
         "response": {
-          "id": "9ac62117-f1fd-4568-909d-55cc1c664e3d",
+          "id": "e0be3682-b7d9-494d-9156-d8f445c6d78b",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -4805,7 +4997,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:15 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -4860,10 +5052,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
+          "responseTime": 8,
           "responseSize": 34
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC15 - Password nhỏ hơn min - đúng HTTP status",
@@ -4873,16 +5065,16 @@
       },
       {
         "cursor": {
-          "ref": "4bd79480-9536-4b6a-adc9-35b5acf56d69",
+          "ref": "dc625787-3f17-4983-b4d6-a976599dc2bb",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 15,
           "cr": true,
-          "httpRequestId": "fe26d73b-d089-4b9e-b2d2-ef4244f7bcb2"
+          "httpRequestId": "8386760c-168b-441b-aa96-90a110e53daf"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -4918,7 +5110,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -4997,7 +5189,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -5038,7 +5230,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "d2c3f9d8-71b7-4249-aeb7-62e78a9e1b53",
+              "value": "dc2d49e4-8818-4c5a-a206-34cd2ed8b5d9",
               "system": true
             },
             {
@@ -5074,7 +5266,7 @@
           }
         },
         "response": {
-          "id": "a5b60f1a-210f-4766-9803-e9dd76c0714d",
+          "id": "4e22f34f-e107-478c-a419-0f295b7fb35c",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -5084,7 +5276,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -5145,10 +5337,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 90,
+          "responseTime": 73,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC16 - Password tại max - đúng HTTP status",
@@ -5162,16 +5354,16 @@
       },
       {
         "cursor": {
-          "ref": "23e1062c-df30-4e52-a825-1d1a34351398",
+          "ref": "95d2a505-0a8d-42af-9a5a-9aa5bb0c0c8d",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 16,
           "cr": true,
-          "httpRequestId": "6fda68b1-5236-482d-ad04-acd41418b1ce"
+          "httpRequestId": "c5425f28-f57f-4cd9-8cd8-c418bf3a7213"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -5207,7 +5399,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5286,7 +5478,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -5327,7 +5519,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "bc4370db-555b-4282-a056-f0165588d772",
+              "value": "b4ccee73-d7a5-4c8e-9447-f0c24cc832a5",
               "system": true
             },
             {
@@ -5363,7 +5555,7 @@
           }
         },
         "response": {
-          "id": "acb21a04-2a6f-4e09-8452-50e6f32302aa",
+          "id": "7302b280-5963-4fe3-aab3-fd4a82a5bf3a",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -5373,7 +5565,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -5428,10 +5620,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
+          "responseTime": 6,
           "responseSize": 34
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC17 - Password vượt max - đúng HTTP status",
@@ -5441,16 +5633,16 @@
       },
       {
         "cursor": {
-          "ref": "60eed238-84f4-4621-9594-df414f1c4ee1",
+          "ref": "b7362dee-fef5-4dcb-93d4-8d7f86f30f3f",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 17,
           "cr": true,
-          "httpRequestId": "1ab1c670-c28d-4844-9de9-642c54df7ebe"
+          "httpRequestId": "6162fd8d-74cd-4f1d-9604-07e57df016bf"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -5486,7 +5678,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5565,7 +5757,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -5606,7 +5798,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "4c406175-2e27-4f33-8677-eda5bd1ec4a8",
+              "value": "0d2d4f09-dbb0-4be4-a1a9-207cd77fea0a",
               "system": true
             },
             {
@@ -5642,7 +5834,7 @@
           }
         },
         "response": {
-          "id": "7c6f3705-0717-4667-a80c-681e9138cbb3",
+          "id": "9185b6aa-2a69-496b-8416-8bf616c2333d",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -5652,7 +5844,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:34 GMT"
             },
             {
               "key": "Content-Type",
@@ -5713,10 +5905,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 95,
+          "responseTime": 85,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC18 - Không nhập số điện thoại - đúng HTTP status",
@@ -5730,16 +5922,16 @@
       },
       {
         "cursor": {
-          "ref": "9b86363f-ce98-4d45-9fd5-7879bcafacb2",
+          "ref": "d1c789d7-7dcb-4f73-a5e8-5c9266c507c1",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 18,
           "cr": true,
-          "httpRequestId": "23321c76-e1cf-4f47-bcf5-694815ed8889"
+          "httpRequestId": "19c6c038-995f-4fd7-9070-de663a49a701"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -5775,7 +5967,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -5854,7 +6046,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -5895,7 +6087,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "14cbfaae-46fe-4caf-93ec-639767762d6e",
+              "value": "5a1ba7f1-af03-424a-99d9-6633e13de03d",
               "system": true
             },
             {
@@ -5931,7 +6123,7 @@
           }
         },
         "response": {
-          "id": "d4c8be52-b1d2-405c-9377-65f77633775c",
+          "id": "1c877f10-84e9-41c6-b12a-c7f2d5b6b7b9",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -5941,7 +6133,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -6002,10 +6194,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 95,
+          "responseTime": 74,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC19 - Phone đúng 10 chữ số - đúng HTTP status",
@@ -6019,16 +6211,16 @@
       },
       {
         "cursor": {
-          "ref": "5809ba6c-8559-436b-9e3d-6882d2bd8bee",
+          "ref": "1cdc3fed-876f-4393-bec2-c3939f37ba4d",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 19,
           "cr": true,
-          "httpRequestId": "061da950-eca5-4678-9988-5dfa6c84a74e"
+          "httpRequestId": "c45d4385-2e3a-401a-bc2d-f032fec6d972"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -6064,7 +6256,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6143,7 +6335,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -6184,7 +6376,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "a57dd902-102d-4015-85a4-9579ded33edb",
+              "value": "c1c64730-83d0-4261-be0f-bc028d0f9a0e",
               "system": true
             },
             {
@@ -6220,7 +6412,7 @@
           }
         },
         "response": {
-          "id": "4425d776-743f-4107-96e4-ac95731d213e",
+          "id": "01a1e353-5de2-4371-904a-fdf071b51d6b",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -6230,7 +6422,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -6291,10 +6483,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 93,
+          "responseTime": 68,
           "responseSize": 40
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC20 - Phone có tiền tố 84 - đúng HTTP status",
@@ -6308,16 +6500,16 @@
       },
       {
         "cursor": {
-          "ref": "96b2e887-81ff-49d4-a3ab-0ac6af045c6a",
+          "ref": "ac054671-b66b-47ea-98ca-120745c1cbfe",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 20,
           "cr": true,
-          "httpRequestId": "1e1be881-9719-47cc-8072-f38220c8a782"
+          "httpRequestId": "24923ccc-b5f6-429a-b889-2589e4d45618"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -6353,7 +6545,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6432,7 +6624,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -6473,7 +6665,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "84dfd22b-1880-4a47-8bce-df343f6660b0",
+              "value": "e84a6359-0d15-4f02-a47c-85cea3a977b3",
               "system": true
             },
             {
@@ -6509,7 +6701,7 @@
           }
         },
         "response": {
-          "id": "ce6aa1ce-0468-4d8f-a44b-aefc1e904b3e",
+          "id": "8de82b08-3c5c-403e-bc9a-9e83792ef828",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6519,7 +6711,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -6571,10 +6763,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
+          "responseTime": 7,
           "responseSize": 31
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC21 - Phone 9 chữ số - đúng HTTP status",
@@ -6584,16 +6776,16 @@
       },
       {
         "cursor": {
-          "ref": "7306dad2-b50f-4689-9d24-8b7c2c9b6253",
+          "ref": "77a1e8f5-0768-4c60-a930-2a7a44328882",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 21,
           "cr": true,
-          "httpRequestId": "3b079a9f-c01a-4aa9-b844-d34171537078"
+          "httpRequestId": "0cc0cd92-0012-4e5f-9465-15eaa8c945b7"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -6629,7 +6821,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6708,7 +6900,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -6749,7 +6941,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "4ce31923-8795-4a7e-8315-e805fc14bd17",
+              "value": "7c964557-7813-4d86-816b-33558ec34441",
               "system": true
             },
             {
@@ -6785,7 +6977,7 @@
           }
         },
         "response": {
-          "id": "75a2610e-4046-46e7-9667-fd170f04da28",
+          "id": "6a656d36-ed79-4497-ae73-2fc78d0eaf27",
           "status": "BAD REQUEST",
           "code": 400,
           "header": [
@@ -6795,7 +6987,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -6847,10 +7039,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 9,
+          "responseTime": 7,
           "responseSize": 31
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC22 - Phone 11 chữ số - đúng HTTP status",
@@ -6860,16 +7052,16 @@
       },
       {
         "cursor": {
-          "ref": "bffc6003-39de-4e38-9f54-609a7acec57c",
+          "ref": "d23adade-ce22-42f4-a8a8-1a84e0625f0e",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 22,
           "cr": true,
-          "httpRequestId": "e8cf10b7-f831-48fa-8a4d-8c7ba7898d6b"
+          "httpRequestId": "a9ad80a7-3b98-4748-aa3f-739ba7435959"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -6905,7 +7097,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -6984,7 +7176,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -7025,7 +7217,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "2e751177-0a6a-4523-b078-a6e37a65b856",
+              "value": "98015f8d-8c54-48df-ac0e-3c5f184ef797",
               "system": true
             },
             {
@@ -7061,7 +7253,7 @@
           }
         },
         "response": {
-          "id": "ff6f6101-6a3a-45aa-96c9-48b81917543d",
+          "id": "36c25bbd-e15c-4afd-af8c-82f3dbee017f",
           "status": "CONFLICT",
           "code": 409,
           "header": [
@@ -7071,7 +7263,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -7122,10 +7314,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 10,
+          "responseTime": 7,
           "responseSize": 30
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC23 - Phone đã tồn tại - đúng HTTP status",
@@ -7139,16 +7331,16 @@
       },
       {
         "cursor": {
-          "ref": "b6cceb7c-1e24-44a9-b1ce-7f25ac670abc",
+          "ref": "10239e3b-abc7-4ba0-9002-d9a0dec8b2e0",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 23,
           "cr": true,
-          "httpRequestId": "059b3cc8-48ac-4005-966d-f0abcd86a192"
+          "httpRequestId": "88b1a6bc-78d0-4b55-a93c-cb7585813957"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -7184,7 +7376,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7263,7 +7455,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -7304,7 +7496,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "4771bcb3-9500-4fe7-8187-b0a993e67a70",
+              "value": "b1f4c718-eb6c-4f8e-aa08-65c5a5cc714f",
               "system": true
             },
             {
@@ -7340,7 +7532,7 @@
           }
         },
         "response": {
-          "id": "fc291a00-cab4-4cde-a12d-3cbcb70974ea",
+          "id": "85ade59f-772a-4f80-a269-a96f1a60d91e",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -7350,7 +7542,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:16 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -7416,10 +7608,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 102,
+          "responseTime": 68,
           "responseSize": 45
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC24 - Email tại min+ - đúng HTTP status",
@@ -7433,16 +7625,16 @@
       },
       {
         "cursor": {
-          "ref": "7f2ababc-e1d4-496e-b8c6-8221e4dba3e0",
+          "ref": "61799b0f-2727-403f-9b4f-4568e3eeae40",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 24,
           "cr": true,
-          "httpRequestId": "3df20ca5-3c34-4a52-96e1-b0eadd67d503"
+          "httpRequestId": "33c4a62e-7f54-4c5c-9608-1e65426e2be2"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -7478,7 +7670,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7557,7 +7749,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -7598,7 +7790,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "7bc89f12-d4b9-4432-97c0-c88ff054953c",
+              "value": "cd8f6d86-32db-46db-9d1e-ebeb4c222cec",
               "system": true
             },
             {
@@ -7634,7 +7826,7 @@
           }
         },
         "response": {
-          "id": "c99dbd7c-644d-41b0-9522-67d1ef7d92e3",
+          "id": "2b071d9e-0c48-43a7-9397-7b26d6d5cb5a",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -7644,7 +7836,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:17 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -7711,10 +7903,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 114,
+          "responseTime": 72,
           "responseSize": 46
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC25 - Email tại max- - đúng HTTP status",
@@ -7728,16 +7920,16 @@
       },
       {
         "cursor": {
-          "ref": "72c44e4c-560d-42f4-8d31-322aaff1a9d6",
+          "ref": "c7180ebb-ec18-4cd5-a8fd-1fdb1ba1f39c",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 25,
           "cr": true,
-          "httpRequestId": "134b3d32-b01b-461b-aea9-1b9f6c320604"
+          "httpRequestId": "5b2253b7-d827-4fd7-be42-eadb30769e20"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -7773,7 +7965,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -7852,7 +8044,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -7893,7 +8085,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "bce5d508-4355-40e6-9cc7-554ca94ede1a",
+              "value": "175e2688-a2f1-47ac-bdd9-b28ff17bb226",
               "system": true
             },
             {
@@ -7929,7 +8121,7 @@
           }
         },
         "response": {
-          "id": "ec5b7683-4e03-4ac5-8d0f-d0ee9f1f8e97",
+          "id": "4edfb97b-4226-47f2-bc0e-494714848aed",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -7939,7 +8131,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:17 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:35 GMT"
             },
             {
               "key": "Content-Type",
@@ -8004,10 +8196,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 91,
+          "responseTime": 68,
           "responseSize": 44
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC26 - Password tại min+ - đúng HTTP status",
@@ -8021,16 +8213,16 @@
       },
       {
         "cursor": {
-          "ref": "08964d9f-aab3-4f39-ab2c-a4e23a237639",
+          "ref": "847a8b8f-3983-4417-8daa-d26eeadde25b",
           "length": 1,
           "cycles": 27,
           "position": 0,
           "iteration": 26,
           "cr": true,
-          "httpRequestId": "5805b5b4-478e-4ff8-9009-331bb2a32c13"
+          "httpRequestId": "c5e98603-959a-43e6-bdac-a1792d97995c"
         },
         "item": {
-          "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+          "id": "e91d8153-b5d5-4064-9846-12234bca581a",
           "name": "Register",
           "request": {
             "url": {
@@ -8066,7 +8258,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5c553b40-098a-41dc-827e-242f590dc5f2",
+                "id": "d11d635e-fd0c-433d-a828-b40abf22cbb6",
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
@@ -8145,7 +8337,7 @@
                   "  \"body:\", pm.response.text()\r",
                   ");"
                 ],
-                "_lastExecutionId": "c3ce2753-cf83-491e-85a0-f9d2be355c5f"
+                "_lastExecutionId": "235eabd2-b619-4651-b9c4-a7350766c1fc"
               }
             }
           ]
@@ -8186,7 +8378,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "0007ab3d-0f3b-4c34-af58-05ef2063466f",
+              "value": "a2e0f07d-718c-44f8-8fd9-dfc2b42bc6df",
               "system": true
             },
             {
@@ -8222,7 +8414,7 @@
           }
         },
         "response": {
-          "id": "7b315233-3790-43a9-84a4-66addd08f4a4",
+          "id": "c089e84d-bddd-41d0-8732-443fbd0a732c",
           "status": "CREATED",
           "code": 201,
           "header": [
@@ -8232,7 +8424,7 @@
             },
             {
               "key": "Date",
-              "value": "Tue, 30 Jun 2026 17:11:17 GMT"
+              "value": "Thu, 02 Jul 2026 06:34:36 GMT"
             },
             {
               "key": "Content-Type",
@@ -8298,10 +8490,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 90,
+          "responseTime": 73,
           "responseSize": 45
         },
-        "id": "b855267d-c255-42e3-a1a9-f6b11c216792",
+        "id": "e91d8153-b5d5-4064-9846-12234bca581a",
         "assertions": [
           {
             "assertion": "REG_TC27 - Password tại max- - đúng HTTP status",

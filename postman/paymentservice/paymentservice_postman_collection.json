@@ -11,6 +11,34 @@
       "name": "PAYMENT_CREATE",
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const row = pm.iterationData.toObject();\r",
+              "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
+              "const rawBody = pm.iterationData.get('raw_body');\r",
+              "\r",
+              "if (rawBody) {\r",
+              "    pm.variables.set('request_body', rawBody);\r",
+              "} else {\r",
+              "    const payload = {};\r",
+              "\r",
+              "    if (has('order_id')) payload.order_id = row.order_id;\r",
+              "    if (has('buyer_id')) payload.buyer_id = row.buyer_id;\r",
+              "    if (has('seller_id')) payload.seller_id = row.seller_id;\r",
+              "    if (has('amount')) payload.amount = row.amount;\r",
+              "    if (has('method')) payload.method = row.method;\r",
+              "    if (has('items')) payload.items = row.items;\r",
+              "\r",
+              "    pm.variables.set('request_body', JSON.stringify(payload, null, 2));\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
@@ -78,7 +106,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"order_id\": \"{{order_id}}\",\r\n    \"buyer_id\": {{buyer_id}},\r\n    \"seller_id\": {{seller_id}},\r\n    \"amount\": {{amount}},\r\n    \"method\": \"{{method}}\",\r\n    \"items\": {{items}}\r\n}",
+          "raw": "{{request_body}}",
           "options": {
             "raw": {
               "language": "json"

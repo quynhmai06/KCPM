@@ -3,7 +3,7 @@
     "_postman_id": "89451812-38a1-48d3-bc92-d867e4e49b56",
     "name": "Auth Service",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "55362457",
+    "_exporter_id": "50117124",
     "_collection_link": "https://go.postman.co/collection/50117124-89451812-38a1-48d3-bc92-d867e4e49b56?source=collection_link"
   },
   "item": [
@@ -121,6 +121,103 @@
           "path": [
             "auth",
             "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Profile",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const row = pm.iterationData.toObject();\r",
+              "const has = (key) => Object.prototype.hasOwnProperty.call(row, key);\r",
+              "const pick = (key, fallback) => has(key) ? row[key] : fallback;\r",
+              "\r",
+              "function text(ch, len) {\r",
+              "  return ch.repeat(Number(len));\r",
+              "}\r",
+              "\r",
+              "const authType = pick(\"authorization_type\", \"member\");\r",
+              "\r",
+              "if (authType === \"none\") {\r",
+              "  pm.variables.set(\"authorization\", \"\");\r",
+              "} else if (authType === \"invalid\") {\r",
+              "  pm.variables.set(\"authorization\", \"Bearer invalid-token\");\r",
+              "} else {\r",
+              "  pm.variables.set(\"authorization\", \"Bearer \" + pm.environment.get(\"memberToken\"));\r",
+              "}\r",
+              "\r",
+              "const fullName = has(\"full_name_length\")\r",
+              "  ? text(\"n\", row.full_name_length)\r",
+              "  : pick(\"full_name\", text(\"n\", 60));\r",
+              "\r",
+              "const address = has(\"address_length\")\r",
+              "  ? text(\"a\", row.address_length)\r",
+              "  : pick(\"address\", text(\"a\", 128));\r",
+              "\r",
+              "pm.variables.set(\"full_name\", fullName);\r",
+              "pm.variables.set(\"phone\", pick(\"phone\", \"0901234567\"));\r",
+              "pm.variables.set(\"address\", address);\r",
+              "pm.variables.set(\"birthdate\", pick(\"birthdate\", \"2000-01-01\"));"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const tc = pm.iterationData.get(\"tc\");\r",
+              "const desc = pm.iterationData.get(\"description\");\r",
+              "const expectedStatus = Number(pm.iterationData.get(\"expected_status\"));\r",
+              "\r",
+              "pm.test(`${tc} - ${desc} - đúng HTTP status`, function () {\r",
+              "  pm.response.to.have.status(expectedStatus);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"full_name\": \"{{full_name}}\",\r\n  \"phone\": \"{{phone}}\",\r\n  \"address\": \"{{address}}\",\r\n  \"birthdate\": \"{{birthdate}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{auth_url}}/auth/profile",
+          "host": [
+            "{{auth_url}}"
+          ],
+          "path": [
+            "auth",
+            "profile"
           ]
         }
       },

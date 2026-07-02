@@ -1,0 +1,157 @@
+[
+  {
+    "tc": "PROF_TC01",
+    "description": "Tất cả giá trị nominal",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC02",
+    "description": "Họ tên tại min",
+    "full_name_length": 1,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC03",
+    "description": "Họ tên tại min+",
+    "full_name_length": 2,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC04",
+    "description": "Họ tên tại max-",
+    "full_name_length": 119,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC05",
+    "description": "Họ tên tại max",
+    "full_name_length": 120,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC06",
+    "description": "Họ tên rỗng",
+    "full_name": "",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC07",
+    "description": "Họ tên vượt giới hạn max",
+    "full_name_length": 121,
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC08",
+    "description": "Số điện thoại đúng 10 chữ số",
+    "phone": "0901234567",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC09",
+    "description": "Số điện thoại 9 chữ số",
+    "phone": "901234567",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC10",
+    "description": "Số điện thoại 11 chữ số",
+    "phone": "09012345678",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC11",
+    "description": "Địa chỉ tại min",
+    "address_length": 1,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC12",
+    "description": "Địa chỉ tại max",
+    "address_length": 255,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC13",
+    "description": "Địa chỉ rỗng",
+    "address": "",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC14",
+    "description": "Địa chỉ vượt giới hạn max",
+    "address_length": 256,
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC15",
+    "description": "Ngày sinh tại min",
+    "birthdate": "1900-01-01",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC16",
+    "description": "Ngày sinh tại min+",
+    "birthdate": "1900-01-02",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC17",
+    "description": "Ngày sinh tại max-",
+    "birthdate": "2026-06-29",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC18",
+    "description": "Ngày sinh tại max",
+    "birthdate": "2026-06-30",
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC19",
+    "description": "Ngày sinh sai định dạng",
+    "birthdate": "28/06/2026",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC20",
+    "description": "Ngày sinh là ngày không tồn tại",
+    "birthdate": "2024-02-31",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC21",
+    "description": "Ngày sinh trước giới hạn min",
+    "birthdate": "1899-12-31",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC22",
+    "description": "Ngày sinh trong tương lai",
+    "birthdate": "2026-07-02",
+    "expected_status": 400
+  },
+  {
+    "tc": "PROF_TC23",
+    "description": "Không có mã xác thực",
+    "authorization_type": "none",
+    "expected_status": 401
+  },
+  {
+    "tc": "PROF_TC24",
+    "description": "Địa chỉ tại min+",
+    "address_length": 2,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC25",
+    "description": "Địa chỉ tại giá trị nominal",
+    "address_length": 128,
+    "expected_status": 200
+  },
+  {
+    "tc": "PROF_TC26",
+    "description": "Địa chỉ tại max-",
+    "address_length": 254,
+    "expected_status": 200
+  }
+]
