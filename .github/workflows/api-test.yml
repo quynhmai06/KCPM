@@ -14,10 +14,10 @@ on:
 
 jobs:
   api-test:
-    name: Review Service Reply Newman Test
+    name: Search Service Advanced Filter Newman Test
     runs-on: ubuntu-latest
     env:
-      REVIEWS_URL: http://localhost:5011
+      SEARCH_URL: http://localhost:5010
 
     steps:
       - name: Checkout source code
@@ -53,50 +53,39 @@ jobs:
           BANK_OWNER=CI Test
           EOF
 
-      - name: Build and start review service
-        run: docker compose up --build -d reviews_service
+      - name: Start postgres only
+        run: docker compose up -d postgres
 
-      - name: Wait for review service
-        run: wait-on "$REVIEWS_URL/" --timeout 180000 --interval 3000
+      - name: Build and start search service only
+        run: docker compose up --build -d --no-deps search_service
 
-      - name: Prepare existing review for reply tests
+      - name: Wait for search health check
+        run: wait-on "$SEARCH_URL/search/" --timeout 180000 --interval 3000
+
+      - name: Prepare search database tables
         run: |
-          seed="$(date +%s)$RANDOM"
-          product_id="${seed}"
-          buyer_id="$((seed + 1000))"
-
-          response="$(curl -fsS -X POST "$REVIEWS_URL/reviews/api/reviews" \
-            -H "Content-Type: application/json" \
-            -d "{\"product_id\":\"${product_id}\",\"buyer_id\":\"${buyer_id}\",\"seller_id\":2,\"rating\":5,\"comment\":\"CI reply seed review\"}")"
-
-          review_id="$(printf '%s' "$response" \
-            | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")"
-
-          echo "REVIEW_ID=${review_id}" >> "$GITHUB_ENV"
+          docker compose exec -T search_service python -c "from app import create_app; from models import db; app=create_app(); ctx=app.app_context(); ctx.push(); db.create_all()"
 
       - name: Show running containers
         run: docker compose ps
 
-      - name: Run review reply Newman collection
+      - name: Run search advanced filter Newman collection
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
 
-          newman run "postman/reviewservice/reviewservice_postman_collection.json" \
+          newman run "postman/searchservice/searchservice_postman_collection.json" \
             -e "postman/postman_environment.json" \
-            -d "postman/reviewservice/data_reply.json" \
-            --folder "REVIEWS_REPLY" \
-            --env-var review_base_url="$REVIEWS_URL" \
-            --env-var reviews_url="$REVIEWS_URL" \
-            --env-var review_id="$REVIEW_ID" \
-            --ignore-redirects \
+            -d "postman/searchservice/data_search_adv_postman.json" \
+            --folder "SEARCH_ADV" \
+            --env-var search_url="$SEARCH_URL" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/reviewservice-reply-newman-result.xml" \
-            --reporter-json-export "reports/reviewservice-reply-newman-result.json" \
-            --reporter-htmlextra-export "reports/reviewservice-reply-newman-report.html"
+            --reporter-junit-export "reports/searchservice-advanced-filter-newman-result.xml" \
+            --reporter-json-export "reports/searchservice-advanced-filter-newman-result.json" \
+            --reporter-htmlextra-export "reports/searchservice-advanced-filter-newman-report.html"
 
-          cp reports/reviewservice-reply-newman-result.json reports/newman-result.json
+          cp reports/searchservice-advanced-filter-newman-result.json reports/newman-result.json
 
       - name: Collect Docker logs when failed
         if: failure()
@@ -121,7 +110,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: reviewservice-reply
+          NEWMAN_SERVICE: searchservice-advanced-filter
 
       - name: Stop backend services
         if: always()

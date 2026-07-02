@@ -106,6 +106,215 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "SEARCH_ADV",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Post-response Script for search_adv\r",
+              "const label = pm.collectionVariables.get('current_case_label') || 'SEARCH_ADV';\r",
+              "\r",
+              "// Mặc định mong đợi status 200 cho các API tìm kiếm (thay vì 302 như mẫu redirect)\r",
+              "const expected = Number(pm.iterationData.get('expected_status') || 200); \r",
+              "\r",
+              "pm.test(label + ' - status code is ' + expected, function () { \r",
+              "    pm.response.to.have.status(expected); \r",
+              "});\r",
+              "\r",
+              "// Kiểm tra nội dung phản hồi có chứa chuỗi mong đợi (nếu có trong JSON Runner)\r",
+              "const expectedContains = pm.iterationData.get('expected_contains');\r",
+              "if (expectedContains) {\r",
+              "    pm.test(label + ' - response contains ' + expectedContains, function () { \r",
+              "        pm.expect(pm.response.text()).to.include(expectedContains); \r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "// Kiểm tra cấu trúc JSON chuẩn cho các request thành công (200 OK)\r",
+              "// Theo báo cáo: \"200 OK, trả về JSON có items\"\r",
+              "if (expected === 200) {\r",
+              "    pm.test(label + ' - response is valid JSON with items array', function () {\r",
+              "        const jsonData = pm.response.json();\r",
+              "        pm.expect(jsonData).to.be.an('object');\r",
+              "        pm.expect(jsonData).to.have.property('items');\r",
+              "        pm.expect(jsonData.items).to.be.an('array');\r",
+              "    });\r",
+              "}\r",
+              "\r",
+              "// In ra ghi chú nếu có (hữu ích khi đánh dấu các case chưa xử lý được hoặc bug)\r",
+              "const gap = pm.iterationData.get('gap_note');\r",
+              "if (gap) console.log(label + ' GAP NOTE: ' + gap);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Pre-request Script for search_adv (Advanced Search)\r",
+              "function getData(name, fallback) {\r",
+              "    const v = pm.iterationData.get(name);\r",
+              "    return (v === undefined || v === null) ? fallback : v;\r",
+              "}\r",
+              "\r",
+              "// Tạo seed cố định cho toàn bộ vòng chạy Runner để đảm bảo tính nhất quán\r",
+              "if (pm.info.iteration === 0) {\r",
+              "    pm.collectionVariables.set('runner_seed', String(Date.now() + Math.floor(Math.random()*1000)));\r",
+              "}\r",
+              "const seed = Number(pm.collectionVariables.get('runner_seed') || Date.now());\r",
+              "\r",
+              "// Hàm mở rộng các template đặc biệt\r",
+              "function expandTemplate(s) {\r",
+              "    if (s === undefined || s === null) return '';\r",
+              "    s = String(s);\r",
+              "    \r",
+              "    // Các template sinh ID theo seed\r",
+              "    s = s.replace(/__P(\\d+)__/g, (_, n) => String(seed + Number(n)));\r",
+              "    s = s.replace(/__B(\\d+)__/g, (_, n) => String(seed + Number(n)));\r",
+              "    s = s.replace(/__DUP_PRODUCT__/g, String(seed + 9001));\r",
+              "    s = s.replace(/__DUP_BUYER__/g, String(seed + 9901));\r",
+              "    \r",
+              "    // Template cho tìm kiếm cơ bản (q max 180)\r",
+              "    s = s.replace(/__LONGQ180__/g, 'q'.repeat(180));\r",
+              "    s = s.replace(/__LONGQ181__/g, 'q'.repeat(181));\r",
+              "    \r",
+              "    // Template cho tìm kiếm nâng cao (brand max 80) - Dựa trên báo cáo\r",
+              "    s = s.replace(/__LONGB80__/g, 'b'.repeat(80));\r",
+              "    s = s.replace(/__LONGB81__/g, 'b'.repeat(81));\r",
+              "    \r",
+              "    // Các template chuỗi dài khác (giữ lại từ mẫu phòng trường hợp dùng chung)\r",
+              "    s = s.replace(/__LONGC1000__/g, 'c'.repeat(1000));\r",
+              "    s = s.replace(/__LONGC1001__/g, 'c'.repeat(1001));\r",
+              "    s = s.replace(/__LONGM1000__/g, encodeURIComponent('m'.repeat(1000)));\r",
+              "    s = s.replace(/__LONGM1001__/g, encodeURIComponent('m'.repeat(1001)));\r",
+              "    \r",
+              "    return s;\r",
+              "}\r",
+              "\r",
+              "// Thiết lập label cho test case\r",
+              "const caseId = getData('case_id', 'MANUAL');\r",
+              "const tags = getData('tags', '');\r",
+              "const desc = getData('description', '');\r",
+              "pm.collectionVariables.set('current_case_label', caseId + (tags ? ' [' + tags + ']' : '') + (desc ? ' - ' + desc : ''));\r",
+              "\r",
+              "// Tự động mở rộng template và gán vào biến cho các tham số của search_adv\r",
+              "// Giúp bạn có thể dùng {{brand}}, {{year_from}}... trực tiếp trên URL của Postman\r",
+              "const searchParams = [\r",
+              "    'brand', \r",
+              "    'year_from', 'year_to', \r",
+              "    'mileage_min', 'mileage_max', \r",
+              "    'battery_capacity_min', 'battery_capacity_max'\r",
+              "];\r",
+              "\r",
+              "searchParams.forEach(key => {\r",
+              "    const val = getData(key, null);\r",
+              "    if (val !== null && val !== undefined) {\r",
+              "        pm.collectionVariables.set(key, expandTemplate(val));\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{search_url}}{{adv_endpoint}}?brand={{brand}}&year_from={{year_from}}&year_to={{year_to}}&mileage_min={{mileage_min}}&mileage_max={{mileage_max}}&battery_capacity_min={{battery_capacity_min}}&battery_capacity_max={{battery_capacity_max}}",
+          "host": [
+            "{{search_url}}{{adv_endpoint}}"
+          ],
+          "query": [
+            {
+              "key": "brand",
+              "value": "{{brand}}"
+            },
+            {
+              "key": "year_from",
+              "value": "{{year_from}}"
+            },
+            {
+              "key": "year_to",
+              "value": "{{year_to}}"
+            },
+            {
+              "key": "mileage_min",
+              "value": "{{mileage_min}}"
+            },
+            {
+              "key": "mileage_max",
+              "value": "{{mileage_max}}"
+            },
+            {
+              "key": "battery_capacity_min",
+              "value": "{{battery_capacity_min}}"
+            },
+            {
+              "key": "battery_capacity_max",
+              "value": "{{battery_capacity_max}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "runner_seed",
+      "value": ""
+    },
+    {
+      "key": "current_case_label",
+      "value": ""
+    },
+    {
+      "key": "brand",
+      "value": ""
+    },
+    {
+      "key": "year_from",
+      "value": ""
+    },
+    {
+      "key": "year_to",
+      "value": ""
+    },
+    {
+      "key": "mileage_min",
+      "value": ""
+    },
+    {
+      "key": "mileage_max",
+      "value": ""
+    },
+    {
+      "key": "battery_capacity_min",
+      "value": ""
+    },
+    {
+      "key": "battery_capacity_max",
+      "value": ""
     }
   ]
 }
