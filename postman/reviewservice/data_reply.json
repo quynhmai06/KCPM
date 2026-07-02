@@ -1,0 +1,130 @@
+[
+  {
+    "case_id": "REVIEWS_REPLY_TC01",
+    "tags": "REPLY-V1,REPLY-V2,REPLY-V3",
+    "description": "Tạo reply hợp lệ",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=Cảm%20ơn%20bạn%20đã%20đánh%20giá",
+    "expected_status": 302,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC02",
+    "tags": "REPLY-X1",
+    "description": "review_id không tồn tại",
+    "review_id_value": "999999",
+    "form_template": "seller_id=2&message=OK",
+    "expected_status": 404,
+    "expected_contains": "Review not found"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC03",
+    "tags": "REPLY-X2",
+    "description": "review_id < 1",
+    "review_id_value": "0",
+    "form_template": "seller_id=2&message=OK",
+    "expected_status": 404,
+    "expected_contains": "Review not found"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC04",
+    "tags": "REPLY-X3",
+    "description": "review_id không phải số",
+    "review_id_value": "abc",
+    "form_template": "seller_id=2&message=OK",
+    "expected_status": 404,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC05",
+    "tags": "REPLY-X4",
+    "description": "Thiếu seller_id",
+    "review_id_value": "__EXISTING__",
+    "form_template": "message=OK",
+    "expected_status": 400,
+    "expected_contains": "seller_id"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC06",
+    "tags": "REPLY-X4",
+    "description": "seller_id rỗng",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=&message=OK",
+    "expected_status": 400,
+    "expected_contains": "seller_id"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC07",
+    "tags": "REPLY-X5",
+    "description": "seller_id < 1",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=-1&message=OK",
+    "expected_status": 400,
+    "expected_contains": "seller_id",
+    "gap_note": "Code hiện tại có thể trả 302 vì chưa validate seller_id dương."
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC08",
+    "tags": "REPLY-X6",
+    "description": "seller_id không phải số",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=abc&message=OK",
+    "expected_status": 400,
+    "expected_contains": "seller_id"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC09",
+    "tags": "REPLY-V3,B-message-min",
+    "description": "message tại min",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=A",
+    "expected_status": 302,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC10",
+    "tags": "REPLY-V3,B-message-max",
+    "description": "message 1000 ký tự",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=__LONGM1000__",
+    "expected_status": 302,
+    "expected_contains": ""
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC11",
+    "tags": "REPLY-X7",
+    "description": "Thiếu message",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2",
+    "expected_status": 400,
+    "expected_contains": "message"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC12",
+    "tags": "REPLY-X8",
+    "description": "message rỗng",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=",
+    "expected_status": 400,
+    "expected_contains": "message"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC13",
+    "tags": "REPLY-X8",
+    "description": "message chỉ gồm khoảng trắng",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=%20%20%20",
+    "expected_status": 400,
+    "expected_contains": "message"
+  },
+  {
+    "case_id": "REVIEWS_REPLY_TC14",
+    "tags": "REPLY-X9",
+    "description": "message hơn 1000 ký tự",
+    "review_id_value": "__EXISTING__",
+    "form_template": "seller_id=2&message=__LONGM1001__",
+    "expected_status": 400,
+    "expected_contains": "message",
+    "gap_note": "Code hiện tại có thể chưa validate độ dài message."
+  }
+]
