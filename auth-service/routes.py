@@ -6,7 +6,7 @@ import time
 from urllib.parse import urlencode, parse_qs
 from oauth_client import oauth
 from flask import send_from_directory, url_for, current_app
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from flask import Blueprint, request, jsonify, session, render_template, current_app, flash, redirect
 from types import SimpleNamespace
 from werkzeug.utils import secure_filename
@@ -25,6 +25,8 @@ PROFILE_ADDRESS_MAX_LENGTH = 255
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_MAX_LENGTH = 64
 PHONE_LENGTH = 10
+PROFILE_BIRTHDATE_MIN = date(1900, 1, 1)
+PROFILE_BIRTHDATE_MAX = date(2026, 6, 30)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -44,6 +46,53 @@ def normalize_phone(s: str | None) -> str | None:
     elif digits.startswith("084"):
         digits = "0" + digits[3:]
     return digits
+
+
+def _validate_profile_update(data: dict):
+    """Validate a partial profile update before changing database objects."""
+    validated = {}
+
+    if "full_name" in data:
+        full_name = data.get("full_name")
+        if not isinstance(full_name, str) or not full_name.strip():
+            return None, ({"error": "invalid_full_name"}, 400)
+        if len(full_name) > PROFILE_FULL_NAME_MAX_LENGTH:
+            return None, ({"error": "full_name_too_long"}, 400)
+        validated["full_name"] = full_name
+
+    if "phone" in data:
+        phone = data.get("phone")
+        if not isinstance(phone, str) or not phone.isdigit() or len(phone) != PHONE_LENGTH:
+            return None, ({"error": "invalid_phone"}, 400)
+        validated["phone"] = phone
+
+    if "address" in data:
+        address = data.get("address")
+        if not isinstance(address, str) or not address.strip():
+            return None, ({"error": "invalid_address"}, 400)
+        if len(address) > PROFILE_ADDRESS_MAX_LENGTH:
+            return None, ({"error": "address_too_long"}, 400)
+        validated["address"] = address
+
+    if "birthdate" in data:
+        value = data.get("birthdate")
+        if value in (None, ""):
+            validated["birthdate"] = None
+        elif not isinstance(value, str):
+            return None, ({"error": "invalid_birthdate_format"}, 400)
+        else:
+            try:
+                birthdate = datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError:
+                return None, ({"error": "invalid_birthdate_format"}, 400)
+            if not PROFILE_BIRTHDATE_MIN <= birthdate <= PROFILE_BIRTHDATE_MAX:
+                return None, ({"error": "invalid_birthdate_range"}, 400)
+            validated["birthdate"] = birthdate
+
+    if "gender" in data:
+        validated["gender"] = data.get("gender") or None
+
+    return validated, None
 
 def _make_token(u: User) -> str:
     payload = {
@@ -383,33 +432,28 @@ def update_profile():
     u, err = _require_user()
     if err:
         return err
-    d = request.get_json(force=True)
+    d = request.get_json(silent=True)
+    if not isinstance(d, dict):
+        return {"error": "invalid_json"}, 400
+
+    validated, validation_error = _validate_profile_update(d)
+    if validation_error:
+        return validation_error
+
+    phone = validated.get("phone")
+    if phone and User.query.filter(User.phone == phone, User.id != u.id).first():
+        return {"error": "phone_exists"}, 409
+
     p = UserProfile.query.filter_by(user_id=u.id).first()
     if not p:
         p = UserProfile(user_id=u.id)
         db.session.add(p)
-    if "full_name" in d:
-        full_name = d.get("full_name") or None
-        if full_name and len(full_name) > PROFILE_FULL_NAME_MAX_LENGTH:
-            return {"error": "full_name_too_long"}, 400
-        p.full_name = full_name
-    if "address" in d:
-        address = d.get("address") or None
-        if address and len(address) > PROFILE_ADDRESS_MAX_LENGTH:
-            return {"error": "address_too_long"}, 400
-        p.address = address
-    if "gender" in d:     p.gender    = d.get("gender") or None
-    if "birthdate" in d:
-        val = d.get("birthdate")
-        if val:
-            try:
-                p.birthdate = datetime.strptime(val, "%Y-%m-%d").date()
-            except ValueError:
-                return {"error": "invalid_birthdate_format"}, 400
-        else:
-            p.birthdate = None
-    if "phone" in d:
-        u.phone = d.get("phone") or None
+
+    for field in ("full_name", "address", "gender", "birthdate"):
+        if field in validated:
+            setattr(p, field, validated[field])
+    if "phone" in validated:
+        u.phone = validated["phone"]
 
     db.session.commit()
     return {"ok": True, "profile": p.to_dict(), "user": u.to_dict_basic()}
