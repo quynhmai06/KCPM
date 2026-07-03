@@ -1,23 +1,23 @@
-name: Listing White-box Test
+name: Search White-box Test
 
 on:
   push:
     branches: [main, develop]
     paths:
-      - "listing-service/**"
+      - "search-service/**"
       - "scripts/**"
       - ".github/workflows/api-test.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - "listing-service/**"
+      - "search-service/**"
       - "scripts/**"
       - ".github/workflows/api-test.yml"
   workflow_dispatch:
 
 jobs:
-  listing-whitebox:
-    name: Listing White-box Pytest
+  search-whitebox:
+    name: Search White-box Pytest
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        working-directory: listing-service
+        working-directory: search-service
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -38,18 +38,18 @@ jobs:
 
       - name: Run white-box tests
         id: pytest
-        working-directory: listing-service
+        working-directory: search-service
         run: |
           mkdir -p ../reports
 
           set +e
-          python -m pytest tests/test_listing_whitebox.py -v \
-            --junitxml=../reports/listing-whitebox-junit.xml \
+          python -m pytest tests/test_search_whitebox.py -v \
+            --junitxml=../reports/search-whitebox-junit.xml \
             --cov=routes \
             --cov=models \
             --cov-branch \
             --cov-report=term-missing \
-            --cov-report=xml:../reports/listing-whitebox-coverage.xml
+            --cov-report=xml:../reports/search-whitebox-coverage.xml
 
           pytest_exit=$?
           echo "pytest_exit=$pytest_exit" >> "$GITHUB_OUTPUT"
@@ -59,9 +59,9 @@ jobs:
         if: steps.pytest.outputs.pytest_exit != '0'
         run: |
           python scripts/pytest-junit-to-newman.py \
-            --junit reports/listing-whitebox-junit.xml \
-            --output reports/listing-whitebox-newman-result.json \
-            --service listing-whitebox
+            --junit reports/search-whitebox-junit.xml \
+            --output reports/search-whitebox-newman-result.json \
+            --service search-whitebox
 
       - name: Create Jira bug when white-box failed
         if: steps.pytest.outputs.pytest_exit != '0'
@@ -72,17 +72,17 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: listing-whitebox
+          NEWMAN_SERVICE: search-whitebox
 
       - name: Upload white-box reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: listing-whitebox-test-report
+          name: search-whitebox-test-report
           path: reports/
 
       - name: Mark workflow failed when white-box failed
         if: steps.pytest.outputs.pytest_exit != '0'
         run: |
-          echo "Listing white-box tests failed. Jira bug was created. Marking workflow as failed."
+          echo "Search white-box tests failed. Jira bug was created. Marking workflow as failed."
           exit 1
