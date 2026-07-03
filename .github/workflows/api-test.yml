@@ -1,23 +1,32 @@
-name: API Automation Test
+name: Reviews Reply API Automation Test
 
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "reviews-service/**"
+      - "postman/reviewservice/**"
+      - "postman/postman_environment.json"
+      - "docker-compose.yml"
+      - ".github/workflows/api-test.yml"
+      - "scripts/**"
   pull_request:
     branches: [main, develop]
+    paths:
+      - "reviews-service/**"
+      - "postman/reviewservice/**"
+      - "postman/postman_environment.json"
+      - "docker-compose.yml"
+      - ".github/workflows/api-test.yml"
+      - "scripts/**"
   workflow_dispatch:
-    inputs:
-      jira_issue_key:
-        description: Jira issue key to transition after successful tests, for example KTPM-1
-        required: false
-        type: string
 
 jobs:
   api-test:
-    name: Payment Service Confirm Newman Test
+    name: Reviews Reply Newman Test
     runs-on: ubuntu-latest
     env:
-      PAYMENT_URL: http://localhost:5008
+      REVIEWS_URL: http://localhost:5011
       JWT_SECRET: supersecret
 
     steps:
@@ -36,98 +45,76 @@ jobs:
         run: |
           cat > .env <<EOF
           JWT_SECRET=${JWT_SECRET}
-          DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ev_platform
-          DB_HOST=postgres
-          DB_PORT=5432
-          DB_NAME=ev_platform
-          DB_USER=postgres
-          DB_PASSWORD=postgres
-          GATEWAY_SECRET=ci_gateway_secret
-          PROVIDER=none
-          GOOGLE_API_KEY=
-          GEMINI_MODEL=models/gemini-2.5-flash
-          OPENAI_API_KEY=
-          OPENAI_MODEL=gpt-4o-mini
-          SOFT_TIMEOUT=8
-          HARD_TIMEOUT=15
-          CACHE_TTL=600
-          STRICT_AI=0
-          BANK_NAME=Test Bank
-          BANK_ACCOUNT=0000000000
-          BANK_OWNER=CI Test
-          PAYMENT_PUBLIC_BASE=${PAYMENT_URL}
+          DATABASE_URL=postgresql+psycopg2://ev:evpass@postgres:5432/evdb
+          SHARED_DATABASE_URL=postgresql+psycopg2://ev:evpass@postgres:5432/evdb
+          REVIEWS_DEV_ALLOW=1
           EOF
 
       - name: Start postgres only
         run: docker compose up -d postgres
 
-      - name: Build and start payment service only
-        run: docker compose up --build -d --no-deps payment_service
+      - name: Build and start reviews service only
+        run: docker compose up --build -d --no-deps reviews_service
 
-      - name: Wait for payment health check
-        run: wait-on "$PAYMENT_URL/payment/health" --timeout 180000 --interval 3000
+      - name: Wait for reviews health check
+        run: wait-on "$REVIEWS_URL/reviews/" --timeout 180000 --interval 3000
 
-      - name: Prepare payment confirm test data
+      - name: Prepare reviews reply test data
         run: |
-          docker compose exec -T payment_service python - <<'PY'
+          docker compose exec -T reviews_service python - <<'PY'
           from app import create_app
-          from models import db, Payment, Contract, PaymentMethod, PaymentStatus
+          from db import db
+          from models import Review, Reply
 
           app = create_app()
 
           with app.app_context():
               db.create_all()
 
-              Contract.query.delete()
-              Payment.query.delete()
+              Reply.query.delete()
+              Review.query.delete()
 
-              payment = Payment(
+              review = Review(
                   id=1,
-                  order_id="ORD-CONFIRM-001",
-                  buyer_id=101,
-                  seller_id=202,
-                  amount=1000000,
-                  items=[],
-                  method=PaymentMethod.BANKING,
-                  provider="CI Test",
-                  status=PaymentStatus.PENDING,
+                  product_id=1001,
+                  buyer_id=2001,
+                  seller_id=2,
+                  rating=5,
+                  comment="CI seed review",
               )
 
-              db.session.add(payment)
+              db.session.add(review)
               db.session.commit()
 
-              print("Prepared payment_id=1 for PAYMENT_CONFIRM tests")
+              print("Prepared review_id=1 for REVIEWS_REPLY tests")
           PY
 
-      - name: Show running containers
-        run: docker compose ps
-
-      - name: Run payment confirm Newman collection
+      - name: Run reviews reply Newman collection
         id: newman
         run: |
           rm -rf reports
           mkdir -p reports
 
           set +e
-          newman run "postman/paymentservice/paymentservice_postman_collection.json" \
-            --folder "PAYMENT_CONFIRM" \
+          newman run "postman/reviewservice/reviewservice_postman_collection.json" \
+            --folder "REVIEWS_REPLY" \
             -e "postman/postman_environment.json" \
-            -d "postman/paymentservice/data_confirm_payment.json" \
-            --env-var payment_url="$PAYMENT_URL" \
-            --env-var baseUrl="$PAYMENT_URL" \
-            --env-var payment_id="1" \
+            -d "postman/reviewservice/data_reply.json" \
+            --env-var reviews_url="$REVIEWS_URL" \
+            --env-var review_base_url="$REVIEWS_URL" \
+            --env-var review_id="1" \
             --reporters cli,junit,json,htmlextra \
-            --reporter-junit-export "reports/payment-confirm-newman-result.xml" \
-            --reporter-json-export "reports/payment-confirm-newman-result.json" \
-            --reporter-htmlextra-export "reports/payment-confirm-newman-report.html"
+            --reporter-junit-export "reports/reviews-reply-newman-result.xml" \
+            --reporter-json-export "reports/reviews-reply-newman-result.json" \
+            --reporter-htmlextra-export "reports/reviews-reply-newman-report.html"
 
           newman_exit=$?
           set -e
 
           echo "newman_exit=$newman_exit" >> "$GITHUB_OUTPUT"
 
-          if [ -f reports/payment-confirm-newman-result.json ]; then
-            cp reports/payment-confirm-newman-result.json reports/newman-result.json
+          if [ -f reports/reviews-reply-newman-result.json ]; then
+            cp reports/reviews-reply-newman-result.json reports/newman-result.json
           fi
 
           exit 0
@@ -137,13 +124,13 @@ jobs:
         run: |
           mkdir -p reports
           docker compose ps > reports/docker-compose-ps.txt
-          docker compose logs --no-color > reports/docker-compose.log
+          docker compose logs --no-color reviews_service postgres > reports/docker-compose.log
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-test-report
+          name: reviews-reply-api-test-report
           path: reports/
 
       - name: Create Jira bug when Newman test failed
@@ -155,12 +142,12 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: payment-confirm
+          NEWMAN_SERVICE: reviews-reply
 
       - name: Mark workflow failed when Newman failed
         if: steps.newman.outputs.newman_exit != '0'
         run: |
-          echo "Newman tests failed. Jira bug was created. Marking workflow as failed."
+          echo "Reviews reply Newman tests failed. Jira bug was created. Marking workflow as failed."
           exit 1
 
       - name: Stop backend services

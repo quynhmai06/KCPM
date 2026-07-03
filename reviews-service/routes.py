@@ -398,9 +398,15 @@ def create_reply(review_id: int):
     except (TypeError, ValueError):
         return jsonify({"detail": "seller_id must be an integer"}), 400
 
+    if seller_id_int < 1:
+        return jsonify({"detail": "seller_id must be greater than 0"}), 400
+
     if not message:
         # Cho phép bỏ trống hay không tuỳ yêu cầu; ở đây yêu cầu phải có nội dung
         return jsonify({"detail": "message is required"}), 400
+
+    if len(message) > 1000:
+        return jsonify({"detail": "message must not exceed 1000 characters"}), 400
 
     rv: Optional[Review] = Review.query.get(review_id)
     if not rv:
