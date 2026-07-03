@@ -7,3 +7,20 @@ gateway/static/uploads/
 .vscode/
 .env
 **/.env
+# Python virtual environments
+.venv/
+**/.venv/
+
+# Pytest / coverage
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+**/.coverage
+coverage.xml
+**/coverage.xml
+htmlcov/
+**/htmlcov/
+
+# SonarQube scanner output
+.scannerwork/
+**/.scannerwork/
