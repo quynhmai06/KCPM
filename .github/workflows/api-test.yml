@@ -1,23 +1,23 @@
-name: Payment White-box Test
+name: Reviews White-box Test
 
 on:
   push:
     branches: [main, develop]
     paths:
-      - "payment-service/**"
+      - "reviews-service/**"
       - "scripts/**"
-      - ".github/workflows/payment-whitebox.yml"
+      - ".github/workflows/api-test.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - "payment-service/**"
+      - "reviews-service/**"
       - "scripts/**"
-      - ".github/workflows/payment-whitebox.yml"
+      - ".github/workflows/api-test.yml"
   workflow_dispatch:
 
 jobs:
-  payment-whitebox:
-    name: Payment White-box Pytest
+  reviews-whitebox:
+    name: Reviews White-box Pytest
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        working-directory: payment-service
+        working-directory: reviews-service
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -38,18 +38,20 @@ jobs:
 
       - name: Run white-box tests
         id: pytest
-        working-directory: payment-service
+        working-directory: reviews-service
         run: |
           mkdir -p ../reports
 
           set +e
-          python -m pytest tests/test_payment_whitebox.py -v \
-            --junitxml=../reports/payment-whitebox-junit.xml \
+          python -m pytest tests/test_reviews_whitebox.py -v \
+            --junitxml=../reports/reviews-whitebox-junit.xml \
+            --cov=app \
+            --cov=db \
             --cov=routes \
             --cov=models \
             --cov-branch \
             --cov-report=term-missing \
-            --cov-report=xml:../reports/payment-whitebox-coverage.xml
+            --cov-report=xml:../reports/reviews-whitebox-coverage.xml
 
           pytest_exit=$?
           echo "pytest_exit=$pytest_exit" >> "$GITHUB_OUTPUT"
@@ -59,9 +61,9 @@ jobs:
         if: steps.pytest.outputs.pytest_exit != '0'
         run: |
           python scripts/pytest-junit-to-newman.py \
-            --junit reports/payment-whitebox-junit.xml \
-            --output reports/payment-whitebox-newman-result.json \
-            --service payment-whitebox
+            --junit reports/reviews-whitebox-junit.xml \
+            --output reports/reviews-whitebox-newman-result.json \
+            --service reviews-whitebox
 
       - name: Create Jira bug when white-box failed
         if: steps.pytest.outputs.pytest_exit != '0'
@@ -72,17 +74,17 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
-          NEWMAN_SERVICE: payment-whitebox
+          NEWMAN_SERVICE: reviews-whitebox
 
       - name: Upload white-box reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: payment-whitebox-test-report
+          name: reviews-whitebox-test-report
           path: reports/
 
       - name: Mark workflow failed when white-box failed
         if: steps.pytest.outputs.pytest_exit != '0'
         run: |
-          echo "Payment white-box tests failed. Jira bug was created. Marking workflow as failed."
+          echo "Reviews white-box tests failed. Jira bug was created. Marking workflow as failed."
           exit 1
