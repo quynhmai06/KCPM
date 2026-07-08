@@ -271,6 +271,7 @@ jobs:
             -d postman/searchservice/data_search_adv_postman.json \
             --folder SEARCH_ADV \
             --env-var search_url=http://localhost:5010
+            
           run_newman paymentservice-contract \
             postman/paymentservice/paymentservice_postman_collection.json \
             -e postman/postman_environment.json \
