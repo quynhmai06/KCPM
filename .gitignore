@@ -24,3 +24,4 @@ htmlcov/
 # SonarQube scanner output
 .scannerwork/
 **/.scannerwork/
+reports/
