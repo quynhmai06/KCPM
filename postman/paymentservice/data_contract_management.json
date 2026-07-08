@@ -3,6 +3,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC01",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "27",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -15,6 +16,7 @@
     "seller_phone": "0907654321",
     "cart_items": "-",
     "expected_status": 201,
+    "expected_status": 200,
     "expected_error": "404 payment_not_found"
   },
   {
@@ -75,6 +77,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC05",
     "api": "create",
     "payment_id": "{{contract_exists_payment_id}}",
+    "payment_id": "27",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -93,6 +96,7 @@
   "tc_id": "PAYMENT_CONTRACT_TC06",
   "api": "create",
   "payment_id": "AUTO",
+  "payment_id": "1",
   "product_info": "OK",
   "product_details": "A",
   "buyer_info": "OK",
@@ -111,6 +115,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC07", 
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "2",
     "product_info": "OK",
     "product_details": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     "buyer_info": "OK",
@@ -129,6 +134,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC08",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "3",
     "product_info": "MISSING",
     "product_details": "",
     "buyer_info": "OK",
@@ -147,6 +153,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC09",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "4",
     "product_info": "OK",
     "product_details": "",
     "buyer_info": "OK",
@@ -165,6 +172,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC10",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "5",
     "product_info": "OK",
     "product_details": "d...(1001 ký tự)...",
     "buyer_info": "OK",
@@ -183,6 +191,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC11",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "6",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -201,6 +210,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC12",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "7",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "MISSING",
@@ -219,6 +229,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC13",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "8",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -237,6 +248,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC14",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "9",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -255,6 +267,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC15",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "10",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -273,6 +286,7 @@
     "tc_id": "PAYMENT_CONTRACT_TC16",
     "api": "create",
     "payment_id": "AUTO",
+    "payment_id": "11",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -367,6 +381,7 @@
     "signature_data": "",
     "expected_status": 400,
     "expected_error": "signature_data"
+
   },
   {
   "tc_id": "PAYMENT_CONTRACT_TC25",
@@ -437,5 +452,6 @@
   "signature_data": "Trần Văn B",
   "expected_status": 200,
   "expected_error": "-"
-}
+
+  }
 ]

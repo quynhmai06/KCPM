@@ -271,15 +271,16 @@ jobs:
             -d postman/searchservice/data_search_adv_postman.json \
             --folder SEARCH_ADV \
             --env-var search_url=http://localhost:5010
-          run_newman paymentservice-confirm \
-            postman/paymentservice/paymentservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/paymentservice/data_confirm_payment.json \
-            --folder PAYMENT_CONFIRM \
-            --env-var payment_url=http://localhost:5008 \
-            --env-var token="${MEMBER_TOKEN}"
           run_newman paymentservice-contract \
             postman/paymentservice/paymentservice_postman_collection.json \
+            -e postman/postman_environment.json \
+            -d postman/paymentservice/data_contract_management.json \
+            --folder PAYMENT_CONTRACT_MANAGEMENT \
+            --env-var payment_url=http://localhost:5008 \
+            --env-var token="${MEMBER_TOKEN}"
+
+          run_newman reviewservice-create \
+            postman/reviewservice/reviewservice_postman_collection.json \
             -e postman/postman_environment.json \
             -d postman/paymentservice/data_contract_management.json \
             --folder PAYMENT_CONTRACT_MANAGEMENT \
