@@ -271,15 +271,6 @@ jobs:
             -d postman/searchservice/data_search_adv_postman.json \
             --folder SEARCH_ADV \
             --env-var search_url=http://localhost:5010
-
-          run_newman paymentservice-create \
-            postman/paymentservice/paymentservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/paymentservice/data_payment.service.json \
-            --folder PAYMENT_CREATE \
-            --env-var payment_url=http://localhost:5008 \
-            --env-var token="${MEMBER_TOKEN}"
-
           run_newman paymentservice-confirm \
             postman/paymentservice/paymentservice_postman_collection.json \
             -e postman/postman_environment.json \
@@ -287,15 +278,15 @@ jobs:
             --folder PAYMENT_CONFIRM \
             --env-var payment_url=http://localhost:5008 \
             --env-var token="${MEMBER_TOKEN}"
-
-          run_newman reviewservice-create \
-            postman/reviewservice/reviewservice_postman_collection.json \
+          run_newman paymentservice-contract \
+            postman/paymentservice/paymentservice_postman_collection.json \
             -e postman/postman_environment.json \
-            -d postman/reviewservice/data_create.json \
-            --folder REVIEWS_CREATE \
-            --env-var reviews_url=http://localhost:5011 \
-            --env-var review_base_url=http://localhost:5011 \
+            -d postman/paymentservice/data_contract_management.json \
+            --folder PAYMENT_CONTRACT_MANAGEMENT \
+            --env-var payment_url=http://localhost:5008 \
             --env-var token="${MEMBER_TOKEN}"
+
+
 
           REVIEW_ID="$(
             curl -fsS -X POST http://localhost:5011/reviews/api/reviews \
