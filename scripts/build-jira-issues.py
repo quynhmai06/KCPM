@@ -287,15 +287,18 @@ def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     payloads: list[dict[str, Any]] = []
+    seen_summaries: set[str] = set()
 
     for newman_report in args.newman_report:
         if not newman_report.is_file():
-            payloads.append(
-                fallback_payload(
-                    args,
-                    f"The Newman JSON report was not generated: {newman_report.name}.",
-                )
+            payload = fallback_payload(
+                args,
+                f"The Newman JSON report was not generated: {newman_report.name}.",
             )
+            summary = payload["fields"]["summary"]
+            if summary not in seen_summaries:
+                seen_summaries.add(summary)
+                payloads.append(payload)
             continue
 
         try:
@@ -303,14 +306,24 @@ def main() -> None:
             for execution in report.get("run", {}).get("executions", []):
                 failures = failed_assertions(execution)
                 if failures:
-                    payloads.append(build_payload(execution, failures, args))
+                    payload = build_payload(execution, failures, args)
+                    summary = payload["fields"]["summary"]
+
+                    if summary in seen_summaries:
+                        continue
+
+                    seen_summaries.add(summary)
+                    payloads.append(payload)
+
         except (json.JSONDecodeError, OSError, TypeError, ValueError) as error:
-            payloads.append(
-                fallback_payload(
-                    args,
-                    f"Could not parse {newman_report.name}: {error}",
-                )
+            payload = fallback_payload(
+                args,
+                f"Could not parse {newman_report.name}: {error}",
             )
+            summary = payload["fields"]["summary"]
+            if summary not in seen_summaries:
+                seen_summaries.add(summary)
+                payloads.append(payload)
 
     if not payloads:
         payloads.append(

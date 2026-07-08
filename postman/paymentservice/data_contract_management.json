@@ -3,7 +3,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC01",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "27",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -16,8 +15,7 @@
     "seller_phone": "0907654321",
     "cart_items": "-",
     "expected_status": 201,
-    "expected_status": 200,
-    "expected_error": "404 payment_not_found"
+    "expected_error": "-"
   },
   {
     "tc_id": "PAYMENT_CONTRACT_TC02",
@@ -77,7 +75,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC05",
     "api": "create",
     "payment_id": "{{contract_exists_payment_id}}",
-    "payment_id": "27",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -90,32 +87,30 @@
     "seller_phone": "0907654321",
     "cart_items": "-",
     "expected_status": 200,
-    "expected_error": "404 payment_not_found"
+    "expected_error": "-"
   },
   {
-  "tc_id": "PAYMENT_CONTRACT_TC06",
-  "api": "create",
-  "payment_id": "AUTO",
-  "payment_id": "1",
-  "product_info": "OK",
-  "product_details": "A",
-  "buyer_info": "OK",
-  "buyer_name": "Nguyễn Văn A",
-  "buyer_email": "buyer@example.com",
-  "buyer_phone": "0901234567",
-  "seller_info": "OK",
-  "seller_name": "Trần Văn B",
-  "seller_email": "seller@example.com",
-  "seller_phone": "0907654321",
-  "cart_items": "-",
-  "expected_status": 201,
-  "expected_error": "-"
-  },
-  {
-    "tc_id": "PAYMENT_CONTRACT_TC07", 
+    "tc_id": "PAYMENT_CONTRACT_TC06",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "2",
+    "product_info": "OK",
+    "product_details": "A",
+    "buyer_info": "OK",
+    "buyer_name": "Nguyễn Văn A",
+    "buyer_email": "buyer@example.com",
+    "buyer_phone": "0901234567",
+    "seller_info": "OK",
+    "seller_name": "Trần Văn B",
+    "seller_email": "seller@example.com",
+    "seller_phone": "0907654321",
+    "cart_items": "-",
+    "expected_status": 201,
+    "expected_error": "-"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC07",
+    "api": "create",
+    "payment_id": "AUTO",
     "product_info": "OK",
     "product_details": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     "buyer_info": "OK",
@@ -134,7 +129,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC08",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "3",
     "product_info": "MISSING",
     "product_details": "",
     "buyer_info": "OK",
@@ -153,7 +147,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC09",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "4",
     "product_info": "OK",
     "product_details": "",
     "buyer_info": "OK",
@@ -172,7 +165,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC10",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "5",
     "product_info": "OK",
     "product_details": "d...(1001 ký tự)...",
     "buyer_info": "OK",
@@ -191,7 +183,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC11",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "6",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -210,7 +201,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC12",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "7",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "MISSING",
@@ -229,7 +219,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC13",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "8",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -248,7 +237,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC14",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "9",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -267,7 +255,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC15",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "10",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -286,7 +273,6 @@
     "tc_id": "PAYMENT_CONTRACT_TC16",
     "api": "create",
     "payment_id": "AUTO",
-    "payment_id": "11",
     "product_info": "OK",
     "product_details": "Pin LFP 60V 20Ah",
     "buyer_info": "OK",
@@ -301,7 +287,6 @@
     "expected_status": 201,
     "expected_error": "-"
   },
-
   {
     "tc_id": "PAYMENT_CONTRACT_TC17",
     "api": "sign",
@@ -343,34 +328,34 @@
     "expected_error": "contract_not_found"
   },
   {
-  "tc_id": "PAYMENT_CONTRACT_TC21",
-  "api": "sign",
-  "contract_id": "0",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "Nguyễn Văn A",
-  "expected_status": 404,
-  "expected_error": "contract_not_found"
+    "tc_id": "PAYMENT_CONTRACT_TC21",
+    "api": "sign",
+    "contract_id": "0",
+    "signer_role": "buyer",
+    "signature_type": "text",
+    "signature_data": "Nguyễn Văn A",
+    "expected_status": 404,
+    "expected_error": "contract_not_found"
   },
   {
-  "tc_id": "PAYMENT_CONTRACT_TC22",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "admin",
-  "signature_type": "text",
-  "signature_data": "Admin",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
+    "tc_id": "PAYMENT_CONTRACT_TC22",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "admin",
+    "signature_type": "text",
+    "signature_data": "Admin",
+    "expected_status": 400,
+    "expected_error": "missing_signature_data"
   },
   {
-  "tc_id": "PAYMENT_CONTRACT_TC23",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "invalid",
-  "signature_data": "Nguyễn Văn A",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
+    "tc_id": "PAYMENT_CONTRACT_TC23",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "invalid",
+    "signature_data": "Nguyễn Văn A",
+    "expected_status": 400,
+    "expected_error": "missing_signature_data"
   },
   {
     "tc_id": "PAYMENT_CONTRACT_TC24",
@@ -381,77 +366,76 @@
     "signature_data": "",
     "expected_status": 400,
     "expected_error": "signature_data"
-
   },
   {
-  "tc_id": "PAYMENT_CONTRACT_TC25",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "file",
-  "signature_data": "Nguyễn Văn A",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC26",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "A",
-  "expected_status": 200,
-  "expected_error": "-"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC27",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
-  "expected_status": 200,
-  "expected_error": "-"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC28",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC29",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC30",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "buyer",
-  "signature_type": "text",
-  "signature_data": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
-  "expected_status": 400,
-  "expected_error": "missing_signature_data"
-},
-{
-  "tc_id": "PAYMENT_CONTRACT_TC31",
-  "api": "sign",
-  "contract_id": "{{contract_id}}",
-  "signer_role": "seller",
-  "signature_type": "text",
-  "signature_data": "Trần Văn B",
-  "expected_status": 200,
-  "expected_error": "-"
-
+    "tc_id": "PAYMENT_CONTRACT_TC25",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "file",
+    "signature_data": "Nguyễn Văn A",
+    "expected_status": 400,
+    "expected_error": "missing_signature_data"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC26",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "text",
+    "signature_data": "A",
+    "expected_status": 200,
+    "expected_error": "-"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC27",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "text",
+    "signature_data": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "expected_status": 200,
+    "expected_error": "-"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC28",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "text",
+    "signature_data": "",
+    "expected_status": 400,
+    "expected_error": "missing_signature_data"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC29",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "image",
+    "signature_data": "",
+    "expected_status": 400,
+    "expected_error": "missing_signature_data"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC30",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "buyer",
+    "signature_type": "text",
+    "signature_data": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "expected_status": 400,
+    "expected_error": "signature_too_long"
+  },
+  {
+    "tc_id": "PAYMENT_CONTRACT_TC31",
+    "api": "sign",
+    "contract_id": "{{contract_id}}",
+    "signer_role": "seller",
+    "signature_type": "text",
+    "signature_data": "Trần Văn B",
+    "expected_status": 200,
+    "expected_error": "-"
   }
+
 ]
