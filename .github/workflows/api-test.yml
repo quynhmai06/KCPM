@@ -1,4 +1,4 @@
-name: Payment Contract Newman Test
+name: Payment Contract Management Newman Test
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - "payment-service/**"
       - "postman/paymentservice/**"
+      - "postman/postman_environment.json"
       - "scripts/**"
       - "docker-compose.yml"
       - ".github/workflows/api-test.yml"
@@ -14,18 +15,21 @@ on:
     paths:
       - "payment-service/**"
       - "postman/paymentservice/**"
+      - "postman/postman_environment.json"
       - "scripts/**"
       - "docker-compose.yml"
       - ".github/workflows/api-test.yml"
   workflow_dispatch:
 
 jobs:
-  payment-contract:
-    name: Payment Contract Test
+  payment-contract-management:
+    name: Payment Contract Management
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     env:
       JWT_SECRET: supersecret
+      PAYMENT_URL: http://localhost:5008
 
     steps:
       - name: Checkout source code
@@ -36,7 +40,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Newman
+      - name: Install API test tools
         run: npm install -g newman newman-reporter-htmlextra
 
       - name: Create CI environment file
@@ -47,19 +51,20 @@ jobs:
           GATEWAY_SECRET=ci-gateway-secret
           SHARED_DATABASE_URL=postgresql+psycopg2://ev:evpass@postgres:5432/evdb
           PROVIDER=mock
+          PAYMENT_PUBLIC_BASE=${PAYMENT_URL}
           EOF
 
-      - name: Start payment service
+      - name: Build and start payment service
         run: |
           docker compose down -v --remove-orphans
           docker compose up -d --build postgres payment_service
 
-      - name: Wait for payment service
+      - name: Wait for payment service health check
         run: |
           set -euo pipefail
 
           for i in {1..60}; do
-            if curl -fsS http://localhost:5008/payment/health >/dev/null 2>&1; then
+            if curl -fsS "${PAYMENT_URL}/payment/health" >/dev/null 2>&1; then
               echo "payment_service is ready"
               exit 0
             fi
@@ -72,41 +77,48 @@ jobs:
 
       - name: Make member JWT token
         run: |
-          MEMBER_TOKEN="$(node -e '
-            const crypto = require("crypto");
-            const secret = process.env.JWT_SECRET || "supersecret";
-            const b64url = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
-            const now = Math.floor(Date.now() / 1000);
-            const header = { alg: "HS256", typ: "JWT" };
-            const payload = {
-              sub: "1",
-              username: "contract_member_test",
-              role: "member",
-              approved: true,
-              locked: false,
-              iat: now,
-              exp: now + 31536000
-            };
-            const unsigned = `${b64url(header)}.${b64url(payload)}`;
-            const signature = crypto.createHmac("sha256", secret).update(unsigned).digest("base64url");
-            console.log(`${unsigned}.${signature}`);
-          ')"
+          MEMBER_TOKEN="$(node - <<'NODE'
+          const crypto = require("crypto");
+          const secret = process.env.JWT_SECRET || "supersecret";
+          const b64url = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+          const now = Math.floor(Date.now() / 1000);
+
+          const header = { alg: "HS256", typ: "JWT" };
+          const payload = {
+            sub: "1",
+            id: 1,
+            user_id: 1,
+            username: "payment_contract_member",
+            role: "member",
+            approved: true,
+            locked: false,
+            iat: now,
+            exp: now + 31536000
+          };
+
+          const unsigned = `${b64url(header)}.${b64url(payload)}`;
+          const signature = crypto.createHmac("sha256", secret).update(unsigned).digest("base64url");
+          console.log(`${unsigned}.${signature}`);
+          NODE
+          )"
 
           echo "MEMBER_TOKEN=$MEMBER_TOKEN" >> "$GITHUB_ENV"
 
-      - name: Run payment contract Newman
+      - name: Run payment contract management with Newman
         id: newman
         run: |
           set +e
+
           rm -rf reports
           mkdir -p reports
 
           newman run postman/paymentservice/paymentservice_postman_collection.json \
             -e postman/postman_environment.json \
             -d postman/paymentservice/data_contract_management.json \
-            --folder PAYMENT_CONTRACT_MANAGEMENT \
-            --env-var payment_url=http://localhost:5008 \
+            --folder "PAYMENT_CONTRACT_MANAGEMENT" \
+            --env-var payment_url="${PAYMENT_URL}" \
             --env-var memberToken="${MEMBER_TOKEN}" \
+            --env-var token="${MEMBER_TOKEN}" \
             --reporters cli,json,htmlextra \
             --reporter-json-export reports/paymentservice-contract-newman-result.json \
             --reporter-htmlextra-export reports/paymentservice-contract-report.html
@@ -129,15 +141,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: payment-contract-report
+          name: payment-contract-management-report
           path: reports/
 
-      - name: Create Jira bug when Contract test failed
+      - name: Create Jira bug when test failed
         if: steps.newman.outputs.failed == '1'
         run: |
           set -euo pipefail
-          echo "Creating Jira bug(s) for paymentservice-contract"
-          NEWMAN_SERVICE=paymentservice-contract bash scripts/create-jira-issue.sh
+          NEWMAN_SERVICE=paymentservice-contract-management bash scripts/create-jira-issue.sh
           exit 1
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -146,6 +157,6 @@ jobs:
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
 
-      - name: Stop services
+      - name: Stop backend services
         if: always()
         run: docker compose down -v --remove-orphans

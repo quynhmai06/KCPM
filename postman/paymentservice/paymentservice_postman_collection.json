@@ -3,7 +3,7 @@
     "_postman_id": "41b689fb-065c-4b47-af29-b3737eacfa5a",
     "name": "Payment Service",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "55357541",
+    "_exporter_id": "50117124",
     "_collection_link": "https://go.postman.co/collection/55357541-41b689fb-065c-4b47-af29-b3737eacfa5a?source=collection_link"
   },
   "item": [
@@ -55,6 +55,37 @@
               "\r",
               "    console.log(\"payment_id =\", pid);\r",
               "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const row = pm.iterationData.toObject();\r",
+              "\r",
+              "const rawBody = pm.iterationData.get(\"raw_body\");\r",
+              "if (rawBody && String(rawBody).trim() !== \"\") {\r",
+              "  pm.request.body.update(String(rawBody));\r",
+              "} else {\r",
+              "  const payload = {};\r",
+              "\r",
+              "  [\"order_id\", \"buyer_id\", \"seller_id\", \"amount\", \"method\", \"items\"].forEach((key) => {\r",
+              "    if (Object.prototype.hasOwnProperty.call(row, key)) {\r",
+              "      payload[key] = row[key];\r",
+              "    }\r",
+              "  });\r",
+              "\r",
+              "  pm.request.body.update(JSON.stringify(payload, null, 2));\r",
+              "}\r",
+              "\r",
+              "pm.request.headers.upsert({\r",
+              "  key: \"Content-Type\",\r",
+              "  value: \"application/json\"\r",
+              "});"
             ],
             "type": "text/javascript",
             "packages": {},

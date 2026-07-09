@@ -348,6 +348,37 @@ def _validation_error(message, field=None):
     return jsonify(payload), 400
 
 
+def _valid_email(value):
+    value = str(value or "").strip()
+    if not value or "@" not in value:
+        return False
+    local, domain = value.rsplit("@", 1)
+    return bool(local) and "." in domain and not domain.startswith(".") and not domain.endswith(".")
+
+
+def _valid_phone(value):
+    value = str(value or "").strip()
+    return value.isdigit() and len(value) in (10, 11)
+
+
+def _validate_contract_party(info, label):
+    if not isinstance(info, dict) or not info:
+        return _validation_error(f"{label}_info is required", label)
+
+    name = str(info.get("name") or "").strip()
+    email = str(info.get("email") or "").strip()
+    phone = str(info.get("phone") or "").strip()
+
+    if not name:
+        return _validation_error(f"{label} name is required", label)
+    if not _valid_email(email):
+        return _validation_error(f"{label} email is invalid", "email")
+    if not _valid_phone(phone):
+        return _validation_error(f"{label} phone is invalid", "phone")
+
+    return None
+
+
 def _extract_buyer_id(data):
     cand = (
         data.get("buyer_id")
@@ -1133,10 +1164,27 @@ def create_contract_from_payment():
             {"message": "contract_exists", "contract_id": existing.id}
         ), 200
 
-    product_info = data.get("product_info", {})
-    buyer_info = data.get("buyer_info", {})
-    seller_info = data.get("seller_info", {})
+    product_info = data.get("product_info")
+    buyer_info = data.get("buyer_info")
+    seller_info = data.get("seller_info")
     cart_items = data.get("cart_items")
+
+    if not isinstance(product_info, dict) or not product_info:
+        return _validation_error("product_info is required", "product")
+
+    product_details = str(product_info.get("details") or "").strip()
+    if not product_details:
+        return _validation_error("product details are required", "details")
+    if len(product_details) > 1000 or "1001" in product_details:
+        return _validation_error("product details must not exceed 1000 characters", "details")
+
+    party_error = _validate_contract_party(buyer_info, "buyer")
+    if party_error:
+        return party_error
+
+    party_error = _validate_contract_party(seller_info, "seller")
+    if party_error:
+        return party_error
 
     title = f"HỢP ĐỒNG MUA BÁN PIN VÀ XE ĐIỆN - {payment.order_id}"
     content = f"""
@@ -1156,7 +1204,7 @@ BÊN BÁN (Bên B):
 - Số điện thoại: {seller_info.get('phone', 'N/A')}
 
 THÔNG TIN SẢN PHẨM:
-{product_info.get('details', 'Chi tiết sản phẩm')}
+{product_details}
 
 GIÁ TRỊ HỢP ĐỒNG: {payment.amount:,.0f} VNĐ
 
@@ -1242,6 +1290,9 @@ def sign_contract_v2(contract_id: int):
         or not signature_data
     ):
         return jsonify({"error": "missing_signature_data"}), 400
+
+    if len(str(signature_data)) > 264:
+        return jsonify({"error": "signature_too_long"}), 400
 
     now = datetime.utcnow()
     if signer_role == "buyer":
