@@ -742,15 +742,14 @@ def test_payment_contract_wb_tc06_create_without_product_info(
     PAYMENT_CONTRACT_WB_TC06
     Branch: product_info thiếu -> dùng default details
     Path: PAY-CONTRACT-P6
-    Expected theo code hiện tại: 201
     """
     response = create_contract_from_payment(product_info={})
 
-    assert response.status_code == 201
+    assert response.status_code == 400
 
     data = response.get_json()
-    assert data["message"] == "contract_created"
-    assert data["contract_id"] > 0
+    assert data["error"] == "product_info is required"
+    assert data["field"] == "product"
 
 
 def test_payment_contract_wb_tc07_create_without_buyer_info(
@@ -760,15 +759,14 @@ def test_payment_contract_wb_tc07_create_without_buyer_info(
     PAYMENT_CONTRACT_WB_TC07
     Branch: buyer_info thiếu -> dùng N/A trong content
     Path: PAY-CONTRACT-P7
-    Expected theo code hiện tại: 201
     """
     response = create_contract_from_payment(buyer_info={})
 
-    assert response.status_code == 201
+    assert response.status_code == 400
 
     data = response.get_json()
-    assert data["message"] == "contract_created"
-    assert data["contract_id"] > 0
+    assert data["error"] == "buyer_info is required"
+    assert data["field"] == "buyer"
 
 
 def test_payment_contract_wb_tc08_create_without_seller_info(
@@ -778,15 +776,14 @@ def test_payment_contract_wb_tc08_create_without_seller_info(
     PAYMENT_CONTRACT_WB_TC08
     Branch: seller_info thiếu -> dùng N/A trong content
     Path: PAY-CONTRACT-P8
-    Expected theo code hiện tại: 201
     """
     response = create_contract_from_payment(seller_info={})
 
-    assert response.status_code == 201
+    assert response.status_code == 400
 
     data = response.get_json()
-    assert data["message"] == "contract_created"
-    assert data["contract_id"] > 0
+    assert data["error"] == "seller_info is required"
+    assert data["field"] == "seller"
 
 
 # ==========================================================

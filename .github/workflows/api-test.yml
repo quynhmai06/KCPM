@@ -1,4 +1,4 @@
-name: API Newman Tests
+name: White-box Test All Services
 
 on:
   push:
@@ -9,9 +9,7 @@ on:
       - "search-service/**"
       - "payment-service/**"
       - "reviews-service/**"
-      - "postman/**"
       - "scripts/**"
-      - "docker-compose.yml"
       - ".github/workflows/api-test.yml"
   pull_request:
     branches: [main, develop]
@@ -21,375 +19,104 @@ on:
       - "search-service/**"
       - "payment-service/**"
       - "reviews-service/**"
-      - "postman/**"
       - "scripts/**"
-      - "docker-compose.yml"
       - ".github/workflows/api-test.yml"
   workflow_dispatch:
 
 jobs:
-  api-newman:
-    name: API Newman Tests
+  whitebox-test:
+    name: White-box ${{ matrix.service }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
 
-    env:
-      JWT_SECRET: supersecret
-      REGISTER_USER: uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
-      REGISTER_PASS: pppppppppppppppppppppppppppppppppppp
-      BLOCKED_USERNAME: blocked_member_test
-      OTHER_USERNAME: other_member_test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-service
+            test_file: tests/test_auth_whitebox.py
+            cov_args: "--cov=routes --cov=models"
+
+          - service: listing-service
+            test_file: tests/test_listing_whitebox.py
+            cov_args: "--cov=app --cov=models"
+
+          - service: search-service
+            test_file: tests/test_search_whitebox.py
+            cov_args: "--cov=app --cov=models"
+
+          - service: payment-service
+            test_file: tests/test_payment_whitebox.py
+            cov_args: "--cov=app --cov=models"
+
+          - service: reviews-service
+            test_file: tests/test_reviews_whitebox.py
+            cov_args: "--cov=app --cov=models"
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.12"
 
-      - name: Install API test tools
-        run: npm install -g newman newman-reporter-htmlextra
-
-      - name: Create CI environment file
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
         run: |
-          cat > .env <<EOF
-          JWT_SECRET=${JWT_SECRET}
-          FLASK_SECRET=ci-flask-secret
-          GATEWAY_SECRET=ci-gateway-secret
-          SHARED_DATABASE_URL=postgresql+psycopg2://ev:evpass@postgres:5432/evdb
-          AUTH_URL_INTERNAL=http://auth_service:5001
-          ADMIN_URL_INTERNAL=http://admin_service:5003
-          PROVIDER=mock
-          EOF
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov coverage
 
-      - name: Build and start backend services
+      - name: Run white-box tests
+        id: pytest
+        working-directory: ${{ matrix.service }}
         run: |
-          docker compose down -v --remove-orphans
-          docker compose up -d --build postgres auth_service listing_service search_service payment_service reviews_service
+          mkdir -p ../reports
 
-      - name: Wait for backend health checks
+          set +e
+          python -m pytest ${{ matrix.test_file }} -v \
+            --junitxml=../reports/${{ matrix.service }}-junit.xml \
+            ${{ matrix.cov_args }} \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=xml:../reports/${{ matrix.service }}-coverage.xml
+
+          pytest_exit=$?
+          echo "pytest_exit=$pytest_exit" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Convert pytest result for Jira
+        if: steps.pytest.outputs.pytest_exit != '0'
         run: |
-          set -euo pipefail
+          python scripts/pytest-junit-to-newman.py \
+            --junit reports/${{ matrix.service }}-junit.xml \
+            --output reports/${{ matrix.service }}-newman-result.json \
+            --service ${{ matrix.service }}
 
-          wait_for_url() {
-            local name="$1"
-            local url="$2"
-
-            for i in {1..60}; do
-              if curl -fsS "$url" >/dev/null 2>&1; then
-                echo "$name is ready"
-                return 0
-              fi
-              sleep 2
-            done
-
-            echo "$name did not become ready: $url"
-            docker compose ps
-            docker compose logs --no-color "$name" || true
-            return 1
-          }
-
-          wait_for_url auth_service http://localhost:5001/health
-          wait_for_url listing_service http://localhost:5002/
-          wait_for_url search_service http://localhost:5010/search/
-          wait_for_url payment_service http://localhost:5008/payment/health
-          wait_for_url reviews_service http://localhost:5011/reviews/
-
-      - name: Seed auth admin user
-        run: docker compose exec -T auth_service python init_db.py
-
-      - name: Show running containers
-        run: docker compose ps
-
-      - name: Run Postman API tests with Newman
-        id: newman
-        run: |
-          set -euo pipefail
-          mkdir -p reports
-
-          NEWMAN_FAILED=0
-          FAILED_SERVICES=""
-
-          run_newman() {
-            local name="$1"
-            shift
-
-            echo "::group::newman ${name}"
-            set +e
-            newman run "$@" \
-              --reporters cli,json,htmlextra \
-              --reporter-json-export "reports/${name}-newman-result.json" \
-              --reporter-htmlextra-export "reports/${name}-report.html"
-            local code=$?
-            set -e
-            echo "::endgroup::"
-
-            if [ "$code" -ne 0 ]; then
-              echo "${name} failed with exit code ${code}"
-              NEWMAN_FAILED=1
-              if [ -z "$FAILED_SERVICES" ]; then
-                FAILED_SERVICES="${name}"
-              else
-                FAILED_SERVICES="${FAILED_SERVICES} ${name}"
-              fi
-            fi
-          }
-
-          parse_json_field() {
-            node -e "
-              let raw = '';
-              process.stdin.on('data', chunk => raw += chunk);
-              process.stdin.on('end', () => {
-                const data = JSON.parse(raw);
-                console.log(data[process.argv[1]] || '');
-              });
-            " "$1"
-          }
-
-          make_jwt() {
-            node -e '
-              const crypto = require("crypto");
-              const username = process.argv[1];
-              const sub = process.argv[2];
-              const secret = process.env.JWT_SECRET || "supersecret";
-              const b64url = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
-              const now = Math.floor(Date.now() / 1000);
-
-              const header = { alg: "HS256", typ: "JWT" };
-              const payload = {
-                sub: String(sub),
-                username,
-                role: "member",
-                approved: true,
-                locked: false,
-                iat: now,
-                exp: now + 31536000
-              };
-
-              const unsigned = `${b64url(header)}.${b64url(payload)}`;
-              const signature = crypto.createHmac("sha256", secret).update(unsigned).digest("base64url");
-              console.log(`${unsigned}.${signature}`);
-            ' "$1" "$2"
-          }
-
-          run_newman authservice-register \
-            postman/authservice/authservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/authservice/data_register.json \
-            --folder Register \
-            --env-var auth_url=http://localhost:5001
-
-          docker compose exec -T postgres psql -U ev -d evdb -v ON_ERROR_STOP=1 -c "
-            UPDATE users
-               SET approved = true, locked = false
-             WHERE username = '${REGISTER_USER}';
-
-            UPDATE users
-               SET phone = NULL
-             WHERE username <> '${REGISTER_USER}'
-               AND phone IN ('0901234567', '901234567', '09012345678');
-
-            INSERT INTO blocked_users (username, reason, created_at)
-            VALUES ('${BLOCKED_USERNAME}', 'ci blocked user for listing CREATE_TC53', NOW())
-            ON CONFLICT (username) DO NOTHING;
-          "
-
-          MEMBER_TOKEN="$(
-            curl -fsS -X POST http://localhost:5001/auth/login \
-              -H "Content-Type: application/json" \
-              -d "{\"username\":\"${REGISTER_USER}\",\"password\":\"${REGISTER_PASS}\"}" \
-              | parse_json_field access_token
-          )"
-
-          BLOCKED_MEMBER_TOKEN="$(make_jwt "${BLOCKED_USERNAME}" 901)"
-          OTHER_MEMBER_TOKEN="$(make_jwt "${OTHER_USERNAME}" 902)"
-
-          run_newman authservice-profile \
-            postman/authservice/authservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/authservice/data_profile.json \
-            --folder Profile \
-            --env-var auth_url=http://localhost:5001 \
-            --env-var memberToken="${MEMBER_TOKEN}"
-
-          run_newman listingservice-create \
-            postman/listingservice/listingservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/listingservice/data_create.json \
-            --folder Create \
-            --env-var listing_url=http://localhost:5002 \
-            --env-var memberToken="${MEMBER_TOKEN}" \
-            --env-var blockedMemberToken="${BLOCKED_MEMBER_TOKEN}"
-
-          APPROVED_LISTING_ID="$(
-            docker compose exec -T postgres psql -U ev -d evdb -At -c "
-              SELECT id FROM products WHERE owner = '${REGISTER_USER}' ORDER BY id DESC LIMIT 1;
-            " | tr -d '[:space:]'
-          )"
-
-          UPDATE_LISTING_ID="$(
-            docker compose exec -T postgres psql -U ev -d evdb -At -c "
-              SELECT id FROM products
-               WHERE owner = '${REGISTER_USER}'
-                 AND id <> ${APPROVED_LISTING_ID:-0}
-               ORDER BY id DESC LIMIT 1;
-            " | tr -d '[:space:]'
-          )"
-
-          if [ -n "$APPROVED_LISTING_ID" ] && [ -n "$UPDATE_LISTING_ID" ]; then
-            docker compose exec -T postgres psql -U ev -d evdb -v ON_ERROR_STOP=1 -c "
-              UPDATE products
-                 SET approved = false,
-                     approved_at = NULL,
-                     approved_by = NULL,
-                     status = 'pending'
-               WHERE id = ${UPDATE_LISTING_ID};
-
-              UPDATE products
-                 SET approved = true,
-                     approved_at = NOW(),
-                     approved_by = 'ci-admin',
-                     status = 'approved'
-               WHERE id = ${APPROVED_LISTING_ID};
-            "
-          fi
-
-          run_newman listingservice-update \
-            postman/listingservice/listingservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/listingservice/data_update.json \
-            --folder Update \
-            --env-var listing_url=http://localhost:5002 \
-            --env-var memberToken="${MEMBER_TOKEN}" \
-            --env-var blockedMemberToken="${BLOCKED_MEMBER_TOKEN}" \
-            --env-var otherMemberToken="${OTHER_MEMBER_TOKEN}" \
-            --env-var update_listing_id="${UPDATE_LISTING_ID}" \
-            --env-var approved_listing_id="${APPROVED_LISTING_ID}" \
-            --env-var missing_listing_id="99999999"
-
-          run_newman searchservice-search \
-            postman/searchservice/searchservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/searchservice/data_search.json \
-            --folder SEARCH_SEARCH \
-            --env-var search_url=http://localhost:5010 \
-            --env-var Authorization="Bearer ${MEMBER_TOKEN}"
-
-          run_newman searchservice-adv \
-            postman/searchservice/searchservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/searchservice/data_search_adv_postman.json \
-            --folder SEARCH_ADV \
-            --env-var search_url=http://localhost:5010
-
-          run_newman paymentservice-create \
-            postman/paymentservice/paymentservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/paymentservice/data_payment.service.json \
-            --folder PAYMENT_CREATE \
-            --env-var payment_url=http://localhost:5008 \
-            --env-var token="${MEMBER_TOKEN}"
-
-          docker compose exec -T postgres psql -U ev -d evdb -v ON_ERROR_STOP=1 -c "
-            DELETE FROM contracts WHERE payment_id = 1;
-
-            INSERT INTO payments
-              (id, order_id, buyer_id, seller_id, amount, method, provider, status, created_at, updated_at)
-            VALUES
-              (1, 'ORD-CONFIRM-SEED', 1, 2, 50000000, 'BANKING', 'DemoPay', 'PENDING', NOW(), NOW())
-            ON CONFLICT (id) DO UPDATE SET
-              order_id = EXCLUDED.order_id,
-              buyer_id = EXCLUDED.buyer_id,
-              seller_id = EXCLUDED.seller_id,
-              amount = EXCLUDED.amount,
-              method = EXCLUDED.method,
-              provider = EXCLUDED.provider,
-              status = EXCLUDED.status,
-              updated_at = NOW();
-
-            SELECT setval(pg_get_serial_sequence('payments','id'), GREATEST((SELECT MAX(id) FROM payments), 1));
-          "
-
-          run_newman paymentservice-confirm \
-            postman/paymentservice/paymentservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/paymentservice/data_confirm_payment.json \
-            --folder PAYMENT_CONFIRM \
-            --env-var payment_url=http://localhost:5008 \
-            --env-var token="${MEMBER_TOKEN}"
-
-          run_newman paymentservice-contract \
-            postman/paymentservice/paymentservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/paymentservice/data_contract_management.json \
-            --folder PAYMENT_CONTRACT_MANAGEMENT \
-            --env-var payment_url=http://localhost:5008 \
-            --env-var memberToken="${MEMBER_TOKEN}" \
-            --env-var token="${MEMBER_TOKEN}"
-
-          run_newman reviewservice-create \
-            postman/reviewservice/reviewservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/reviewservice/data_create.json \
-            --folder REVIEWS_CREATE \
-            --env-var reviews_url=http://localhost:5011 \
-            --env-var review_base_url=http://localhost:5011 \
-            --env-var token="${MEMBER_TOKEN}"
-
-          REVIEW_ID="$(
-            curl -fsS -X POST http://localhost:5011/reviews/api/reviews \
-              -H "Content-Type: application/json" \
-              -d '{"product_id":777001,"buyer_id":777301,"seller_id":2,"rating":5,"comment":"seed review for reply"}' \
-              | parse_json_field id
-          )"
-
-          run_newman reviewservice-reply \
-            postman/reviewservice/reviewservice_postman_collection.json \
-            -e postman/postman_environment.json \
-            -d postman/reviewservice/data_reply.json \
-            --folder REVIEWS_REPLY \
-            --env-var reviews_url=http://localhost:5011 \
-            --env-var review_base_url=http://localhost:5011 \
-            --env-var review_id="${REVIEW_ID}" \
-            --ignore-redirects
-
-          echo "failed=${NEWMAN_FAILED}" >> "$GITHUB_OUTPUT"
-          echo "failed_services=${FAILED_SERVICES}" >> "$GITHUB_OUTPUT"
-
-      - name: Collect Docker logs when failed
-        if: steps.newman.outputs.failed == '1'
-        run: docker compose logs --no-color > reports/docker-compose-logs.txt
-
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-report
-          path: reports/
-
-      - name: Create Jira bug when test failed
-        if: steps.newman.outputs.failed == '1'
-        run: |
-          set -euo pipefail
-
-          FAILED_SERVICES="${{ steps.newman.outputs.failed_services }}"
-
-          for service in $FAILED_SERVICES; do
-            echo "Creating Jira bug(s) for ${service}"
-            NEWMAN_SERVICE="${service}" bash scripts/create-jira-issue.sh
-          done
-
-          echo "Newman API tests failed. Jira bug was created. Marking workflow as failed."
-          exit 1
+      - name: Create Jira bug when white-box failed
+        if: steps.pytest.outputs.pytest_exit != '0'
+        run: bash scripts/create-jira-issue.sh
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_SPRINT_ID: ${{ secrets.JIRA_SPRINT_ID }}
+          NEWMAN_SERVICE: ${{ matrix.service }}
 
-      - name: Stop backend services
+      - name: Upload white-box reports
         if: always()
-        run: docker compose down -v --remove-orphans
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-whitebox-report
+          path: |
+            reports/${{ matrix.service }}-junit.xml
+            reports/${{ matrix.service }}-coverage.xml
+            reports/${{ matrix.service }}-newman-result.json
+
+      - name: Mark workflow failed when white-box failed
+        if: steps.pytest.outputs.pytest_exit != '0'
+        run: |
+          echo "${{ matrix.service }} white-box tests failed. Jira bug was created. Marking workflow as failed."
+          exit 1
